@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
       intimacyDad,
       intimacyMom,
       isFanMode = false,
+      memoryNotes,
     } = body
     
     if (!messages || !chatType) {
@@ -143,8 +144,8 @@ export async function POST(request: NextRequest) {
       content: m.content,
     }))
     
-    // 生成系统提示
-    const systemPrompt = generateSystemPrompt(userIdentity, currentChapter, sender)
+    // 生成系统提示（异步加载世界书）
+    const systemPrompt = await generateSystemPrompt(userIdentity, currentChapter, sender, memoryNotes)
     const allMessages: { role: 'user' | 'assistant'; content: string }[] = [
       { role: 'user', content: systemPrompt },
       ...chatHistory,

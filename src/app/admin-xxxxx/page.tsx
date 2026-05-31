@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { 
   Settings, DollarSign, Users, BarChart3, 
   PieChart, TrendingUp, Save, RefreshCw,
-  Plus, X, Check, AlertCircle, ChevronDown
+  Plus, X, Check, AlertCircle, ChevronDown, BookOpen
 } from 'lucide-react'
 
 // 类型定义
@@ -56,7 +56,7 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
-  const [activeTab, setActiveTab] = useState<'overview' | 'config' | 'users' | 'revenue'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'config' | 'worldbook' | 'users' | 'revenue'>('overview')
   const [loading, setLoading] = useState(false)
   const [secret, setSecret] = useState('')
   
@@ -71,6 +71,13 @@ export default function AdminPage() {
   const [revenueForm, setRevenueForm] = useState({ amount: '', source: 'manual', note: '' })
   const [showRevenueModal, setShowRevenueModal] = useState(false)
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'all'>('today')
+  
+  // 世界书状态
+  const [worldBookSections, setWorldBookSections] = useState<{id: number; section: string; title: string; content: string; is_active: boolean; sort_order: number}[]>([])
+  const [editingSection, setEditingSection] = useState<string | null>(null)
+  const [editContent, setEditContent] = useState('')
+  const [editTitle, setEditTitle] = useState('')
+  const [saving, setSaving] = useState(false)
 
   // 认证
   const handleAuth = () => {
@@ -135,11 +142,27 @@ export default function AdminPage() {
     }
   }, [isAuthenticated, password, secret, period])
 
+  // 获取世界书
+  const fetchWorldBook = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/worldbook', {
+        headers: { 'x-admin-secret': password || secret }
+      })
+      if (res.ok) {
+        const json = await res.json()
+        setWorldBookSections(json.sections || [])
+      }
+    } catch (e) {
+      console.error('Fetch world book failed:', e)
+    }
+  }, [password, secret])
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchData()
+      fetchWorldBook()
     }
-  }, [isAuthenticated, fetchData])
+  }, [isAuthenticated, fetchData, fetchWorldBook])
 
   // 保存配置
   const saveConfig = async () => {
@@ -165,6 +188,33 @@ export default function AdminPage() {
       console.error('Failed to save config:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 保存世界书
+  const saveWorldBook = async (section: string) => {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/admin/worldbook', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-secret': password || secret
+        },
+        body: JSON.stringify({ section, title: editTitle, content: editContent })
+      })
+      
+      if (res.ok) {
+        setEditingSection(null)
+        fetchWorldBook()
+        alert('世界书保存成功！')
+      } else {
+        alert('保存失败')
+      }
+    } catch (error) {
+      console.error('Failed to save world book:', error)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -273,6 +323,7 @@ export default function AdminPage() {
           {[
             { id: 'overview', label: '财务总览', icon: DollarSign },
             { id: 'config', label: '模型配置', icon: Settings },
+            { id: 'worldbook', label: '世界书与人设', icon: BookOpen },
             { id: 'revenue', label: '收入管理', icon: BarChart3 },
             { id: 'users', label: '用户统计', icon: Users },
           ].map(tab => (
@@ -628,6 +679,136 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 世界书与人设 */}
+        {activeTab === 'worldbook' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold text-white">🌍 世界书与人设管理</h3>
+                <p className="text-sm text-gray-400 mt-1">在这里粘贴世界书规则、角色人设、NPC人设，内容会自动注入AI对话</p>
+              </div>
+              <button onClick={fetchWorldBook} className="btn btn-secondary flex items-center gap-2">
+                <RefreshCw className="w-4 h-4" /> 刷新
+              </button>
+            </div>
+
+            {worldBookSections.map(section => (
+              <div key={section.section} className="glass rounded-2xl p-5 space-y-3">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <span className="text-white font-medium">{section.title}</span>
+                    <span className="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded">{section.section}</span>
+                    <button
+                      onClick={async () => {
+                        const res = await fetch('/api/admin/worldbook', {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json', 'x-admin-secret': password || secret },
+                          body: JSON.stringify({ section: section.section, is_active: !section.is_active })
+                        })
+                        if (res.ok) fetchWorldBook()
+                      }}
+                      className={`text-xs px-2 py-0.5 rounded cursor-pointer ${section.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}
+                    >
+                      {section.is_active ? '✅ 启用' : '⏸️ 禁用'}
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    {editingSection !== section.section && (
+                      <button
+                        onClick={() => {
+                          setEditingSection(section.section)
+                          setEditTitle(section.title)
+                          setEditContent(section.content)
+                        }}
+                        className="btn btn-secondary text-sm px-3 py-1"
+                      >
+                        编辑
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {editingSection === section.section ? (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={e => setEditTitle(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+                      placeholder="标题"
+                    />
+                    <textarea
+                      value={editContent}
+                      onChange={e => setEditContent(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-mono"
+                      rows={12}
+                      placeholder="在此粘贴世界书/人设内容..."
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => setEditingSection(null)}
+                        className="btn btn-secondary text-sm px-4 py-1"
+                      >
+                        取消
+                      </button>
+                      <button
+                        onClick={() => saveWorldBook(section.section)}
+                        disabled={saving}
+                        className="btn btn-primary text-sm px-4 py-1 flex items-center gap-2"
+                      >
+                        <Save className="w-3 h-3" />
+                        {saving ? '保存中...' : '保存'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-black/20 rounded-lg p-3 text-sm text-gray-300 max-h-32 overflow-y-auto whitespace-pre-wrap">
+                    {section.content ? (
+                      section.content.length > 300 
+                        ? section.content.slice(0, 300) + '...'
+                        : section.content
+                    ) : (
+                      <span className="text-gray-600 italic">（空内容，点击编辑粘贴）</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* 添加新模块 */}
+            <div className="glass rounded-2xl p-5">
+              <button
+                onClick={async () => {
+                  const sectionKey = `custom_${Date.now()}`
+                  const title = prompt('请输入模块标题')
+                  if (!title) return
+                  const res = await fetch('/api/admin/worldbook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-secret': password || secret },
+                    body: JSON.stringify({ section: sectionKey, title, content: '', sort_order: worldBookSections.length })
+                  })
+                  if (res.ok) fetchWorldBook()
+                }}
+                className="btn btn-secondary flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" /> 添加自定义模块
+              </button>
+            </div>
+
+            {/* 说明 */}
+            <div className="glass rounded-2xl p-5 text-sm text-gray-400 space-y-2">
+              <p className="font-medium text-gray-300">📖 使用说明</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>世界书内容会在每次AI对话时自动注入System Prompt最前面</li>
+                <li>禁用的模块不会被注入，可以用来调试</li>
+                <li>核心模块（world_rules/dad_profile/mom_profile/npc_profiles）不能删除</li>
+                <li>修改后即时生效，无需重新部署</li>
+                <li>建议先在文档里写好，再粘贴进来</li>
+              </ul>
             </div>
           </div>
         )}

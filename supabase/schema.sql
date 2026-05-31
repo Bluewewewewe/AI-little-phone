@@ -178,3 +178,37 @@ CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 --   END as chapter,
 --   COUNT(*) as count
 -- FROM user_data GROUP BY chapter;
+
+
+-- ============================================
+-- 9. 世界书与人设表 (world_book)
+-- ============================================
+CREATE TABLE IF NOT EXISTS world_book (
+  id SERIAL PRIMARY KEY,
+  section VARCHAR(50) UNIQUE NOT NULL,  -- 'world_rules'|'dad_profile'|'mom_profile'|'npc_profiles'|'custom_1'|'custom_2'...
+  title TEXT NOT NULL,                   -- 显示标题
+  content TEXT NOT NULL DEFAULT '',      -- 世界书内容（管理员粘贴的文本）
+  is_active BOOLEAN DEFAULT TRUE,        -- 是否启用
+  sort_order INT DEFAULT 0,              -- 排序顺序
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_by TEXT DEFAULT 'admin'
+);
+
+-- 初始化默认条目
+INSERT INTO world_book (section, title, content, sort_order) VALUES
+  ('world_rules', '🌍 世界书·时间感知系统', '时间是你的世界的根基。在你回应之前，先感知此刻的现实时间。
+
+M1: 时间最高优先级，永不停止。
+M2: 每条消息重新校准时间。不得沿用上一条的时间假设。
+M3: 三态模型——线上聊天/线下场景/无互动，各有规则。
+M4: 状态切换必须时间对账。离线→在线是活人感的关键。
+M5: 时间与环境绑定——光照、身体状态、活跃度随时间变。
+M6: 感知日期、星期、节日，跨日必须知道。
+M7: 用户不在时你仍在生活——有作息、有日常、有随机小事件。
+M8: 时间感知隐形，绝不输出时间戳或暴露系统。', 0),
+  ('dad_profile', '🟢 爸爸人设', '（在此粘贴爸爸的完整人设卡，包括性格、说话风格、背景故事、习惯、口癖等）', 1),
+  ('mom_profile', '🟣 妈妈人设', '（在此粘贴妈妈的完整人设卡，包括性格、说话风格、背景故事、习惯、口癖等）', 2),
+  ('npc_profiles', '👥 NPC人设', '（在此粘贴AI粉丝、毒唯、CPF等NPC的人设卡）', 3),
+  ('custom_1', '📝 自定义模块1', '', 4),
+  ('custom_2', '📝 自定义模块2', '', 5)
+ON CONFLICT (section) DO NOTHING;

@@ -113,6 +113,23 @@ interface AppState {
   
   // 用户ID（匿名）
   userId: string
+  
+  // 记忆笔记本
+  memoryNotes: MemoryNote[]
+  addMemoryNote: (note: MemoryNote) => void
+  removeMemoryNote: (id: string) => void
+  updateMemoryNote: (id: string, content: string) => void
+  getActiveMemoryNotes: () => string[]
+}
+
+// 记忆笔记本条目
+export interface MemoryNote {
+  id: string
+  category: 'about_me' | 'chat_summary' | 'important_event' | 'auto_detected' | 'archived'
+  content: string
+  source: 'manual' | 'ai_assisted' | 'auto'
+  created_at: string
+  is_active: boolean
 }
 
 // 生成匿名用户ID
@@ -151,7 +168,7 @@ export const useStore = create<AppState>()(
         
         if (type === 'dad') {
           const newDaily = state.dailyIntimacyDad + amount
-          if (newDaily <= 30) {
+          if (newDaily <= 60) {
             set({
               intimacyDad: state.intimacyDad + amount,
               dailyIntimacyDad: newDaily,
@@ -159,7 +176,7 @@ export const useStore = create<AppState>()(
           }
         } else {
           const newDaily = state.dailyIntimacyMom + amount
-          if (newDaily <= 30) {
+          if (newDaily <= 60) {
             set({
               intimacyMom: state.intimacyMom + amount,
               dailyIntimacyMom: newDaily,
@@ -281,6 +298,15 @@ export const useStore = create<AppState>()(
       
       // 用户ID
       userId: generateUserId(),
+      
+      // 记忆笔记本
+      memoryNotes: [],
+      addMemoryNote: (note) => set((state) => ({ memoryNotes: [...state.memoryNotes, note] })),
+      removeMemoryNote: (id) => set((state) => ({ memoryNotes: state.memoryNotes.filter(n => n.id !== id) })),
+      updateMemoryNote: (id, content) => set((state) => ({
+        memoryNotes: state.memoryNotes.map(n => n.id === id ? { ...n, content } : n)
+      })),
+      getActiveMemoryNotes: () => get().memoryNotes.filter(n => n.is_active).map(n => n.content),
     }),
     {
       name: 'ai-phone-storage',
@@ -295,6 +321,7 @@ export const useStore = create<AppState>()(
         chapter: state.chapter,
         userId: state.userId,
         isDarkMode: state.isDarkMode,
+        memoryNotes: state.memoryNotes,
         // 不持久化消息，避免存储过大
       }),
     }
