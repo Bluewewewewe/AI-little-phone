@@ -564,6 +564,71 @@ export default function AdminPage() {
                 </select>
               </div>
             </div>
+
+            {/* 模型价格配置 */}
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-bold flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-amber-400" />
+                  模型价格配置
+                </h4>
+                <span className="text-xs text-white/40">修改后保存即时生效，不用重新部署</span>
+              </div>
+              <p className="text-xs text-white/40 mb-4">价格单位：¥/百万token。修改价格会影响后续成本计算，已有记录不受影响。</p>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left text-sm text-white/60 border-b border-white/10">
+                      <th className="pb-3">模型</th>
+                      <th className="pb-3">输入价格</th>
+                      <th className="pb-3">输出价格</th>
+                      <th className="pb-3">缓存价格</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { key: 'price_gemini_pro', label: 'Gemini 2.5 Pro', defaultIn: '9', defaultOut: '72', defaultCache: '2.25' },
+                      { key: 'price_gemini_flash', label: 'Gemini 2.5 Flash', defaultIn: '0.5', defaultOut: '2.16', defaultCache: '0.13' },
+                      { key: 'price_claude_sonnet', label: 'Claude Sonnet 4.6', defaultIn: '21.6', defaultOut: '108', defaultCache: '2.16' },
+                      { key: 'price_claude_opus', label: 'Claude Opus 4', defaultIn: '108', defaultOut: '540', defaultCache: '10.8' },
+                      { key: 'price_deepseek_flash', label: 'DeepSeek V4 Flash', defaultIn: '1', defaultOut: '2', defaultCache: '0.02' },
+                    ].map(model => (
+                      <tr key={model.key} className="border-b border-white/5">
+                        <td className="py-3 text-sm font-medium">{model.label}</td>
+                        <td className="py-3">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={configForm[model.key + '_in'] || model.defaultIn}
+                            onChange={(e) => setConfigForm({ ...configForm, [model.key + '_in']: e.target.value })}
+                            className="w-24 bg-white/10 border border-white/20 rounded px-2 py-1 text-sm"
+                          />
+                        </td>
+                        <td className="py-3">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={configForm[model.key + '_out'] || model.defaultOut}
+                            onChange={(e) => setConfigForm({ ...configForm, [model.key + '_out']: e.target.value })}
+                            className="w-24 bg-white/10 border border-white/20 rounded px-2 py-1 text-sm"
+                          />
+                        </td>
+                        <td className="py-3">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={configForm[model.key + '_cache'] || model.defaultCache}
+                            onChange={(e) => setConfigForm({ ...configForm, [model.key + '_cache']: e.target.value })}
+                            className="w-24 bg-white/10 border border-white/20 rounded px-2 py-1 text-sm"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 

@@ -2,6 +2,39 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin, isSupabaseConfigured } from '@/lib/supabase'
 import { callAI, DEFAULT_MODEL_CONFIG, UserIdentity } from '@/lib/ai-engine'
 import { generateSystemPrompt, getChapterByIntimacy } from '@/lib/prompts'
+import { updateModelPrices, DEFAULT_MODEL_PRICES } from '@/lib/models'
+
+// 启动时从DB加载价格（如果可用）
+let pricesLoaded = false
+async function ensurePricesLoaded() {
+  if (pricesLoaded || !isSupabaseConfigured()) return
+  try {
+    const { data } = await supabaseAdmin.from('model_config').select('key, value')
+    if (data) {
+      const configMap = data.reduce((acc, item) => { acc[item.key] = item.value; return acc }, {} as Record<string, string>)
+      const PRICE_KEY_MAP: Record<string, { modelIds: string[]; name: string }> = {
+        'price_gemini_pro': { modelIds: ['gemini-2.5-pro', 'gemini-2.5-pro-06-05'], name: 'Gemini 2.5 Pro' },
+        'price_gemini_flash': { modelIds: ['gemini-2.5-flash', 'gemini-1.5-flash'], name: 'Gemini 2.5 Flash' },
+        'price_claude_sonnet': { modelIds: ['claude-sonnet-4', 'claude-sonnet-4-20250514'], name: 'Claude Sonnet 4.6' },
+        'price_claude_opus': { modelIds: ['claude-opus-4'], name: 'Claude Opus 4' },
+        'price_deepseek_flash': { modelIds: ['deepseek-v4-flash', 'deepseek-chat'], name: 'DeepSeek V4 Flash' },
+      }
+      const overrides: Record<string, { name: string; input_per_million: number; output_per_million: number; cache_per_million: number }> = {}
+      for (const [key, mapping] of Object.entries(PRICE_KEY_MAP)) {
+        const inVal = parseFloat(configMap[key + '_in'])
+        const outVal = parseFloat(configMap[key + '_out'])
+        const cacheVal = parseFloat(configMap[key + '_cache'])
+        if (!isNaN(inVal) && !isNaN(outVal) && !isNaN(cacheVal)) {
+          for (const modelId of mapping.modelIds) {
+            overrides[modelId] = { name: mapping.name, input_per_million: inVal, output_per_million: outVal, cache_per_million: cacheVal }
+          }
+        }
+      }
+      if (Object.keys(overrides).length > 0) updateModelPrices(overrides)
+      pricesLoaded = true
+    }
+  } catch { /* ignore */ }
+}
 // 聊天消息类型（API用）
 interface ApiChatMessage {
   role: 'user' | 'assistant'
@@ -68,6 +101,9 @@ async function recordUsage(
 
 export async function POST(request: NextRequest) {
   try {
+    // 确保价格从DB加载
+    await ensurePricesLoaded()
+    
     const body = await request.json()
     const { 
       messages, 
