@@ -326,6 +326,7 @@ html, body {
 /* 手机外框 - 桌面端显示，移动端隐藏全屏 */
 .phone-page {
   min-height: 100vh;
+  height: 100vh;
   background: #06060f;
   display: flex;
   align-items: center;
@@ -344,8 +345,8 @@ html, body {
   border-radius: 55px;
   padding: 12px;
   position: relative;
-  width: min(390px, calc(100vh * 9 / 19.5));
-  height: min(844px, 96vh);
+  width: min(calc(96vh * 9 / 19.5), 96vw);
+  height: 96vh;
   flex-shrink: 0;
 }
 
