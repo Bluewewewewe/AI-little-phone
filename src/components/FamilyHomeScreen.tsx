@@ -14,6 +14,22 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
   const [peekTarget, setPeekTarget] = useState<'tianlei' | 'ziyu' | null>(null)
   const [showBedroom, setShowBedroom] = useState(false)
   const [petBubble, setPetBubble] = useState<string | null>(null)
+  const [timeInfo, setTimeInfo] = useState({ hour: 12, timeStr: '' })
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date()
+      setTimeInfo({
+        hour: now.getHours(),
+        timeStr: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+      })
+    }
+    updateTime()
+    const t = setInterval(updateTime, 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  const { hour, timeStr } = timeInfo
 
   useEffect(() => {
     const update = () => {
@@ -50,7 +66,6 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
     setShowPeek(true)
   }
 
-  const hour = new Date().getHours()
   const isNight = hour >= 22 || hour < 7
   const isEvening = hour >= 18 && hour < 22
 
@@ -86,7 +101,7 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
           <h2 className="font-semibold text-sm">家里现在</h2>
         </div>
         <span className="text-[11px] text-white/25 tabular-nums">
-          {new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+          {timeStr || '--:--'}
         </span>
       </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
 import HomeScreen from './HomeScreen'
 import ChatScreen from './ChatScreen'
@@ -17,6 +17,16 @@ export default function PhoneScreen() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [animDir, setAnimDir] = useState<'open'|'close'>('open')
+  const [appBarTime, setAppBarTime] = useState('')
+
+  useEffect(() => {
+    const updateTime = () => {
+      setAppBarTime(new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }))
+    }
+    updateTime()
+    const t = setInterval(updateTime, 1000)
+    return () => clearInterval(t)
+  }, [])
 
   const isHome = currentApp === 'home'
 
@@ -68,7 +78,7 @@ export default function PhoneScreen() {
           {/* APP内状态栏（覆盖式） */}
           <div className="flex items-center justify-between px-6 h-8 flex-shrink-0">
             <span className="text-xs font-medium">
-              {new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}
+              {appBarTime || '--:--'}
             </span>
             <div className="flex items-center gap-2 text-xs">
               <span>📶</span>

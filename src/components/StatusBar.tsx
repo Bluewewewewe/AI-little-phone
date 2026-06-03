@@ -1,23 +1,30 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useStore } from '@/store/useStore'
 import { Wifi, Signal, Battery, Sun, Moon } from 'lucide-react'
 
 export default function StatusBar() {
   const { isDarkMode, toggleTheme } = useStore()
-  
-  // 模拟时间
-  const now = new Date()
-  const timeString = now.toLocaleTimeString('zh-CN', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: false 
-  })
+  const [timeString, setTimeString] = useState<string>('')
+
+  useEffect(() => {
+    const updateTime = () => {
+      setTimeString(new Date().toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }))
+    }
+    updateTime()
+    const t = setInterval(updateTime, 1000)
+    return () => clearInterval(t)
+  }, [])
 
   return (
     <div className="h-8 px-6 flex items-center justify-between text-xs">
       {/* 左侧：时间 */}
-      <span className="font-medium">{timeString}</span>
+      <span className="font-medium">{timeString || '--:--'}</span>
       
       {/* 右侧：状态图标 */}
       <div className="flex items-center gap-2">
