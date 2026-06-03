@@ -14,7 +14,14 @@ export default function DesktopInfoPanel() {
   return (
     <div className="hidden lg:flex flex-col gap-6 w-[230px] animate-fadeIn">
       {/* 等级与章节 */}
-      <div className="rounded-[20px] bg-white/35 backdrop-blur-2xl p-5 shadow-sm shadow-amber-900/5">
+      <div
+        className="rounded-[20px] backdrop-blur-2xl p-5"
+        style={{
+          background: 'rgba(255,255,255,0.45)',
+          border: '1px solid rgba(255,255,255,0.6)',
+          boxShadow: '0 2px 16px rgba(120,80,0,0.08), inset 0 0.5px 0 rgba(255,255,255,0.5)'
+        }}
+      >
         <div className="flex items-center gap-2.5 mb-4">
           <Shield className="w-5 h-5 text-amber-500/70" />
           <span className="text-sm font-medium text-amber-900/70">等级</span>
@@ -41,7 +48,14 @@ export default function DesktopInfoPanel() {
       </div>
 
       {/* 爸妈亲密度 */}
-      <div className="rounded-[20px] bg-white/35 backdrop-blur-2xl p-5 shadow-sm shadow-amber-900/5">
+      <div
+        className="rounded-[20px] backdrop-blur-2xl p-5"
+        style={{
+          background: 'rgba(255,255,255,0.45)',
+          border: '1px solid rgba(255,255,255,0.6)',
+          boxShadow: '0 2px 16px rgba(120,80,0,0.08), inset 0 0.5px 0 rgba(255,255,255,0.5)'
+        }}
+      >
         <div className="flex items-center gap-2.5 mb-5">
           <Heart className="w-5 h-5 text-red-400/70 fill-red-400/70" />
           <span className="text-sm font-medium text-amber-900/70">亲密度</span>
@@ -92,7 +106,14 @@ export default function DesktopInfoPanel() {
 
       {/* 宠物健康值 - 解锁后显示 */}
       {petsUnlocked && (
-        <div className="rounded-[20px] bg-white/35 backdrop-blur-2xl p-5 shadow-sm shadow-amber-900/5">
+        <div
+          className="rounded-[20px] backdrop-blur-2xl p-5"
+          style={{
+            background: 'rgba(255,255,255,0.45)',
+            border: '1px solid rgba(255,255,255,0.6)',
+            boxShadow: '0 2px 16px rgba(120,80,0,0.08), inset 0 0.5px 0 rgba(255,255,255,0.5)'
+          }}
+        >
           <div className="flex items-center gap-2.5 mb-5">
             <PawPrint className="w-5 h-5 text-emerald-500/70" />
             <span className="text-sm font-medium text-amber-900/70">宠物</span>

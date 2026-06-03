@@ -54,7 +54,7 @@ export default function HomePage() {
             onClick={() => setShowSetup(true)}
             className="w-full py-3.5 text-base rounded-2xl font-medium active:scale-[0.97] transition-transform text-amber-900"
             style={{
-              background: 'rgba(251, 191, 36, 0.35)',
+              background: 'rgba(251, 191, 36, 0.18)',
               backdropFilter: 'blur(20px)',
               boxShadow: '0 2px 8px rgba(0,0,0,0.04), inset 0 0.5px 0 rgba(255,255,255,0.5)'
             }}
@@ -106,19 +106,27 @@ function IdentitySetup({ onComplete }: { onComplete: () => void }) {
     onComplete()
   }
 
-  const optionButtonClass = (isSelected: boolean, color: string) => {
-    if (isSelected) {
-      const colorMap: Record<string, string> = {
-        purple: 'rgba(168, 85, 247, 0.30)',
-        pink: 'rgba(236, 72, 153, 0.30)',
-        cyan: 'rgba(6, 182, 212, 0.30)',
-        amber: 'rgba(245, 158, 11, 0.30)',
-      }
-      return `p-3.5 rounded-2xl text-sm font-medium transition-all text-amber-900`
-        .replace('transition-all', 'transition-all active:scale-[0.95]')
-        + ` bg-[${colorMap[color] || colorMap.purple}]`
+  const optionButtonStyle = (isSelected: boolean, color: string): React.CSSProperties => {
+    const colorMap: Record<string, string> = {
+      purple: 'rgba(168, 85, 247, 0.18)',
+      pink: 'rgba(236, 72, 153, 0.18)',
+      cyan: 'rgba(6, 182, 212, 0.18)',
+      amber: 'rgba(245, 158, 11, 0.18)',
     }
-    return 'p-3.5 rounded-2xl text-sm font-medium transition-all active:scale-[0.95] text-amber-900 bg-white/25 backdrop-blur-xl'
+    return {
+      background: isSelected ? (colorMap[color] || colorMap.purple) : 'rgba(255,255,255,0.20)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.03), inset 0 0.5px 0 rgba(255,255,255,0.5)',
+      borderRadius: '16px',
+      padding: '14px',
+      fontSize: '14px',
+      fontWeight: 500,
+      color: '#78350f',
+      border: 'none',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+    }
   }
 
   const renderStep = () => {
@@ -137,10 +145,7 @@ function IdentitySetup({ onComplete }: { onComplete: () => void }) {
                     setFormData({ ...formData, roleA_name: option })
                     setStep(2)
                   }}
-                  className={optionButtonClass(formData.roleA_name === option, 'purple')}
-                  style={{
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.04), inset 0 0.5px 0 rgba(255,255,255,0.5)'
-                  }}
+                  style={optionButtonStyle(formData.roleA_name === option, 'purple')}
                 >
                   {option}
                 </button>
@@ -172,10 +177,7 @@ function IdentitySetup({ onComplete }: { onComplete: () => void }) {
                     setFormData({ ...formData, roleB_name: option })
                     setStep(3)
                   }}
-                  className={optionButtonClass(formData.roleB_name === option, 'pink')}
-                  style={{
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.04), inset 0 0.5px 0 rgba(255,255,255,0.5)'
-                  }}
+                  style={optionButtonStyle(formData.roleB_name === option, 'pink')}
                 >
                   {option}
                 </button>
@@ -197,10 +199,7 @@ function IdentitySetup({ onComplete }: { onComplete: () => void }) {
                     setFormData({ ...formData, user_name: option })
                     setStep(4)
                   }}
-                  className={optionButtonClass(formData.user_name === option, 'cyan')}
-                  style={{
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.04), inset 0 0.5px 0 rgba(255,255,255,0.5)'
-                  }}
+                  style={optionButtonStyle(formData.user_name === option, 'cyan')}
                 >
                   {option}
                 </button>
@@ -222,10 +221,7 @@ function IdentitySetup({ onComplete }: { onComplete: () => void }) {
                     setFormData({ ...formData, family_mode: option })
                     setStep(5)
                   }}
-                  className={optionButtonClass(formData.family_mode === option, 'amber')}
-                  style={{
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.04), inset 0 0.5px 0 rgba(255,255,255,0.5)'
-                  }}
+                  style={optionButtonStyle(formData.family_mode === option, 'amber')}
                 >
                   {option}
                 </button>
@@ -259,7 +255,7 @@ function IdentitySetup({ onComplete }: { onComplete: () => void }) {
               onClick={handleComplete}
               className="w-full py-3.5 rounded-2xl font-medium active:scale-[0.97] transition-transform text-amber-900"
               style={{
-                background: 'rgba(251, 191, 36, 0.35)',
+                background: 'rgba(251, 191, 36, 0.18)',
                 backdropFilter: 'blur(20px)',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.04), inset 0 0.5px 0 rgba(255,255,255,0.5)'
               }}

@@ -213,7 +213,7 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder="输入消息..."
-              className="w-full bg-amber-900/[0.04] border border-amber-900/10 rounded-2xl px-4 py-3 pr-12 text-sm focus:outline-none focus:border-purple-500/50"
+              className="w-full bg-amber-900/[0.04] rounded-2xl px-4 py-3 pr-12 text-sm focus:outline-none focus:border-purple-500/50"
             />
             <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-amber-900/[0.04] rounded-full">
               <Smile className="w-5 h-5 text-amber-900/50" />
