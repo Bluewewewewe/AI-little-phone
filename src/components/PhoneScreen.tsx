@@ -80,9 +80,9 @@ export default function PhoneScreen() {
             <span className="font-semibold text-[14px]">
               {appBarTime || '--:--'}
             </span>
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-[6px] text-xs">
               <span>📶</span>
-              <span>87%</span>
+              <span className="text-[10px] leading-none">87%</span>
             </div>
           </div>
           

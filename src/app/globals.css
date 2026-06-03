@@ -1,30 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 
 :root {
-  /* Liquid Glass 色板 */
-  --bg-primary: linear-gradient(135deg, #0c0015 0%, #0a0a2e 40%, #0f0c29 100%);
+  /* Liquid Glass 色板 - 浅黄暖调 */
+  --bg-primary: linear-gradient(135deg, #1a1508 0%, #1c1610 40%, #1e1a12 100%);
   --bg-secondary: rgba(255, 255, 255, 0.04);
-  --bg-card: rgba(255, 255, 255, 0.06);
-  --bg-glass: rgba(255, 255, 255, 0.08);
-  --bg-glass-hover: rgba(255, 255, 255, 0.12);
+  --bg-card: rgba(255, 245, 220, 0.06);
+  --bg-glass: rgba(255, 245, 220, 0.08);
+  --bg-glass-hover: rgba(255, 245, 220, 0.12);
 
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.7);
   --text-muted: rgba(255, 255, 255, 0.4);
 
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-light: rgba(255, 255, 255, 0.04);
+  --border-color: rgba(255, 225, 150, 0.08);
+  --border-light: rgba(255, 225, 150, 0.04);
 
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.3);
-  --shadow-glow: 0 0 40px rgba(139, 92, 246, 0.08);
+  --shadow-glow: 0 0 40px rgba(234, 179, 8, 0.06);
 
   --accent-purple: #a855f7;
   --accent-blue: #6366f1;
   --accent-pink: #ec4899;
-  --accent-gold: #f59e0b;
+  --accent-gold: #eab308;
 
-  --dad-color: #8b5cf6;
+  --dad-color: #f59e0b;
   --mom-color: #ec4899;
   --user-color: #06b6d4;
 
@@ -41,14 +41,14 @@
 }
 
 [data-theme="light"] {
-  --bg-primary: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #ddd6fe 100%);
+  --bg-primary: linear-gradient(135deg, #fef9ee 0%, #fef3c7 50%, #fde68a 100%);
   --bg-secondary: rgba(0, 0, 0, 0.02);
   --bg-card: rgba(255, 255, 255, 0.65);
   --bg-glass: rgba(255, 255, 255, 0.5);
   --bg-glass-hover: rgba(255, 255, 255, 0.75);
-  --text-primary: #1e1b4b;
-  --text-secondary: rgba(30, 27, 75, 0.7);
-  --text-muted: rgba(30, 27, 75, 0.45);
+  --text-primary: #422006;
+  --text-secondary: rgba(66, 32, 6, 0.7);
+  --text-muted: rgba(66, 32, 6, 0.45);
   --border-color: rgba(0, 0, 0, 0.06);
   --border-light: rgba(0, 0, 0, 0.03);
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
@@ -145,14 +145,14 @@ html, body {
 }
 
 .glass-btn-primary {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(99, 102, 241, 0.3));
-  border-color: rgba(139, 92, 246, 0.3);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(234, 179, 8, 0.3));
+  border-color: rgba(245, 158, 11, 0.3);
 }
 
 .glass-btn-primary:hover {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.45), rgba(99, 102, 241, 0.45));
-  border-color: rgba(139, 92, 246, 0.4);
-  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.45), rgba(234, 179, 8, 0.45));
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2);
 }
 
 /* 保留旧按钮兼容 */
@@ -166,7 +166,7 @@ html, body {
 }
 
 .btn-dad {
-  background: linear-gradient(135deg, var(--dad-color), #7c3aed);
+  background: linear-gradient(135deg, var(--dad-color), #d97706);
   color: white;
 }
 
@@ -191,8 +191,8 @@ html, body {
 }
 
 .input:focus {
-  border-color: rgba(139, 92, 246, 0.4);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1), var(--shadow);
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1), var(--shadow);
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -225,10 +225,10 @@ html, body {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #8b5cf6, #6366f1, #3b82f6);
+  background: linear-gradient(90deg, #f59e0b, #eab308, #fbbf24);
   border-radius: var(--radius-full);
   transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.4);
 }
 
 /* ===== 动画系统 ===== */
@@ -264,8 +264,8 @@ html, body {
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.1); }
-  50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.25); }
+  0%, 100% { box-shadow: 0 0 20px rgba(234, 179, 8, 0.08); }
+  50% { box-shadow: 0 0 30px rgba(234, 179, 8, 0.2); }
 }
 
 @keyframes breathe {
@@ -327,7 +327,9 @@ html, body {
 .phone-page {
   min-height: 100vh;
   min-height: 100dvh;
-  background: #06060f;
+  height: 100vh;
+  height: 100dvh;
+  background: #08070a;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -336,16 +338,16 @@ html, body {
 }
 
 .phone-frame {
-  background: linear-gradient(145deg, #1a1a2e, #0d0d1a);
+  background: linear-gradient(145deg, #1e1a14, #0f0d0a);
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.06),
-    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 0 0 1px rgba(255,225,150,0.06),
+    inset 0 1px 0 rgba(255,225,150,0.04),
     0 25px 80px rgba(0,0,0,0.6),
     0 8px 30px rgba(0,0,0,0.4);
   border-radius: 55px;
   padding: 12px;
   position: relative;
-  width: min(390px, calc(100dvh * 9 / 19.5));
+  width: min(390px, calc(96dvh * 9 / 19.5));
   height: min(844px, 96dvh);
   flex-shrink: 0;
 }
@@ -361,7 +363,7 @@ html, body {
 }
 
 .phone-screen {
-  background: linear-gradient(135deg, #0c0015 0%, #0a0a2e 40%, #0f0c29 100%);
+  background: linear-gradient(135deg, #1a1508 0%, #1c1610 40%, #1e1a12 100%);
   border-radius: 47px;
   overflow: hidden;
   display: flex;

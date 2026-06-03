@@ -26,7 +26,7 @@ export default function IntimacyPanel() {
         <div className="flex items-center gap-2 mb-3">
           <Heart className="w-4 h-4 text-red-400 fill-red-400" />
           <span className="text-sm font-medium">亲密度</span>
-          <span className="badge badge-purple text-[10px] ml-auto">
+          <span className="badge badge-gold text-[10px] ml-auto">
             Ch{currentChapter}
           </span>
         </div>
@@ -34,14 +34,14 @@ export default function IntimacyPanel() {
         {/* 爸妈亲密度 */}
         <div className="space-y-2 mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center">
               <span className="text-[10px] font-bold text-white">爸</span>
             </div>
             <div className="flex-1">
               <div className="progress-bar h-2">
                 <div 
-                  className="progress-fill bg-gradient-to-r from-purple-500 to-violet-500"
-                  style={{ width: `${Math.min(100, (intimacyDad / 500) * 100)}%` }}
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (intimacyDad / 500) * 100)}%`, background: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }}
                 />
               </div>
             </div>
@@ -55,8 +55,8 @@ export default function IntimacyPanel() {
             <div className="flex-1">
               <div className="progress-bar h-2">
                 <div 
-                  className="progress-fill bg-gradient-to-r from-pink-500 to-rose-500"
-                  style={{ width: `${Math.min(100, (intimacyMom / 500) * 100)}%` }}
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (intimacyMom / 500) * 100)}%`, background: 'linear-gradient(90deg, #ec4899, #f472b6)' }}
                 />
               </div>
             </div>
@@ -78,7 +78,7 @@ export default function IntimacyPanel() {
                 key={i}
                 className={`flex-1 h-2 rounded-sm ${
                   i < Math.floor(totalDaily / 3)
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500'
+                    ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
                     : 'bg-white/10'
                 }`}
               />
@@ -93,7 +93,7 @@ export default function IntimacyPanel() {
               <span className="text-white/60">
                 下一章：{nextChapterConfig.name}
               </span>
-              <span className="text-purple-400">
+              <span className="text-amber-400">
                 {nextChapterConfig.min - totalIntimacy}点
               </span>
             </div>

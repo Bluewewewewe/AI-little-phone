@@ -25,23 +25,23 @@ export default function StatusBar() {
     <div className="status-bar">
       <span className="font-semibold text-[14px]">{timeString || '--:--'}</span>
       
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-[6px]">
         <button 
           onClick={toggleTheme}
-          className="p-1 hover:bg-white/10 rounded transition-colors"
+          className="p-0.5 hover:bg-white/10 rounded transition-colors"
         >
           {isDarkMode ? (
-            <Moon className="w-3.5 h-3.5" />
+            <Moon className="w-[14px] h-[14px]" />
           ) : (
-            <Sun className="w-3.5 h-3.5" />
+            <Sun className="w-[14px] h-[14px]" />
           )}
         </button>
         
-        <Signal className="w-3.5 h-3.5" />
-        <Wifi className="w-3.5 h-3.5" />
-        <div className="flex items-center gap-0.5">
-          <Battery className="w-4 h-3.5" />
-          <span className="text-[10px]">87%</span>
+        <Signal className="w-[14px] h-[14px]" />
+        <Wifi className="w-[14px] h-[14px]" />
+        <div className="flex items-center gap-[3px]">
+          <Battery className="w-[18px] h-[14px]" />
+          <span className="text-[10px] leading-none">87%</span>
         </div>
       </div>
     </div>

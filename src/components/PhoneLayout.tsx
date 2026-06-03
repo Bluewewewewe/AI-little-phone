@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react'
 import StatusBar from './StatusBar'
+import DesktopInfoPanel from './DesktopInfoPanel'
 
 interface PhoneLayoutProps {
   children: ReactNode
@@ -10,8 +11,9 @@ interface PhoneLayoutProps {
 export default function PhoneLayout({ children }: PhoneLayoutProps) {
   return (
     <div className="phone-page">
-      <div className="hidden md:block absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-[100px] pointer-events-none" />
-      <div className="hidden md:block absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="hidden md:block absolute top-1/4 left-1/4 w-96 h-96 bg-amber-600/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="hidden md:block absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-600/5 rounded-full blur-[100px] pointer-events-none" />
+      <DesktopInfoPanel />
       <div className="phone-frame">
         <div className="dynamic-island" />
         <div className="phone-screen">

@@ -51,11 +51,11 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
   return (
     <div className="h-full flex flex-col relative">
       {/* 壁纸层 */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a2e] via-[#0f0c29] to-[#1a0a2e]">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1a1508] via-[#1e1a12] to-[#2a2015]">
         {/* 壁纸装饰 */}
-        <div className="absolute top-[15%] left-[20%] w-48 h-48 bg-violet-600/8 rounded-full blur-[60px]" />
-        <div className="absolute top-[40%] right-[10%] w-40 h-40 bg-pink-600/6 rounded-full blur-[50px]" />
-        <div className="absolute bottom-[30%] left-[10%] w-36 h-36 bg-indigo-600/6 rounded-full blur-[40px]" />
+        <div className="absolute top-[15%] left-[20%] w-48 h-48 bg-amber-600/8 rounded-full blur-[60px]" />
+        <div className="absolute top-[40%] right-[10%] w-40 h-40 bg-yellow-500/6 rounded-full blur-[50px]" />
+        <div className="absolute bottom-[30%] left-[10%] w-36 h-36 bg-orange-500/6 rounded-full blur-[40px]" />
       </div>
       
       <div className="relative z-10 flex-1 flex flex-col">
@@ -78,12 +78,12 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] text-white/40 uppercase tracking-wider font-medium">家里现在</span>
               <div className="flex items-center gap-1">
-                <Heart className="w-3 h-3 text-violet-400" />
-                <span className="text-[10px] text-violet-400">{totalIntimacy}</span>
+                <Heart className="w-3 h-3 text-amber-400" />
+                <span className="text-[10px] text-amber-400">{totalIntimacy}</span>
               </div>
             </div>
             <div className="flex gap-2">
-              <div className="flex-1 flex items-center gap-2 p-1.5 rounded-lg bg-violet-500/[0.06]">
+              <div className="flex-1 flex items-center gap-2 p-1.5 rounded-lg bg-amber-500/[0.06]">
                 <span className="text-lg">{tianleiStatus.icon}</span>
                 <div className="min-w-0">
                   <p className="text-[11px] font-medium truncate">{identity?.roleA_name || '田雷'}</p>
