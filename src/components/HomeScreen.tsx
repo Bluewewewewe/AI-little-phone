@@ -137,6 +137,12 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
           </div>
         </div>
 
+        {/* 页面指示点 - iOS风格导航标 */}
+        <div className="flex items-center justify-center gap-1.5 pb-2">
+          <span className="w-[6px] h-[6px] rounded-full bg-amber-900/40" />
+          <span className="w-[6px] h-[6px] rounded-full bg-amber-900/15" />
+        </div>
+
         {/* 底部Dock - 柔和毛玻璃，无硬边框 */}
         <div className="mx-6 mb-4 rounded-[28px] bg-white/30 backdrop-blur-2xl shadow-sm shadow-amber-900/5">
           {/* 顶部高光线 */}
