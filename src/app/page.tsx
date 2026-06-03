@@ -52,11 +52,9 @@ export default function HomePage() {
         <div className="animate-fadeIn" style={{ animationDelay: '0.2s' }}>
           <button
             onClick={() => setShowSetup(true)}
-            className="w-full py-3.5 text-base rounded-2xl font-medium active:scale-[0.97] transition-transform text-amber-900"
+            className="w-full py-3.5 text-base rounded-2xl font-medium active:scale-[0.97] transition-transform text-amber-900 bg-white/25 backdrop-blur-xl"
             style={{
-              background: 'rgba(251, 191, 36, 0.18)',
-              backdropFilter: 'blur(20px)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04), inset 0 0.5px 0 rgba(255,255,255,0.5)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04), inset 0 0.5px 0 rgba(255,255,255,0.6)'
             }}
           >
             开始设置我的家 👨‍👩‍👧
@@ -253,16 +251,22 @@ function IdentitySetup({ onComplete }: { onComplete: () => void }) {
             </div>
             <button
               onClick={handleComplete}
-              className="w-full py-3.5 rounded-2xl font-medium active:scale-[0.97] transition-transform text-amber-900"
+              className="w-full py-3.5 rounded-2xl font-medium active:scale-[0.97] transition-transform text-amber-900 bg-white/25 backdrop-blur-xl"
               style={{
-                background: 'rgba(251, 191, 36, 0.18)',
-                backdropFilter: 'blur(20px)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04), inset 0 0.5px 0 rgba(255,255,255,0.5)'
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04), inset 0 0.5px 0 rgba(255,255,255,0.6)'
               }}
             >
               ❤️ 开始温馨之旅
             </button>
-            <button onClick={() => setStep(1)} className="w-full py-2 text-sm text-amber-900/35">重新设置</button>
+            <button
+              onClick={() => setStep(1)}
+              className="w-full py-2.5 text-sm text-amber-900/50 rounded-2xl bg-white/15 backdrop-blur-xl active:scale-[0.97] transition-transform"
+              style={{
+                boxShadow: '0 1px 4px rgba(0,0,0,0.03), inset 0 0.5px 0 rgba(255,255,255,0.4)'
+              }}
+            >
+              重新设置
+            </button>
           </div>
         )
       default: return null
@@ -285,7 +289,15 @@ function IdentitySetup({ onComplete }: { onComplete: () => void }) {
         </div>
         {renderStep()}
         {step > 1 && step < 5 && (
-          <button onClick={() => setStep(step - 1)} className="text-amber-900/35 text-xs mt-4 hover:text-amber-900/60 transition-colors">← 返回上一步</button>
+          <button
+            onClick={() => setStep(step - 1)}
+            className="text-amber-900/50 text-xs mt-4 py-2 px-4 rounded-xl bg-white/15 backdrop-blur-xl hover:bg-white/25 transition-all"
+            style={{
+              boxShadow: '0 1px 4px rgba(0,0,0,0.03), inset 0 0.5px 0 rgba(255,255,255,0.4)'
+            }}
+          >
+            ← 返回上一步
+          </button>
         )}
       </div>
     </div>
