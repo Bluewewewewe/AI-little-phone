@@ -2,7 +2,7 @@
 
 import { useStore } from '@/store/useStore'
 import { getParentStatus } from '@/lib/parent-status'
-import { Heart } from 'lucide-react'
+
 import { CHAPTER_UNLOCK } from '@/lib/prompts'
 import { useEffect, useState } from 'react'
 
@@ -80,7 +80,7 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] text-amber-800/35 tracking-wider font-medium">家里现在</span>
               <div className="flex items-center gap-1">
-                <Heart className="w-3 h-3 text-amber-500/70" />
+                ❤️
                 <span className="text-[10px] text-amber-600/70">{totalIntimacy}</span>
               </div>
             </div>

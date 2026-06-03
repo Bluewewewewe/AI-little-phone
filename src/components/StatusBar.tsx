@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useStore } from '@/store/useStore'
-import { Wifi, Signal, Battery, Sun, Moon } from 'lucide-react'
+
 
 export default function StatusBar() {
   const { isDarkMode, toggleTheme } = useStore()
@@ -30,19 +30,12 @@ export default function StatusBar() {
           onClick={toggleTheme}
           className="p-0.5 hover:bg-amber-800/10 rounded transition-colors"
         >
-          {isDarkMode ? (
-            <Moon className="w-[14px] h-[14px]" />
-          ) : (
-            <Sun className="w-[14px] h-[14px]" />
-          )}
+          {isDarkMode ? '🌙' : '☀️'}
         </button>
         
-        <Signal className="w-[14px] h-[14px]" />
-        <Wifi className="w-[14px] h-[14px]" />
-        <div className="flex items-center gap-[3px]">
-          <Battery className="w-[18px] h-[14px]" />
-          <span className="text-[10px] leading-none">87%</span>
-        </div>
+        <span>📶</span>
+        <span>📡</span>
+        <span>🔋</span>
       </div>
     </div>
   )

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
 import { PETS, FOODS, FURNITURE, PET_FRIENDSHIP_EVENTS, PetConfig, FoodConfig } from '@/lib/pet-data'
-import { ChevronLeft, ShoppingCart, Home as HomeIcon, Heart, Sparkles, BedDouble } from 'lucide-react'
 
 interface PetState { hunger: number; mood: number; health: number; energy: number; isSleeping: boolean }
 const INIT: PetState = { hunger: 100, mood: 100, health: 100, energy: 100, isSleeping: false }
@@ -85,13 +84,15 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* 顶栏 */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/[0.04]">
-        <button onClick={onBack} className="flex items-center gap-1 text-amber-900/50 hover:text-amber-800/70 transition-colors">
-          <ChevronLeft className="w-5 h-5" /> <span className="text-sm">返回</span>
+      {/* 顶栏 - 毛玻璃 */}
+      <div className="flex items-center justify-between px-4 py-3"
+        style={{ background: 'rgba(255,255,255,0.35)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+        <button onClick={onBack} className="flex items-center gap-1 text-amber-900/50 hover:text-amber-800/70 transition-colors py-1 px-2 -ml-2 rounded-xl hover:bg-white/20">
+          <span className="text-lg">←</span>
+          <span className="text-sm">返回</span>
         </button>
         <h2 className="font-semibold text-sm">🐾 宠物之家</h2>
-        <span className="text-xs text-amber-400/80">💰 {pocketMoney}</span>
+        <span className="text-xs text-amber-700/60 bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg">💰 {pocketMoney}</span>
       </div>
 
       {/* 宠物选择 */}
@@ -99,10 +100,10 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
         {Object.values(PETS).map(pet => (
           <button key={pet.id} onClick={() => setSelectedPet(pet.id)}
             className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-2xl transition-all duration-300 ${
-              selectedPet === pet.id ? 'bg-violet-500/15' : 'hover:bg-amber-900/[0.02]'
+              selectedPet === pet.id ? 'bg-amber-500/15' : 'hover:bg-white/20'
             }`}>
             <span className={`text-xl transition-transform duration-300 ${selectedPet === pet.id ? 'scale-110' : ''}`}>{pet.icon}</span>
-            <span className={`text-[10px] ${selectedPet === pet.id ? 'text-violet-300' : 'text-amber-900/45'}`}>{pet.name}</span>
+            <span className={`text-[10px] ${selectedPet === pet.id ? 'text-amber-700' : 'text-amber-900/45'}`}>{pet.name}</span>
           </button>
         ))}
       </div>
@@ -118,7 +119,6 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
             } ${feedAnim ? 'scale-125' : ''}`}>
               {cs.isSleeping ? '💤' : currentPet.icon}
             </div>
-            {/* 互动反馈表情 */}
             {moodEmoji && (
               <span className="absolute -top-2 -right-4 text-xl animate-fadeIn">{moodEmoji}</span>
             )}
@@ -141,7 +141,7 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
                 </div>
                 <div className="h-1.5 bg-amber-900/[0.06] rounded-full overflow-hidden">
                   <div className={`h-full ${statColor(cs[s.key])} rounded-full transition-all duration-700 shadow-sm ${statGlow(cs[s.key])}`}
-                    style={{ width: ` ${Number(cs[s.key as keyof typeof cs])}%` }} />
+                    style={{ width: `${Number(cs[s.key as keyof typeof cs])}%` }} />
                 </div>
               </div>
             ))}
@@ -152,32 +152,32 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
           {cs.isSleeping && <p className="text-indigo-300/60 text-[11px] mt-2">💤 {currentPet.name}正在睡觉...</p>}
         </div>
 
-        {/* Tab */}
-        <div className="flex gap-1">
+        {/* Tab - emoji 图标 */}
+        <div className="flex gap-1.5">
           {[
-            { id: 'feed', icon: ShoppingCart, label: '喂食' },
-            { id: 'play', icon: Heart, label: '互动' },
-            { id: 'furniture', icon: BedDouble, label: '家具' },
-            { id: 'events', icon: Sparkles, label: '友情' },
+            { id: 'feed', icon: '🛒', label: '喂食' },
+            { id: 'play', icon: '❤️', label: '互动' },
+            { id: 'furniture', icon: '🛋️', label: '家具' },
+            { id: 'events', icon: '✨', label: '友情' },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id as any)}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] transition-all duration-300 ${
-                tab === t.id ? 'bg-violet-500/15 text-violet-300' : 'text-amber-900/45 hover:bg-amber-900/[0.02]'
+                tab === t.id ? 'bg-amber-500/15 text-amber-700' : 'text-amber-900/45 hover:bg-white/20'
               }`}>
-              <t.icon className="w-3 h-3" /> {t.label}
+              <span className="text-xs">{t.icon}</span> {t.label}
             </button>
           ))}
         </div>
 
         {/* 喂食 */}
         {tab === 'feed' && (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {Object.values(FOODS).map(food => {
               const disliked = currentPet.dislikedFoods.includes(food.id)
               const fav = currentPet.favoriteFoods.includes(food.id)
               return (
                 <button key={food.id} onClick={() => feedPet(food.id)} disabled={disliked || pocketMoney < food.price}
-                  className={`w-full glass-card p-3 flex items-center gap-3 text-left transition-all ${disliked ? 'opacity-30' : 'hover:bg-amber-900/[0.02] active:scale-[0.98]'}`}>
+                  className={`w-full glass-card p-3 flex items-center gap-3 text-left transition-all ${disliked ? 'opacity-30' : 'hover:bg-white/20 active:scale-[0.98]'}`}>
                   <span className="text-xl">{food.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1">
@@ -187,7 +187,7 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
                     </div>
                     <p className="text-[10px] text-amber-800/30">饱腹+{food.hungerRestore} 心情+{food.moodRestore}</p>
                   </div>
-                  <span className="text-amber-400/70 text-[11px]">💰{food.price}</span>
+                  <span className="text-amber-600/70 text-[11px]">💰{food.price}</span>
                 </button>
               )
             })}
@@ -196,7 +196,7 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
 
         {/* 互动 */}
         {tab === 'play' && (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {[
               { type: 'pet' as const, icon: '🖐️', label: '摸头', desc: `${currentPet.name}会怎样呢？` },
               { type: 'talk' as const, icon: '💬', label: '说话', desc: '跟它聊聊天' },
@@ -204,16 +204,16 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
               { type: 'bath' as const, icon: '🛀', label: '洗澡', desc: '健康+5' },
             ].map(a => (
               <button key={a.type} onClick={() => interactPet(a.type)} disabled={cs.isSleeping}
-                className="w-full glass-card p-3 flex items-center gap-3 text-left hover:bg-amber-900/[0.02] transition-all active:scale-[0.98]">
+                className="w-full glass-card p-3 flex items-center gap-3 text-left hover:bg-white/20 transition-all active:scale-[0.98]">
                 <span className="text-xl">{a.icon}</span>
                 <div className="flex-1"><p className="font-medium text-[13px]">{a.label}</p><p className="text-[10px] text-amber-800/30">{a.desc}</p></div>
-                <span className={`text-[11px] ${currentPet.interactionPreference[a.type] > 0 ? 'text-emerald-400/70' : 'text-amber-800/25'}`}>
+                <span className={`text-[11px] ${currentPet.interactionPreference[a.type] > 0 ? 'text-emerald-500/70' : 'text-amber-800/25'}`}>
                   心情{currentPet.interactionPreference[a.type] > 0 ? '+' : ''}{currentPet.interactionPreference[a.type]}
                 </span>
               </button>
             ))}
             <button onClick={sleepPet}
-              className="w-full glass-card p-3 flex items-center gap-3 text-left hover:bg-amber-900/[0.02] transition-all">
+              className="w-full glass-card p-3 flex items-center gap-3 text-left hover:bg-white/20 transition-all">
               <span className="text-xl">{cs.isSleeping ? '☀️' : '😴'}</span>
               <div className="flex-1"><p className="font-medium text-[13px]">{cs.isSleeping ? '叫醒' : '睡觉'}</p><p className="text-[10px] text-amber-800/30">{cs.isSleeping ? '让它起来' : '恢复能量'}</p></div>
             </button>
@@ -222,21 +222,21 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
 
         {/* 家具 */}
         {tab === 'furniture' && (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {Object.values(FURNITURE).map(f => {
               const owned = ownedFurniture.includes(f.id)
               return (
-                <div key={f.id} className={`glass-card p-3 flex items-center gap-3 ${owned ? 'ring-1 ring-emerald-400/10' : ''}`}>
+                <div key={f.id} className="glass-card p-3 flex items-center gap-3">
                   <span className="text-xl">{f.icon}</span>
                   <div className="flex-1">
                     <p className="font-medium text-[13px]">{f.name} {owned && '✅'}</p>
                     <p className="text-[10px] text-amber-800/30">{f.effect}</p>
                   </div>
                   {owned ? (
-                    <span className="text-emerald-400/60 text-[10px]">已拥有</span>
+                    <span className="text-emerald-500/60 text-[10px]">已拥有</span>
                   ) : (
                     <button onClick={() => buyFurniture(f.id)} disabled={pocketMoney < f.price}
-                      className="glass-btn text-[10px] px-2.5 py-1 !bg-violet-500/15  !text-violet-300/70 disabled:opacity-30">
+                      className="text-[10px] px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-700/70 disabled:opacity-30 hover:bg-amber-500/25 transition-colors">
                       💰{f.price}
                     </button>
                   )}
@@ -250,7 +250,7 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
         {tab === 'events' && (
           <div className="space-y-2">
             <button onClick={triggerRandomEvent}
-              className="w-full glass-card p-4 text-center hover:bg-amber-900/[0.02] transition-all active:scale-[0.98]">
+              className="w-full glass-card p-4 text-center hover:bg-white/20 transition-all active:scale-[0.98]">
               <span className="text-2xl">🎲</span>
               <p className="text-sm font-medium mt-1">触发随机事件</p>
               <p className="text-[10px] text-amber-800/30 mt-0.5">看看它们在干嘛~</p>
@@ -258,9 +258,9 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
             {showEvent && (() => {
               const evt = PET_FRIENDSHIP_EVENTS.find(e => e.id === showEvent)
               if (!evt) return null
-              const rc = { common: 'text-emerald-400', rare: 'text-blue-400', epic: 'text-violet-400' }
+              const rc = { common: 'text-emerald-500', rare: 'text-blue-500', epic: 'text-violet-500' }
               return (
-                <div className="glass-card p-4 ring-1 ring-violet-400/10">
+                <div className="glass-card p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-semibold text-sm">{evt.title}</span>
                     <span className={`text-[10px] ${rc[evt.rarity]}`}>

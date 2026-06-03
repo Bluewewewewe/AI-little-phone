@@ -2,7 +2,7 @@
 
 import { useStore } from '@/store/useStore'
 import { useState, useEffect } from 'react'
-import { Phone, Video, X, Volume2 } from 'lucide-react'
+
 
 export default function CallScreen() {
   const { incomingCall, setIncomingCall, identity } = useStore()
@@ -52,10 +52,10 @@ export default function CallScreen() {
           onClick={handleDecline}
           className="p-3 bg-amber-900/[0.04] rounded-full hover:bg-white/20 transition-colors"
         >
-          <X className="w-6 h-6" />
+          ✕
         </button>
         <button className="p-3 bg-amber-900/[0.04] rounded-full hover:bg-white/20 transition-colors">
-          <Volume2 className="w-6 h-6" />
+          🔊
         </button>
       </div>
 
@@ -104,13 +104,13 @@ export default function CallScreen() {
               onClick={handleDecline}
               className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
             >
-              <Phone className="w-7 h-7 text-white rotate-[135deg]" />
+              📞
             </button>
             <button
               onClick={handleAccept}
               className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors"
             >
-              <Phone className="w-7 h-7 text-amber-900" />
+              📞
             </button>
           </>
         ) : (
@@ -118,7 +118,7 @@ export default function CallScreen() {
             onClick={handleDecline}
             className="w-20 h-20 rounded-full bg-red-500 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
           >
-            <Phone className="w-8 h-8 text-white rotate-[135deg]" />
+            📞
           </button>
         )}
       </div>

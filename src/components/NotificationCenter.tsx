@@ -1,7 +1,7 @@
 'use client'
 
 import { useStore, Notification } from '@/store/useStore'
-import { X, Bell, Heart, MessageCircle, Star, Check } from 'lucide-react'
+
 
 interface NotificationCenterProps {
   onClose: () => void
@@ -52,16 +52,11 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'chat':
-        return <MessageCircle className="w-5 h-5 text-blue-400" />
-      case 'moment':
-        return <Heart className="w-5 h-5 text-pink-400" />
-      case 'system':
-        return <Star className="w-5 h-5 text-yellow-400" />
-      case 'call':
-        return <Bell className="w-5 h-5 text-green-400" />
-      default:
-        return <Bell className="w-5 h-5 text-amber-800/60" />
+      case 'chat': return '💬'
+      case 'moment': return '❤️'
+      case 'system': return '⭐'
+      case 'call': return '🔔'
+      default: return '🔔'
     }
   }
 
@@ -100,7 +95,7 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
                 onClick={markAllAsRead}
                 className="text-sm text-purple-400 hover:text-purple-300 flex items-center gap-1"
               >
-                <Check className="w-4 h-4" />
+                ✓
                 全部已读
               </button>
             )}
@@ -108,7 +103,7 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
               onClick={onClose}
               className="p-2 hover:bg-amber-900/[0.04] rounded-full"
             >
-              <X className="w-5 h-5" />
+              ✕
             </button>
           </div>
         </div>
@@ -117,7 +112,7 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
         <div className="overflow-auto max-h-[calc(80vh-60px)]">
           {allNotifications.length === 0 ? (
             <div className="p-8 text-center text-amber-900/50">
-              <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              🔔
               <p>暂无通知</p>
             </div>
           ) : (

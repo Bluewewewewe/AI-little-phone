@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
 import { getParentStatus, getPeekDetail, getBedroomScene, ParentStatus } from '@/lib/parent-status'
-import { ChevronLeft, Eye, DoorOpen, MessageCircle, Heart, Moon } from 'lucide-react'
+
 
 export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
   const { chapter, intimacyDad, intimacyMom, setCurrentApp } = useStore()
@@ -94,10 +94,10 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
       {/* 顶栏 */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/[0.06]">
         <button onClick={onBack} className="flex items-center gap-1 text-amber-900/50 hover:text-amber-800/70 transition-colors">
-          <ChevronLeft className="w-5 h-5" /> <span className="text-sm">返回</span>
+          ← <span className="text-sm">返回</span>
         </button>
         <div className="flex items-center gap-1.5">
-          {isNight ? <Moon className="w-3.5 h-3.5 text-indigo-400/60" /> : <span className="text-xs">☀️</span>}
+          {isNight ? <span>🌙</span> : <span className="text-xs">☀️</span>}
           <h2 className="font-semibold text-sm">家里现在</h2>
         </div>
         <span className="text-[11px] text-amber-800/30 tabular-nums">
@@ -166,7 +166,7 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-pink-400/30 to-transparent" />
             <div className="flex items-center gap-2 mb-2">
               <div className="w-5 h-5 rounded-lg bg-pink-500/15 flex items-center justify-center">
-                <Eye className="w-3 h-3 text-pink-400" />
+                👁️
               </div>
               <span className="font-medium text-xs text-pink-300/80">偷看{peekTarget === 'tianlei' ? '爸爸' : '妈妈'}中...</span>
             </div>
@@ -185,7 +185,7 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
               <div className="flex gap-2 mt-3 justify-center">
                 <button onClick={() => setShowBedroom(true)}
                   className="glass-btn text-[11px] px-4 py-1.5 !bg-rose-500/10  !text-rose-300/80 hover:!bg-rose-500/20">
-                  <DoorOpen className="w-3 h-3" /> 推门
+                  🚪 推门
                 </button>
                 <button className="glass-btn text-[11px] px-4 py-1.5 !text-amber-800/35">
                   回房间
@@ -205,7 +205,7 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
         {/* 情侣互动快报 */}
         {tianlei && ziyu && tianlei.status === 'home' && ziyu.status === 'home' && !isNight && (
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-pink-500/[0.04]">
-            <Heart className="w-3.5 h-3.5 text-pink-400/60 animate-pulse" />
+            💕
             <span className="text-[11px] text-amber-800/45">爸妈都在家~现在感情好好</span>
           </div>
         )}
@@ -242,10 +242,10 @@ function ParentCard({ status, color, onPeek, onChat }: {
       <p className="text-[9px] text-amber-800/25 mt-0.5">{status.location}</p>
       <div className="flex gap-1.5 mt-2.5">
         <button onClick={onPeek} className={`flex-1 py-1.5 rounded-lg text-[10px] transition-all flex items-center justify-center gap-1 ${c.btn}`}>
-          <Eye className="w-3 h-3" /> 偷看
+          👁️ 偷看
         </button>
         <button onClick={onChat} className="flex-1 py-1.5 rounded-lg text-[10px] bg-amber-900/[0.03] text-amber-900/50 hover:bg-white/[0.08] transition-all flex items-center justify-center gap-1">
-          <MessageCircle className="w-3 h-3" /> 消息
+          💬 消息
         </button>
       </div>
     </div>

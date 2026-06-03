@@ -1,7 +1,7 @@
 'use client'
 
 import { useStore } from '@/store/useStore'
-import { Heart, Users, ChevronRight, Star } from 'lucide-react'
+
 import { CHAPTER_UNLOCK, getChapterByIntimacy } from '@/lib/prompts'
 import { DAILY_INTIMACY_LIMIT, INTIMACY_PER_MESSAGE } from '@/lib/intimacy'
 
@@ -24,7 +24,7 @@ export default function IntimacyPanel() {
       {/* 亲密度总览 */}
       <div className="rounded-[18px] bg-white/35 backdrop-blur-2xl p-4 w-52 animate-fadeIn shadow-sm shadow-amber-900/5">
         <div className="flex items-center gap-2 mb-4">
-          <Heart className="w-4 h-4 text-red-400/70 fill-red-400/70" />
+          ❤️
           <span className="text-sm font-medium text-amber-900/70">亲密度</span>
           <span className="text-[10px] ml-auto px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700/70 font-medium">
             Ch{currentChapter}

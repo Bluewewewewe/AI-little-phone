@@ -1,11 +1,7 @@
 'use client'
 
-import { useStore, Moment } from '@/store/useStore'
 import { useState } from 'react'
-import { 
-  ChevronLeft, Heart, MessageCircle, Send, 
-  MoreHorizontal, Image, Camera
-} from 'lucide-react'
+import { useStore, Moment } from '@/store/useStore'
 
 interface MomentsScreenProps {
   onBack: () => void
@@ -106,11 +102,11 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
       {/* 顶部导航 */}
       <div className="glass px-4 py-3 flex items-center gap-3">
         <button onClick={onBack} className="p-2 -ml-2 hover:bg-amber-900/[0.04] rounded-full">
-          <ChevronLeft className="w-5 h-5" />
+          ←
         </button>
         <h2 className="font-bold flex-1">朋友圈</h2>
         <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
-          <Camera className="w-5 h-5" />
+          📷
         </button>
       </div>
 
@@ -197,7 +193,7 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                     onClick={() => addLike(moment.id, 'user', 'user')}
                     className="flex items-center gap-1 text-sm hover:text-red-400 transition-colors"
                   >
-                    <Heart className={`w-4 h-4 ${moment.likes.some(l => l.userId === 'user') ? 'fill-red-500 text-red-500' : 'text-amber-800/60'}`} />
+                    <span className="text-base">{moment.likes.some(l => l.userId === 'user') ? '❤️' : '🤍'}</span>
                     <span className="text-amber-800/60">{moment.likes.length || ''}</span>
                   </button>
                   
@@ -205,7 +201,7 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                     onClick={() => setShowComment(showComment === moment.id ? null : moment.id)}
                     className="flex items-center gap-1 text-sm text-amber-800/60 hover:text-blue-400 transition-colors"
                   >
-                    <MessageCircle className="w-4 h-4" />
+                    💬
                     <span>{moment.comments.length || ''}</span>
                   </button>
                 </div>
@@ -213,7 +209,7 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                 {/* 点赞列表 */}
                 {moment.likes.length > 0 && (
                   <div className="mt-2 flex items-center gap-1 flex-wrap">
-                    <Heart className="w-3 h-3 text-red-400 fill-red-400" />
+                    ❤️
                     <span className="text-xs text-amber-800/60">
                       {moment.likes.map(l => l.author === 'user' ? identity?.user_name : l.author === 'dad' ? identity?.roleA_name : identity?.roleB_name).join('、')}
                     </span>
@@ -249,7 +245,7 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                       onClick={() => handleComment(moment.id)}
                       className="p-2 bg-purple-500/20 backdrop-blur-xl rounded-full hover:bg-purple-500/30 transition-colors"
                     >
-                      <Send className="w-4 h-4" />
+                      📤
                     </button>
                   </div>
                 )}

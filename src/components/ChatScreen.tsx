@@ -2,10 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useStore, ChatMessage } from '@/store/useStore'
-import { 
-  ChevronLeft, Send, Smile, MoreHorizontal, 
-  Phone, Video, Image, Mic
-} from 'lucide-react'
 
 interface ChatScreenProps {
   chatType: 'family' | 'dad' | 'mom'
@@ -38,18 +34,20 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
     : chatType === 'dad' ? identity?.roleA_name || '爸爸'
     : identity?.roleB_name || '妈妈'
   
+  const chatEmoji = chatType === 'family' ? '👨‍👩‍👧' 
+    : chatType === 'dad' ? '👨' 
+    : '👩'
+
   const otherName = chatType === 'dad' 
     ? identity?.roleB_name || '妈妈'
     : chatType === 'mom'
     ? identity?.roleA_name || '爸爸'
     : null
 
-  // 滚动到底部
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
 
-  // 发送消息
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return
     
@@ -66,7 +64,6 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
     setInputValue('')
     setIsLoading(true)
     
-    // 显示对方正在输入
     const other = chatType === 'dad' ? 'mom' : 'dad'
     if (chatType === 'family') {
       setTyping('dad', true)
@@ -76,7 +73,6 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
     }
     
     try {
-      // 调用API
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -92,26 +88,22 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
       
       const data = await response.json()
       
-      // 添加AI回复
       const aiSenders: ('dad' | 'mom')[] = chatType === 'family' ? ['dad', 'mom'] : [chatType === 'dad' ? 'dad' : 'mom']
       
       for (const sender of aiSenders) {
         const aiMessage: ChatMessage = {
           id: (Date.now() + Math.random()).toString(),
           sender,
-          content: sender === 'dad' ? data.content : data.content, // 后续可区分
+          content: sender === 'dad' ? data.content : data.content,
           timestamp: new Date(),
           type: 'text',
           isRead: false,
         }
         addMessage(chatType, aiMessage)
-        
-        // 增加亲密度
         incrementIntimacy(sender, 3)
       }
     } catch (error) {
       console.error('Chat error:', error)
-      // 添加预设回复
       const fallbackMessage: ChatMessage = {
         id: (Date.now() + Math.random()).toString(),
         sender: chatType === 'dad' ? 'dad' : chatType === 'mom' ? 'mom' : 'dad',
@@ -128,33 +120,33 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
     }
   }
 
+  const glassBtnStyle: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.2)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.04), inset 0 0.5px 0 rgba(255,255,255,0.4)',
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* 顶部导航 */}
-      <div className="glass px-4 py-3 flex items-center gap-3">
-        <button onClick={onBack} className="p-2 -ml-2 hover:bg-amber-900/[0.04] rounded-full">
-          <ChevronLeft className="w-5 h-5" />
+      <div className="flex items-center justify-between px-4 py-3"
+        style={{ background: 'rgba(255,255,255,0.35)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+        <button onClick={onBack} 
+          className="flex items-center gap-1 text-amber-900/50 hover:text-amber-800/70 transition-colors py-1 px-2 -ml-2 rounded-xl hover:bg-white/20">
+          <span className="text-lg">←</span>
+          <span className="text-sm">返回</span>
         </button>
         
-        <div className="flex-1">
-          <h2 className="font-bold">{chatName}</h2>
-          {otherName && (
-            <p className="text-xs text-amber-900/50">
-              和{identity?.user_name || '宝贝'}的聊天
-            </p>
-          )}
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{chatEmoji}</span>
+          <span className="font-semibold text-sm text-amber-900">{chatName}</span>
         </div>
         
-        <div className="flex gap-2">
-          <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
-            <Phone className="w-5 h-5 text-amber-800/70" />
-          </button>
-          <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
-            <Video className="w-5 h-5 text-amber-800/70" />
-          </button>
-          <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
-            <MoreHorizontal className="w-5 h-5 text-amber-800/70" />
-          </button>
+        <div className="flex gap-1">
+          <button className="p-2 rounded-xl hover:bg-white/20 transition-colors text-sm">📞</button>
+          <button className="p-2 rounded-xl hover:bg-white/20 transition-colors text-sm">📹</button>
+          <button className="p-2 rounded-xl hover:bg-white/20 transition-colors text-sm">⋯</button>
         </div>
       </div>
 
@@ -162,6 +154,7 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
       <div className="flex-1 overflow-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="text-center text-amber-900/50 py-8">
+            <p className="text-3xl mb-2">💬</p>
             <p className="text-sm">还没有消息</p>
             <p className="text-xs mt-1">开始和{chatName}聊天吧~</p>
           </div>
@@ -176,7 +169,6 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
           />
         ))}
         
-        {/* 正在输入提示 */}
         {isTyping.dad || isTyping.mom ? (
           <div className="flex items-center gap-2 text-amber-900/50 text-sm">
             <div className="flex gap-1">
@@ -197,14 +189,11 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
       </div>
 
       {/* 输入框 */}
-      <div className="glass p-3 ">
+      <div className="px-3 pb-2 pt-2"
+        style={{ background: 'rgba(255,255,255,0.35)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
         <div className="flex items-end gap-2">
-          <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
-            <Image className="w-5 h-5 text-amber-800/70" />
-          </button>
-          <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
-            <Mic className="w-5 h-5 text-amber-800/70" />
-          </button>
+          <button className="p-2 rounded-xl hover:bg-white/20 transition-colors text-lg">🖼️</button>
+          <button className="p-2 rounded-xl hover:bg-white/20 transition-colors text-lg">🎤</button>
           
           <div className="flex-1 relative">
             <input
@@ -213,23 +202,30 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder="输入消息..."
-              className="w-full bg-amber-900/[0.04] rounded-2xl px-4 py-3 pr-12 text-sm focus:outline-none focus:bg-white/35"
+              className="w-full bg-white/30 backdrop-blur-xl rounded-2xl px-4 py-3 pr-10 text-sm focus:outline-none focus:bg-white/40 transition-colors"
+              style={{ boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.5)' }}
             />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-amber-900/[0.04] rounded-full">
-              <Smile className="w-5 h-5 text-amber-900/50" />
+            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/20 rounded-xl transition-colors text-sm">
+              😊
             </button>
           </div>
           
           <button
             onClick={handleSend}
             disabled={!inputValue.trim() || isLoading}
-            className={`p-3 rounded-full transition-all ${
-              inputValue.trim() && !isLoading
-                ? 'bg-gradient-to-br from-purple-500 to-pink-500'
-                : 'bg-amber-900/[0.04]'
-            }`}
+            className="p-3 rounded-2xl transition-all active:scale-90"
+            style={inputValue.trim() && !isLoading ? {
+              background: 'rgba(245,158,11,0.25)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              boxShadow: '0 2px 8px rgba(245,158,11,0.15), inset 0 0.5px 0 rgba(255,255,255,0.4)',
+            } : {
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+            }}
           >
-            <Send className={`w-5 h-5 ${inputValue.trim() ? 'text-white' : 'text-amber-800/35'}`} />
+            <span className="text-lg">{inputValue.trim() ? '🚀' : '➤'}</span>
           </button>
         </div>
       </div>
@@ -253,19 +249,20 @@ function MessageBubble({
     ? identity?.roleA_name || '爸爸'
     : identity?.roleB_name || '妈妈'
   
-  const avatarBg = message.sender === 'user'
-    ? 'from-cyan-500 to-blue-500'
-    : message.sender === 'dad'
-    ? 'from-purple-500 to-violet-500'
-    : 'from-pink-500 to-rose-500'
+  const senderEmoji = message.sender === 'user' ? '👧' 
+    : message.sender === 'dad' ? '👨' : '👩'
 
   return (
     <div className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''} animate-fadeIn`}>
       {/* 头像 */}
-      <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarBg} flex items-center justify-center flex-shrink-0 shadow-lg`}>
-        <span className="text-xs font-bold text-amber-900">
-          {senderName.slice(0, 1)}
-        </span>
+      <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-lg"
+        style={{
+          background: isOwn ? 'rgba(6,182,212,0.2)' : message.sender === 'dad' ? 'rgba(245,158,11,0.2)' : 'rgba(236,72,153,0.2)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.4)',
+        }}>
+        {senderEmoji}
       </div>
       
       {/* 消息内容 */}
@@ -274,14 +271,26 @@ function MessageBubble({
           {senderName}
         </span>
         <div className={`px-4 py-2.5 rounded-2xl ${
-          isOwn 
-            ? 'bg-gradient-to-br from-cyan-500 to-blue-500 text-white rounded-br-md' 
-            : 'glass rounded-bl-md'
-        }`}>
-          <p className="text-sm leading-relaxed">{message.content}</p>
+          isOwn ? 'rounded-br-md' : 'rounded-bl-md'
+        }`}
+          style={isOwn ? {
+            background: 'rgba(6,182,212,0.2)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.4)',
+          } : {
+            background: 'rgba(255,255,255,0.35)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.03), inset 0 0.5px 0 rgba(255,255,255,0.4)',
+          }}
+        >
+          <p className={`text-[13px] leading-relaxed ${isOwn ? 'text-amber-900' : 'text-amber-900'}`}>
+            {message.content}
+          </p>
         </div>
-        <span className={`text-[10px] text-amber-800/35 ${isOwn ? 'text-right' : 'text-left'}`}>
-          {message.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+        <span className="text-[10px] text-amber-900/30">
+          {new Date(message.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
     </div>

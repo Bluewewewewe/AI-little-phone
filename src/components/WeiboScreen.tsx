@@ -1,11 +1,7 @@
 'use client'
 
-import { useStore, WeiboPost } from '@/store/useStore'
 import { useState } from 'react'
-import { 
-  ChevronLeft, Heart, MessageCircle, Share2, 
-  Search, TrendingUp, Flame, Star
-} from 'lucide-react'
+import { useStore, WeiboPost } from '@/store/useStore'
 
 interface WeiboScreenProps {
   onBack: () => void
@@ -89,7 +85,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
       <div className="h-full flex flex-col">
         <div className="glass px-4 py-3 flex items-center gap-3">
           <button onClick={onBack} className="p-2 -ml-2 hover:bg-white/10 rounded-full">
-            <ChevronLeft className="w-5 h-5" />
+            ←
           </button>
           <h2 className="font-bold flex-1">微博</h2>
         </div>
@@ -97,7 +93,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
         <div className="flex-1 flex items-center justify-center p-8 text-center">
           <div>
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center">
-              <Star className="w-10 h-10 text-purple-400" />
+              ⭐
             </div>
             <h3 className="text-lg font-bold mb-2">第2章解锁</h3>
             <p className="text-sm text-amber-800/60">
@@ -117,7 +113,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
       {/* 顶部导航 */}
       <div className="glass px-4 py-3 flex items-center gap-3">
         <button onClick={onBack} className="p-2 -ml-2 hover:bg-white/10 rounded-full">
-          <ChevronLeft className="w-5 h-5" />
+          ←
         </button>
         
         {/* 标签切换 */}
@@ -136,13 +132,13 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
               activeTab === 'hot' ? 'text-amber-900' : 'text-amber-900/50'
             }`}
           >
-            <Flame className="w-4 h-4" />
+            🔥
             热搜
           </button>
         </div>
         
         <button className="p-2 hover:bg-white/10 rounded-full">
-          <Search className="w-5 h-5" />
+          🔍
         </button>
       </div>
 
@@ -153,7 +149,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
           <div className="p-4 border-b border-amber-900/[0.03]">
             <div className="glass-card p-3 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-white" />
+                📈
               </div>
               <div className="flex-1">
                 <p className="font-medium text-sm">热搜榜</p>
@@ -180,7 +176,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
                   </span>
                   {post.isHot && (
                     <span className="badge bg-red-500 text-white text-[10px] flex items-center gap-0.5">
-                      <Flame className="w-3 h-3" /> 热
+                      🔥 热
                     </span>
                   )}
                   <span className="badge badge-blue text-[10px]">
@@ -215,17 +211,17 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
                     onClick={() => toggleLike(post.id)}
                     className="flex items-center gap-1 text-sm text-amber-800/60 hover:text-red-400 transition-colors"
                   >
-                    <Heart className={`w-4 h-4 ${likedPosts.has(post.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                    ❤️
                     <span>{formatNumber(post.likes + (likedPosts.has(post.id) ? 1 : 0))}</span>
                   </button>
                   
                   <button className="flex items-center gap-1 text-sm text-amber-800/60 hover:text-blue-400 transition-colors">
-                    <MessageCircle className="w-4 h-4" />
+                    💬
                     <span>{formatNumber(post.comments)}</span>
                   </button>
                   
                   <button className="flex items-center gap-1 text-sm text-amber-800/60 hover:text-green-400 transition-colors">
-                    <Share2 className="w-4 h-4" />
+                    🔄
                     <span>{formatNumber(post.reposts)}</span>
                   </button>
                 </div>

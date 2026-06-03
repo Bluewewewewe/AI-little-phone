@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useStore } from '@/store/useStore'
 import { OUTFITS, RARITY_COLORS, RARITY_LABELS, OutfitItem } from '@/lib/dressup-data'
-import { ChevronLeft, Sparkles } from 'lucide-react'
 
 export default function DressUpScreen({ onBack }: { onBack: () => void }) {
   const { chapter } = useStore()
@@ -45,38 +44,37 @@ export default function DressUpScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* 顶栏 */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/[0.04]">
-        <button onClick={onBack} className="flex items-center gap-1 text-amber-900/50 hover:text-amber-800/70 transition-colors">
-          <ChevronLeft className="w-5 h-5" /> <span className="text-sm">返回</span>
+      {/* 顶栏 - 毛玻璃 */}
+      <div className="flex items-center justify-between px-4 py-3"
+        style={{ background: 'rgba(255,255,255,0.35)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+        <button onClick={onBack} className="flex items-center gap-1 text-amber-900/50 hover:text-amber-800/70 transition-colors py-1 px-2 -ml-2 rounded-xl hover:bg-white/20">
+          <span className="text-lg">←</span>
+          <span className="text-sm">返回</span>
         </button>
         <h2 className="font-semibold text-sm">🌽 甜玉米换装</h2>
-        <span className="text-xs text-amber-400/80">💰 {pocketMoney}</span>
+        <span className="text-xs text-amber-700/60 bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg">💰 {pocketMoney}</span>
       </div>
 
       <div className="flex-1 overflow-auto px-4 py-3 space-y-3">
-        {/* 甜玉米预览 - 展示台风格 */}
+        {/* 甜玉米预览 */}
         <div className="glass-card p-6 text-center relative overflow-hidden">
-          {/* 背景层 */}
           <div className="absolute inset-0 opacity-20">
             <img src={getEquippedItem('background')?.image || '/images/home/livingroom.jpg'} alt="bg"
               className="w-full h-full object-cover" />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.15), transparent)' }} />
 
           <div className="relative z-10">
-            {/* 展示台 */}
-            <div className={`w-28 h-28 mx-auto rounded-3xl bg-gradient-to-br from-pink-400/20 via-violet-400/20 to-indigo-400/20 flex items-center justify-center mb-3 shadow-2xl transition-all duration-500 ${equipAnim ? 'scale-105' : ''}`}
-              style={{ boxShadow: '0 8px 40px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
+            <div className={`w-28 h-28 mx-auto rounded-3xl bg-amber-400/15 flex items-center justify-center mb-3 transition-all duration-500 ${equipAnim ? 'scale-105' : ''}`}
+              style={{ boxShadow: '0 8px 40px rgba(139,92,246,0.1)', background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(16px)' }}>
               <span className="text-5xl">🐱</span>
             </div>
             <p className="text-xs text-amber-900/50 mb-2">你就是甜玉米 🌽</p>
-            {/* 装备标签 */}
             <div className="flex flex-wrap gap-1 justify-center">
               {['top', 'hat', 'accessory'].map(cat => {
                 const item = getEquippedItem(cat)
                 return item ? (
-                  <span key={cat} className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300/70 ">
+                  <span key={cat} className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700/70">
                     {item.icon} {item.name}
                   </span>
                 ) : null
@@ -85,12 +83,12 @@ export default function DressUpScreen({ onBack }: { onBack: () => void }) {
           </div>
         </div>
 
-        {/* 分类 */}
-        <div className="flex gap-1">
+        {/* 分类 - emoji */}
+        <div className="flex gap-1.5">
           {categories.map(cat => (
             <button key={cat.id} onClick={() => setCategory(cat.id)}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] transition-all duration-300 ${
-                category === cat.id ? 'bg-pink-500/15 text-pink-300' : 'text-amber-900/45 hover:bg-amber-900/[0.02]'
+                category === cat.id ? 'bg-amber-500/15 text-amber-700' : 'text-amber-900/45 hover:bg-white/20'
               }`}>
               {cat.icon} {cat.label}
             </button>
@@ -106,10 +104,10 @@ export default function DressUpScreen({ onBack }: { onBack: () => void }) {
 
             return (
               <div key={item.id} className={`glass-card p-2.5 relative text-center transition-all duration-300 ${
-                equipped ? 'ring-1 ring-pink-400/20' : locked ? 'opacity-30' : ''
+                equipped ? 'bg-amber-500/10' : locked ? 'opacity-30' : ''
               }`}>
-                {/* 稀有度 */}
-                <span className={`absolute top-1 right-1 text-[8px] px-1 py-0.5 rounded-full bg-gradient-to-r ${RARITY_COLORS[item.rarity]} text-amber-800/80`}>
+                <span className={`absolute top-1 right-1 text-[8px] px-1 py-0.5 rounded-full ${RARITY_COLORS[item.rarity]} text-amber-800/60`}
+                  style={{ background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)' }}>
                   {RARITY_LABELS[item.rarity]}
                 </span>
                 <span className="text-2xl">{item.icon}</span>
@@ -123,13 +121,13 @@ export default function DressUpScreen({ onBack }: { onBack: () => void }) {
                 ) : owned ? (
                   <button onClick={() => equipItem(item)}
                     className={`w-full mt-1.5 py-1 rounded-lg text-[10px] transition-all ${
-                      equipped ? 'bg-pink-500/15 text-pink-300/70' : 'bg-amber-900/[0.03] text-amber-900/50 hover:bg-amber-900/[0.05]'
+                      equipped ? 'bg-amber-500/15 text-amber-700/70' : 'text-amber-900/50 hover:bg-white/20'
                     }`}>
                     {equipped ? '✅ 穿戴中' : '穿戴'}
                   </button>
                 ) : (
                   <button onClick={() => buyItem(item)} disabled={pocketMoney < item.price}
-                    className="w-full mt-1.5 py-1 rounded-lg text-[10px] bg-pink-500/10 text-pink-300/60 hover:bg-pink-500/20 disabled:opacity-30 transition-all">
+                    className="w-full mt-1.5 py-1 rounded-lg text-[10px] bg-amber-500/10 text-amber-700/60 hover:bg-amber-500/20 disabled:opacity-30 transition-all">
                     💰{item.price}
                   </button>
                 )}

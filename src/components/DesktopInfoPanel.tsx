@@ -3,7 +3,7 @@
 import { useStore } from '@/store/useStore'
 import { getIntimacyLevel, formatIntimacy } from '@/lib/intimacy'
 import { PETS } from '@/lib/pet-data'
-import { Heart, Star, PawPrint, ChevronRight, Shield, Sparkles } from 'lucide-react'
+
 
 export default function DesktopInfoPanel() {
   const { intimacyDad, intimacyMom, chapter } = useStore()
@@ -23,7 +23,7 @@ export default function DesktopInfoPanel() {
         }}
       >
         <div className="flex items-center gap-2.5 mb-4">
-          <Shield className="w-5 h-5 text-amber-500/70" />
+          🛡️
           <span className="text-sm font-medium text-amber-900/70">等级</span>
           <span className="text-[10px] ml-auto px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700/70 font-medium">
             Ch{levelInfo.level}
@@ -57,7 +57,7 @@ export default function DesktopInfoPanel() {
         }}
       >
         <div className="flex items-center gap-2.5 mb-5">
-          <Heart className="w-5 h-5 text-red-400/70 fill-red-400/70" />
+          ❤️
           <span className="text-sm font-medium text-amber-900/70">亲密度</span>
         </div>
         <div className="space-y-5">
@@ -115,9 +115,9 @@ export default function DesktopInfoPanel() {
           }}
         >
           <div className="flex items-center gap-2.5 mb-5">
-            <PawPrint className="w-5 h-5 text-emerald-500/70" />
+            🐾
             <span className="text-sm font-medium text-amber-900/70">宠物</span>
-            <Sparkles className="w-3 h-3 text-amber-500/50 ml-auto" />
+            ✨
           </div>
           <div className="space-y-4">
             {Object.values(PETS).map((pet) => (
