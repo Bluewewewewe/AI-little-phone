@@ -20,33 +20,28 @@ export default function PhonePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#06060f] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* 背景氛围光 */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/5 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-pink-600/3 rounded-full blur-[80px] pointer-events-none" />
+    <div className="phone-page">
+      {/* 背景氛围光 - 桌面端 */}
+      <div className="hidden md:block absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="hidden md:block absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/5 rounded-full blur-[100px] pointer-events-none" />
 
       {/* 手机外框 */}
-      <div className="phone-frame w-full max-w-[430px] h-[932px] relative">
+      <div className="phone-frame">
         {/* Dynamic Island */}
         <div className="dynamic-island" />
 
         {/* 手机内屏 */}
-        <div className="phone-screen w-full h-full">
-          {/* 状态栏 */}
+        <div className="phone-screen">
           <StatusBar />
-          
-          {/* 主屏幕内容 */}
-          <PhoneScreen />
-          
-          {/* 底部Home指示器 */}
-          <div className="h-[34px] flex items-center justify-center flex-shrink-0">
+          <div className="flex-1 overflow-hidden">
+            <PhoneScreen />
+          </div>
+          <div className="home-indicator">
             <div className="w-[134px] h-[5px] bg-white/20 rounded-full" />
           </div>
         </div>
       </div>
       
-      {/* 亲密度面板（悬浮） */}
       <IntimacyPanel />
     </div>
   )
