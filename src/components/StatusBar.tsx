@@ -22,13 +22,13 @@ export default function StatusBar() {
   }, [])
 
   return (
-    <div className="status-bar">
+    <div className="status-bar text-amber-900">
       <span className="font-semibold text-[14px]">{timeString || '--:--'}</span>
       
       <div className="flex items-center gap-[6px]">
         <button 
           onClick={toggleTheme}
-          className="p-0.5 hover:bg-white/10 rounded transition-colors"
+          className="p-0.5 hover:bg-amber-800/10 rounded transition-colors"
         >
           {isDarkMode ? (
             <Moon className="w-[14px] h-[14px]" />

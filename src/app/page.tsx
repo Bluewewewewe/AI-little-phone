@@ -26,7 +26,7 @@ export default function HomePage() {
           <h1 className="text-2xl font-bold mb-1 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
             AI小手机
           </h1>
-          <p className="text-white/40 text-xs">CP女儿模拟器</p>
+          <p className="text-amber-900/50 text-xs">CP女儿模拟器</p>
         </div>
 
         <div className="glass-card p-5 mb-5 animate-fadeIn" style={{ animationDelay: '0.1s' }}>
@@ -34,7 +34,7 @@ export default function HomePage() {
             <Sparkles className="w-4 h-4 text-purple-400" />
             特色玩法
           </h2>
-          <ul className="space-y-2 text-xs text-white/50">
+          <ul className="space-y-2 text-xs text-amber-900/50">
             <li className="flex items-start gap-2">
               <Users className="w-3.5 h-3.5 text-pink-400 mt-0.5 flex-shrink-0" />
               <span>跟爸爸、妈妈一起组建温暖的家</span>
@@ -224,26 +224,26 @@ function IdentitySetup({ onComplete }: { onComplete: () => void }) {
             <h3 className="text-base font-medium text-center mb-2">确认你的家庭设定</h3>
             <div className="glass-card p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-white/40">爸爸称呼：</span>
+                <span className="text-amber-900/50">爸爸称呼：</span>
                 <span className="font-medium text-purple-400">{formData.roleA_name === '自定义' ? customRoleA : formData.roleA_name}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-white/40">妈妈称呼：</span>
+                <span className="text-amber-900/50">妈妈称呼：</span>
                 <span className="font-medium text-pink-400">{formData.roleB_name === '自定义' ? customRoleB : formData.roleB_name}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-white/40">你的称呼：</span>
+                <span className="text-amber-900/50">你的称呼：</span>
                 <span className="font-medium text-cyan-400">{formData.user_name === '自定义' ? customUserName : formData.user_name}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-white/40">家庭模式：</span>
+                <span className="text-amber-900/50">家庭模式：</span>
                 <span className="font-medium text-amber-400">{formData.family_mode === '自定义' ? customFamilyMode : formData.family_mode}</span>
               </div>
             </div>
             <button onClick={handleComplete} className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium active:scale-[0.97] transition-transform mt-2">
               ❤️ 开始温馨之旅
             </button>
-            <button onClick={() => setStep(1)} className="w-full py-2 text-sm text-white/40">重新设置</button>
+            <button onClick={() => setStep(1)} className="w-full py-2 text-sm text-amber-900/50">重新设置</button>
           </div>
         )
       default: return null
@@ -260,7 +260,7 @@ function IdentitySetup({ onComplete }: { onComplete: () => void }) {
         </div>
         {renderStep()}
         {step > 1 && step < 5 && (
-          <button onClick={() => setStep(step - 1)} className="text-white/30 text-xs mt-3 hover:text-white/60 transition-colors">← 返回上一步</button>
+          <button onClick={() => setStep(step - 1)} className="text-amber-800/35 text-xs mt-3 hover:text-amber-800/60 transition-colors">← 返回上一步</button>
         )}
       </div>
     </div>

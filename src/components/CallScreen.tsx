@@ -50,11 +50,11 @@ export default function CallScreen() {
       <div className="p-6 flex items-center justify-between">
         <button 
           onClick={handleDecline}
-          className="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+          className="p-3 bg-amber-900/[0.04] rounded-full hover:bg-white/20 transition-colors"
         >
           <X className="w-6 h-6" />
         </button>
-        <button className="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+        <button className="p-3 bg-amber-900/[0.04] rounded-full hover:bg-white/20 transition-colors">
           <Volume2 className="w-6 h-6" />
         </button>
       </div>
@@ -63,7 +63,7 @@ export default function CallScreen() {
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         {/* 头像 */}
         <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${callerAvatar} flex items-center justify-center mb-6 shadow-2xl animate-pulse`}>
-          <span className="text-5xl font-bold text-white">
+          <span className="text-5xl font-bold text-amber-900">
             {callerName.slice(0, 1)}
           </span>
         </div>
@@ -72,9 +72,9 @@ export default function CallScreen() {
         <h2 className="text-2xl font-bold mb-2">{callerName}</h2>
         
         {isAccepted ? (
-          <p className="text-white/60">{formatDuration(callDuration)}</p>
+          <p className="text-amber-800/60">{formatDuration(callDuration)}</p>
         ) : (
-          <p className="text-white/60">来电中...</p>
+          <p className="text-amber-800/60">来电中...</p>
         )}
 
         {/* 字幕式通话内容 */}
@@ -110,7 +110,7 @@ export default function CallScreen() {
               onClick={handleAccept}
               className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors"
             >
-              <Phone className="w-7 h-7 text-white" />
+              <Phone className="w-7 h-7 text-amber-900" />
             </button>
           </>
         ) : (

@@ -105,11 +105,11 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
     <div className="h-full flex flex-col">
       {/* 顶部导航 */}
       <div className="glass px-4 py-3 flex items-center gap-3">
-        <button onClick={onBack} className="p-2 -ml-2 hover:bg-white/10 rounded-full">
+        <button onClick={onBack} className="p-2 -ml-2 hover:bg-amber-900/[0.04] rounded-full">
           <ChevronLeft className="w-5 h-5" />
         </button>
         <h2 className="font-bold flex-1">朋友圈</h2>
-        <button className="p-2 hover:bg-white/10 rounded-full">
+        <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
           <Camera className="w-5 h-5" />
         </button>
       </div>
@@ -117,10 +117,10 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
       {/* 朋友圈列表 */}
       <div className="flex-1 overflow-auto">
         {/* 发布框 */}
-        <div className="p-4 border-b border-white/10">
+        <div className="p-4 border-b border-amber-900/10">
           <div className="flex gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-white">
+              <span className="text-sm font-bold text-amber-900">
                 {identity?.user_name?.slice(0, 1) || '我'}
               </span>
             </div>
@@ -129,7 +129,7 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
                 placeholder="记录美好生活..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm resize-none focus:outline-none focus:border-purple-500/50"
+                className="w-full bg-white/5 border border-amber-900/10 rounded-xl p-3 text-sm resize-none focus:outline-none focus:border-purple-500/50"
                 rows={2}
               />
               <div className="flex justify-end mt-2">
@@ -139,7 +139,7 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                   className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
                     newPost.trim()
                       ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                      : 'bg-white/10 text-white/40'
+                      : 'bg-amber-900/[0.04] text-amber-900/50'
                   }`}
                 >
                   发布
@@ -151,10 +151,10 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
 
         {/* 动态列表 */}
         {allMoments.map((moment) => (
-          <div key={moment.id} className="p-4 border-b border-white/10">
+          <div key={moment.id} className="p-4 border-b border-amber-900/10">
             <div className="flex gap-3">
               <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${getAuthorAvatar(moment.author)} flex items-center justify-center flex-shrink-0`}>
-                <span className="text-sm font-bold text-white">
+                <span className="text-sm font-bold text-amber-900">
                   {getAuthorName(moment.author).slice(0, 1)}
                 </span>
               </div>
@@ -187,7 +187,7 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                 )}
                 
                 {/* 时间 */}
-                <p className="text-xs text-white/40 mt-2">
+                <p className="text-xs text-amber-900/50 mt-2">
                   {formatTime(moment.createdAt)}
                 </p>
                 
@@ -197,13 +197,13 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                     onClick={() => addLike(moment.id, 'user', 'user')}
                     className="flex items-center gap-1 text-sm hover:text-red-400 transition-colors"
                   >
-                    <Heart className={`w-4 h-4 ${moment.likes.some(l => l.userId === 'user') ? 'fill-red-500 text-red-500' : 'text-white/60'}`} />
-                    <span className="text-white/60">{moment.likes.length || ''}</span>
+                    <Heart className={`w-4 h-4 ${moment.likes.some(l => l.userId === 'user') ? 'fill-red-500 text-red-500' : 'text-amber-800/60'}`} />
+                    <span className="text-amber-800/60">{moment.likes.length || ''}</span>
                   </button>
                   
                   <button
                     onClick={() => setShowComment(showComment === moment.id ? null : moment.id)}
-                    className="flex items-center gap-1 text-sm text-white/60 hover:text-blue-400 transition-colors"
+                    className="flex items-center gap-1 text-sm text-amber-800/60 hover:text-blue-400 transition-colors"
                   >
                     <MessageCircle className="w-4 h-4" />
                     <span>{moment.comments.length || ''}</span>
@@ -214,7 +214,7 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                 {moment.likes.length > 0 && (
                   <div className="mt-2 flex items-center gap-1 flex-wrap">
                     <Heart className="w-3 h-3 text-red-400 fill-red-400" />
-                    <span className="text-xs text-white/60">
+                    <span className="text-xs text-amber-800/60">
                       {moment.likes.map(l => l.author === 'user' ? identity?.user_name : l.author === 'dad' ? identity?.roleA_name : identity?.roleB_name).join('、')}
                     </span>
                   </div>
@@ -228,7 +228,7 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                         <span className="text-purple-400">
                           {comment.author === 'user' ? identity?.user_name : comment.author === 'dad' ? identity?.roleA_name : identity?.roleB_name}:
                         </span>
-                        <span className="text-white/80 ml-1">{comment.content}</span>
+                        <span className="text-amber-800/80 ml-1">{comment.content}</span>
                       </p>
                     ))}
                   </div>
@@ -243,7 +243,7 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                       onChange={(e) => setCommentText(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleComment(moment.id)}
                       placeholder="写评论..."
-                      className="flex-1 bg-white/10 border border-white/10 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-purple-500/50"
+                      className="flex-1 bg-amber-900/[0.04] border border-amber-900/10 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-purple-500/50"
                     />
                     <button
                       onClick={() => handleComment(moment.id)}

@@ -1,23 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 
 :root {
-  /* Liquid Glass 色板 - 浅黄暖调 */
-  --bg-primary: linear-gradient(135deg, #1a1508 0%, #1c1610 40%, #1e1a12 100%);
-  --bg-secondary: rgba(255, 255, 255, 0.04);
-  --bg-card: rgba(255, 245, 220, 0.06);
-  --bg-glass: rgba(255, 245, 220, 0.08);
-  --bg-glass-hover: rgba(255, 245, 220, 0.12);
+  /* Liquid Glass 色板 - 浅黄暖调 (默认浅色) */
+  --bg-primary: linear-gradient(135deg, #fef9ee 0%, #fef3c7 50%, #fde68a 100%);
+  --bg-secondary: rgba(0, 0, 0, 0.02);
+  --bg-card: rgba(255, 255, 255, 0.65);
+  --bg-glass: rgba(255, 255, 255, 0.5);
+  --bg-glass-hover: rgba(255, 255, 255, 0.75);
 
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --text-muted: rgba(255, 255, 255, 0.4);
+  --text-primary: #422006;
+  --text-secondary: rgba(66, 32, 6, 0.7);
+  --text-muted: rgba(66, 32, 6, 0.45);
 
-  --border-color: rgba(255, 225, 150, 0.08);
-  --border-light: rgba(255, 225, 150, 0.04);
+  --border-color: rgba(120, 80, 20, 0.08);
+  --border-light: rgba(120, 80, 20, 0.04);
 
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.3);
-  --shadow-glow: 0 0 40px rgba(234, 179, 8, 0.06);
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 40px rgba(234, 179, 8, 0.1);
 
   --accent-purple: #a855f7;
   --accent-blue: #6366f1;
@@ -40,19 +40,19 @@
   --radius-full: 9999px;
 }
 
-[data-theme="light"] {
-  --bg-primary: linear-gradient(135deg, #fef9ee 0%, #fef3c7 50%, #fde68a 100%);
-  --bg-secondary: rgba(0, 0, 0, 0.02);
-  --bg-card: rgba(255, 255, 255, 0.65);
-  --bg-glass: rgba(255, 255, 255, 0.5);
-  --bg-glass-hover: rgba(255, 255, 255, 0.75);
-  --text-primary: #422006;
-  --text-secondary: rgba(66, 32, 6, 0.7);
-  --text-muted: rgba(66, 32, 6, 0.45);
-  --border-color: rgba(0, 0, 0, 0.06);
-  --border-light: rgba(0, 0, 0, 0.03);
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.08);
+[data-theme="dark"] {
+  --bg-primary: linear-gradient(135deg, #1a1508 0%, #1c1610 40%, #1e1a12 100%);
+  --bg-secondary: rgba(255, 255, 255, 0.04);
+  --bg-card: rgba(255, 245, 220, 0.06);
+  --bg-glass: rgba(255, 245, 220, 0.08);
+  --bg-glass-hover: rgba(255, 245, 220, 0.12);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --border-color: rgba(255, 225, 150, 0.08);
+  --border-light: rgba(255, 225, 150, 0.04);
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.3);
 }
 
 * {
@@ -100,7 +100,7 @@ html, body {
   left: 10%;
   right: 10%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
   pointer-events: none;
   z-index: 1;
 }
@@ -120,10 +120,10 @@ html, body {
   justify-content: center;
   gap: 6px;
   padding: 8px 18px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(120, 80, 20, 0.1);
   border-radius: var(--radius-full);
   color: var(--text-primary);
   font-size: 13px;
@@ -134,10 +134,10 @@ html, body {
 }
 
 .glass-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(120, 80, 20, 0.18);
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .glass-btn:active {
@@ -145,14 +145,14 @@ html, body {
 }
 
 .glass-btn-primary {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(234, 179, 8, 0.3));
-  border-color: rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(234, 179, 8, 0.2));
+  border-color: rgba(245, 158, 11, 0.25);
 }
 
 .glass-btn-primary:hover {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.45), rgba(234, 179, 8, 0.45));
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(234, 179, 8, 0.35));
   border-color: rgba(245, 158, 11, 0.4);
-  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);
 }
 
 /* 保留旧按钮兼容 */
@@ -179,10 +179,10 @@ html, body {
 .input {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(120, 80, 20, 0.1);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: 14px;
@@ -193,7 +193,7 @@ html, body {
 .input:focus {
   border-color: rgba(245, 158, 11, 0.4);
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1), var(--shadow);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .input::placeholder { color: var(--text-muted); }
@@ -209,16 +209,16 @@ html, body {
   letter-spacing: 0.02em;
 }
 
-.badge-purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
-.badge-blue { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
-.badge-pink { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
-.badge-gold { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.badge-purple { background: rgba(139, 92, 246, 0.1); color: #7c3aed; }
+.badge-blue { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+.badge-pink { background: rgba(236, 72, 153, 0.1); color: #db2777; }
+.badge-gold { background: rgba(245, 158, 11, 0.12); color: #b45309; }
 
 /* 进度条 */
 .progress-bar {
   width: 100%;
   height: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(120, 80, 20, 0.08);
   border-radius: var(--radius-full);
   overflow: hidden;
 }
@@ -310,8 +310,8 @@ html, body {
 /* 滚动条 */
 ::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.15); }
+::-webkit-scrollbar-thumb { background: rgba(120, 80, 20, 0.1); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(120, 80, 20, 0.2); }
 
 /* 手机容器 */
 .phone-container {
@@ -329,7 +329,7 @@ html, body {
   min-height: 100dvh;
   height: 100vh;
   height: 100dvh;
-  background: #08070a;
+  background: linear-gradient(135deg, #fef9ee 0%, #fef3c7 50%, #fde68a 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -338,12 +338,12 @@ html, body {
 }
 
 .phone-frame {
-  background: linear-gradient(145deg, #1e1a14, #0f0d0a);
+  background: linear-gradient(145deg, #f5f0e8, #e8e0d0);
   box-shadow:
-    0 0 0 1px rgba(255,225,150,0.06),
-    inset 0 1px 0 rgba(255,225,150,0.04),
-    0 25px 80px rgba(0,0,0,0.6),
-    0 8px 30px rgba(0,0,0,0.4);
+    0 0 0 1px rgba(120, 80, 20, 0.08),
+    inset 0 1px 0 rgba(255,255,255,0.8),
+    0 25px 80px rgba(120, 80, 20, 0.15),
+    0 8px 30px rgba(120, 80, 20, 0.1);
   border-radius: 55px;
   padding: 12px;
   position: relative;
@@ -357,13 +357,13 @@ html, body {
   position: absolute;
   inset: 1px;
   border-radius: 54px;
-  background: linear-gradient(145deg, rgba(255,255,255,0.03), transparent 50%);
+  background: linear-gradient(145deg, rgba(255,255,255,0.6), transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
 
 .phone-screen {
-  background: linear-gradient(135deg, #1a1508 0%, #1c1610 40%, #1e1a12 100%);
+  background: linear-gradient(135deg, #fef9ee 0%, #fef3c7 50%, #fde68a 100%);
   border-radius: 47px;
   overflow: hidden;
   display: flex;
@@ -381,10 +381,10 @@ html, body {
   transform: translateX(-50%);
   width: 126px;
   height: 36px;
-  background: #000;
+  background: #1a1a1a;
   border-radius: 20px;
   z-index: 50;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
 }
 
 /* Home Indicator - 底部横条 */
@@ -438,7 +438,7 @@ html, body {
 @media (max-width: 768px) {
   .phone-page {
     min-height: 100dvh;
-    background: transparent;
+    background: linear-gradient(135deg, #fef9ee 0%, #fef3c7 50%, #fde68a 100%);
     align-items: stretch;
     justify-content: stretch;
   }

@@ -76,7 +76,7 @@ export default function PhoneScreen() {
           animating && animDir === 'open' ? 'animate-appOpen' : ''
         }`}>
           {/* APP内状态栏（覆盖式） */}
-          <div className="app-status-bar">
+          <div className="app-status-bar text-amber-900">
             <span className="font-semibold text-[14px]">
               {appBarTime || '--:--'}
             </span>

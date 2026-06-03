@@ -61,7 +61,7 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
       case 'call':
         return <Bell className="w-5 h-5 text-green-400" />
       default:
-        return <Bell className="w-5 h-5 text-white/60" />
+        return <Bell className="w-5 h-5 text-amber-800/60" />
     }
   }
 
@@ -76,7 +76,7 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
       case 'call':
         return 'bg-green-500/20'
       default:
-        return 'bg-white/10'
+        return 'bg-amber-900/[0.04]'
     }
   }
 
@@ -87,7 +87,7 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
         onClick={(e) => e.stopPropagation()}
       >
         {/* 顶部栏 */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
+        <div className="flex items-center justify-between p-4 border-b border-amber-900/10">
           <div className="flex items-center gap-3">
             <h2 className="font-bold text-lg">通知中心</h2>
             {unreadCount > 0 && (
@@ -106,7 +106,7 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
             )}
             <button 
               onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-full"
+              className="p-2 hover:bg-amber-900/[0.04] rounded-full"
             >
               <X className="w-5 h-5" />
             </button>
@@ -116,7 +116,7 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
         {/* 通知列表 */}
         <div className="overflow-auto max-h-[calc(80vh-60px)]">
           {allNotifications.length === 0 ? (
-            <div className="p-8 text-center text-white/40">
+            <div className="p-8 text-center text-amber-900/50">
               <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>暂无通知</p>
             </div>
@@ -139,10 +139,10 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
                       <span className="w-2 h-2 bg-purple-500 rounded-full" />
                     )}
                   </div>
-                  <p className="text-xs text-white/60 mt-0.5 line-clamp-2">
+                  <p className="text-xs text-amber-800/60 mt-0.5 line-clamp-2">
                     {notification.content}
                   </p>
-                  <p className="text-xs text-white/40 mt-1">
+                  <p className="text-xs text-amber-900/50 mt-1">
                     {formatTime(notification.createdAt)}
                   </p>
                 </div>

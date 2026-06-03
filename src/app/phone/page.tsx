@@ -22,8 +22,8 @@ export default function PhonePage() {
   return (
     <div className="phone-page">
       {/* 背景氛围光 - 桌面端 */}
-      <div className="hidden md:block absolute top-1/4 left-1/4 w-96 h-96 bg-amber-600/5 rounded-full blur-[100px] pointer-events-none" />
-      <div className="hidden md:block absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-600/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="hidden md:block absolute top-1/4 left-1/4 w-96 h-96 bg-amber-400/15 rounded-full blur-[100px] pointer-events-none" />
+      <div className="hidden md:block absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-300/10 rounded-full blur-[100px] pointer-events-none" />
 
       {/* 左侧信息面板 - 桌面端 */}
       <DesktopInfoPanel />
@@ -40,7 +40,7 @@ export default function PhonePage() {
             <PhoneScreen />
           </div>
           <div className="home-indicator">
-            <div className="w-[134px] h-[5px] bg-white/20 rounded-full" />
+            <div className="w-[134px] h-[5px] bg-amber-900/15 rounded-full" />
           </div>
         </div>
       </div>

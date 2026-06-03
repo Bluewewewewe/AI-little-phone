@@ -25,7 +25,7 @@ export default function IntimacyPanel() {
       <div className="glass-card p-3 w-48 animate-fadeIn">
         <div className="flex items-center gap-2 mb-3">
           <Heart className="w-4 h-4 text-red-400 fill-red-400" />
-          <span className="text-sm font-medium">亲密度</span>
+          <span className="text-sm font-medium text-amber-900">亲密度</span>
           <span className="badge badge-gold text-[10px] ml-auto">
             Ch{currentChapter}
           </span>
@@ -45,7 +45,7 @@ export default function IntimacyPanel() {
                 />
               </div>
             </div>
-            <span className="text-xs font-medium w-8 text-right">{intimacyDad}</span>
+            <span className="text-xs font-medium w-8 text-right text-amber-900">{intimacyDad}</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -60,15 +60,15 @@ export default function IntimacyPanel() {
                 />
               </div>
             </div>
-            <span className="text-xs font-medium w-8 text-right">{intimacyMom}</span>
+            <span className="text-xs font-medium w-8 text-right text-amber-900">{intimacyMom}</span>
           </div>
         </div>
         
         {/* 今日进度 */}
-        <div className="bg-white/5 rounded-lg p-2">
+        <div className="bg-amber-900/[0.04] rounded-lg p-2">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-white/60">今日进度</span>
-            <span className="text-[10px] text-white/60">
+            <span className="text-[10px] text-amber-800/50">今日进度</span>
+            <span className="text-[10px] text-amber-800/50">
               {totalDaily}/{DAILY_INTIMACY_LIMIT}
             </span>
           </div>
@@ -79,7 +79,7 @@ export default function IntimacyPanel() {
                 className={`flex-1 h-2 rounded-sm ${
                   i < Math.floor(totalDaily / 3)
                     ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
-                    : 'bg-white/10'
+                    : 'bg-amber-900/8'
                 }`}
               />
             ))}
@@ -88,12 +88,12 @@ export default function IntimacyPanel() {
         
         {/* 下一章进度 */}
         {nextChapterConfig && (
-          <div className="mt-2 pt-2 border-t border-white/10">
+          <div className="mt-2 pt-2 border-t border-amber-900/8">
             <div className="flex items-center justify-between text-[10px]">
-              <span className="text-white/60">
+              <span className="text-amber-800/50">
                 下一章：{nextChapterConfig.name}
               </span>
-              <span className="text-amber-400">
+              <span className="text-amber-600">
                 {nextChapterConfig.min - totalIntimacy}点
               </span>
             </div>

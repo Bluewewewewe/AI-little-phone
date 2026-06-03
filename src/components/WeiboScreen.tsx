@@ -100,10 +100,10 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
               <Star className="w-10 h-10 text-purple-400" />
             </div>
             <h3 className="text-lg font-bold mb-2">第2章解锁</h3>
-            <p className="text-sm text-white/60">
+            <p className="text-sm text-amber-800/60">
               继续和爸妈聊天，提升亲密度到300即可解锁微博功能~
             </p>
-            <p className="text-xs text-white/40 mt-4">
+            <p className="text-xs text-amber-900/50 mt-4">
               当前亲密度需达到 300，当前还需 {300 - (useStore.getState().intimacyDad + useStore.getState().intimacyMom)}
             </p>
           </div>
@@ -125,7 +125,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
           <button
             onClick={() => setActiveTab('home')}
             className={`text-sm font-medium transition-colors ${
-              activeTab === 'home' ? 'text-white' : 'text-white/50'
+              activeTab === 'home' ? 'text-amber-900' : 'text-amber-900/50'
             }`}
           >
             首页
@@ -133,7 +133,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
           <button
             onClick={() => setActiveTab('hot')}
             className={`flex items-center gap-1 text-sm font-medium transition-colors ${
-              activeTab === 'hot' ? 'text-white' : 'text-white/50'
+              activeTab === 'hot' ? 'text-amber-900' : 'text-amber-900/50'
             }`}
           >
             <Flame className="w-4 h-4" />
@@ -157,7 +157,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
               </div>
               <div className="flex-1">
                 <p className="font-medium text-sm">热搜榜</p>
-                <p className="text-xs text-white/50">实时热度排行</p>
+                <p className="text-xs text-amber-900/50">实时热度排行</p>
               </div>
               <span className="badge badge-gold text-xs">爆</span>
             </div>
@@ -205,7 +205,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
                 )}
                 
                 {/* 时间 */}
-                <p className="text-xs text-white/40 mt-2">
+                <p className="text-xs text-amber-900/50 mt-2">
                   {formatTime(post.createdAt)}
                 </p>
                 
@@ -213,18 +213,18 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
                   <button
                     onClick={() => toggleLike(post.id)}
-                    className="flex items-center gap-1 text-sm text-white/60 hover:text-red-400 transition-colors"
+                    className="flex items-center gap-1 text-sm text-amber-800/60 hover:text-red-400 transition-colors"
                   >
                     <Heart className={`w-4 h-4 ${likedPosts.has(post.id) ? 'fill-red-500 text-red-500' : ''}`} />
                     <span>{formatNumber(post.likes + (likedPosts.has(post.id) ? 1 : 0))}</span>
                   </button>
                   
-                  <button className="flex items-center gap-1 text-sm text-white/60 hover:text-blue-400 transition-colors">
+                  <button className="flex items-center gap-1 text-sm text-amber-800/60 hover:text-blue-400 transition-colors">
                     <MessageCircle className="w-4 h-4" />
                     <span>{formatNumber(post.comments)}</span>
                   </button>
                   
-                  <button className="flex items-center gap-1 text-sm text-white/60 hover:text-green-400 transition-colors">
+                  <button className="flex items-center gap-1 text-sm text-amber-800/60 hover:text-green-400 transition-colors">
                     <Share2 className="w-4 h-4" />
                     <span>{formatNumber(post.reposts)}</span>
                   </button>

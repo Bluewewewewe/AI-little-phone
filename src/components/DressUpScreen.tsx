@@ -46,8 +46,8 @@ export default function DressUpScreen({ onBack }: { onBack: () => void }) {
   return (
     <div className="h-full flex flex-col">
       {/* 顶栏 */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04]">
-        <button onClick={onBack} className="flex items-center gap-1 text-white/40 hover:text-white/70 transition-colors">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/[0.04]">
+        <button onClick={onBack} className="flex items-center gap-1 text-amber-900/50 hover:text-amber-800/70 transition-colors">
           <ChevronLeft className="w-5 h-5" /> <span className="text-sm">返回</span>
         </button>
         <h2 className="font-semibold text-sm">🌽 甜玉米换装</h2>
@@ -66,11 +66,11 @@ export default function DressUpScreen({ onBack }: { onBack: () => void }) {
 
           <div className="relative z-10">
             {/* 展示台 */}
-            <div className={`w-28 h-28 mx-auto rounded-3xl bg-gradient-to-br from-pink-400/20 via-violet-400/20 to-indigo-400/20 flex items-center justify-center mb-3 border border-white/10 shadow-2xl transition-all duration-500 ${equipAnim ? 'scale-105' : ''}`}
+            <div className={`w-28 h-28 mx-auto rounded-3xl bg-gradient-to-br from-pink-400/20 via-violet-400/20 to-indigo-400/20 flex items-center justify-center mb-3 border border-amber-900/10 shadow-2xl transition-all duration-500 ${equipAnim ? 'scale-105' : ''}`}
               style={{ boxShadow: '0 8px 40px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
               <span className="text-5xl">🐱</span>
             </div>
-            <p className="text-xs text-white/50 mb-2">你就是甜玉米 🌽</p>
+            <p className="text-xs text-amber-900/50 mb-2">你就是甜玉米 🌽</p>
             {/* 装备标签 */}
             <div className="flex flex-wrap gap-1 justify-center">
               {['top', 'hat', 'accessory'].map(cat => {
@@ -90,7 +90,7 @@ export default function DressUpScreen({ onBack }: { onBack: () => void }) {
           {categories.map(cat => (
             <button key={cat.id} onClick={() => setCategory(cat.id)}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] transition-all duration-300 ${
-                category === cat.id ? 'bg-pink-500/15 text-pink-300 ring-1 ring-pink-400/15' : 'text-white/35 hover:bg-white/[0.03]'
+                category === cat.id ? 'bg-pink-500/15 text-pink-300 ring-1 ring-pink-400/15' : 'text-amber-900/45 hover:bg-amber-900/[0.02]'
               }`}>
               {cat.icon} {cat.label}
             </button>
@@ -109,21 +109,21 @@ export default function DressUpScreen({ onBack }: { onBack: () => void }) {
                 equipped ? 'ring-1 ring-pink-400/20' : locked ? 'opacity-30' : ''
               }`}>
                 {/* 稀有度 */}
-                <span className={`absolute top-1 right-1 text-[8px] px-1 py-0.5 rounded-full bg-gradient-to-r ${RARITY_COLORS[item.rarity]} text-white/80`}>
+                <span className={`absolute top-1 right-1 text-[8px] px-1 py-0.5 rounded-full bg-gradient-to-r ${RARITY_COLORS[item.rarity]} text-amber-800/80`}>
                   {RARITY_LABELS[item.rarity]}
                 </span>
                 <span className="text-2xl">{item.icon}</span>
                 <p className="text-[10px] font-medium mt-1 truncate">{item.name}</p>
-                <p className="text-[9px] text-white/20">
+                <p className="text-[9px] text-amber-800/25">
                   {item.category === 'top' ? '上衣' : item.category === 'hat' ? '帽子' : item.category === 'accessory' ? '配饰' : '背景'}
                 </p>
 
                 {locked ? (
-                  <p className="text-[9px] text-white/15 mt-1">🔒 Ch{item.unlockChapter}</p>
+                  <p className="text-[9px] text-amber-800/20 mt-1">🔒 Ch{item.unlockChapter}</p>
                 ) : owned ? (
                   <button onClick={() => equipItem(item)}
                     className={`w-full mt-1.5 py-1 rounded-lg text-[10px] transition-all ${
-                      equipped ? 'bg-pink-500/15 text-pink-300/70' : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.08]'
+                      equipped ? 'bg-pink-500/15 text-pink-300/70' : 'bg-amber-900/[0.03] text-amber-900/50 hover:bg-amber-900/[0.05]'
                     }`}>
                     {equipped ? '✅ 穿戴中' : '穿戴'}
                   </button>

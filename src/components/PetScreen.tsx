@@ -86,8 +86,8 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
   return (
     <div className="h-full flex flex-col">
       {/* 顶栏 */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04]">
-        <button onClick={onBack} className="flex items-center gap-1 text-white/40 hover:text-white/70 transition-colors">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/[0.04]">
+        <button onClick={onBack} className="flex items-center gap-1 text-amber-900/50 hover:text-amber-800/70 transition-colors">
           <ChevronLeft className="w-5 h-5" /> <span className="text-sm">返回</span>
         </button>
         <h2 className="font-semibold text-sm">🐾 宠物之家</h2>
@@ -99,10 +99,10 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
         {Object.values(PETS).map(pet => (
           <button key={pet.id} onClick={() => setSelectedPet(pet.id)}
             className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-2xl transition-all duration-300 ${
-              selectedPet === pet.id ? 'bg-violet-500/15 ring-1 ring-violet-400/20' : 'hover:bg-white/[0.03]'
+              selectedPet === pet.id ? 'bg-violet-500/15 ring-1 ring-violet-400/20' : 'hover:bg-amber-900/[0.02]'
             }`}>
             <span className={`text-xl transition-transform duration-300 ${selectedPet === pet.id ? 'scale-110' : ''}`}>{pet.icon}</span>
-            <span className={`text-[10px] ${selectedPet === pet.id ? 'text-violet-300' : 'text-white/35'}`}>{pet.name}</span>
+            <span className={`text-[10px] ${selectedPet === pet.id ? 'text-violet-300' : 'text-amber-900/45'}`}>{pet.name}</span>
           </button>
         ))}
       </div>
@@ -124,7 +124,7 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
             )}
           </div>
           <h3 className="font-bold text-base mt-2">{currentPet.name}</h3>
-          <p className="text-[11px] text-white/30 mt-0.5">{currentPet.species} · {currentPet.personality}</p>
+          <p className="text-[11px] text-amber-800/35 mt-0.5">{currentPet.species} · {currentPet.personality}</p>
 
           {/* 四大属性 */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4">
@@ -136,10 +136,10 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
             ].map(s => (
               <div key={s.key} className="text-left">
                 <div className="flex justify-between text-[10px] mb-1">
-                  <span className="text-white/40">{s.icon} {s.label}</span>
-                  <span className="text-white/50 tabular-nums">{Math.round(Number(cs[s.key as keyof typeof cs]))}</span>
+                  <span className="text-amber-900/50">{s.icon} {s.label}</span>
+                  <span className="text-amber-900/50 tabular-nums">{Math.round(Number(cs[s.key as keyof typeof cs]))}</span>
                 </div>
-                <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-amber-900/[0.06] rounded-full overflow-hidden">
                   <div className={`h-full ${statColor(cs[s.key])} rounded-full transition-all duration-700 shadow-sm ${statGlow(cs[s.key])}`}
                     style={{ width: ` ${Number(cs[s.key as keyof typeof cs])}%` }} />
                 </div>
@@ -162,7 +162,7 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id as any)}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] transition-all duration-300 ${
-                tab === t.id ? 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-400/15' : 'text-white/35 hover:bg-white/[0.03]'
+                tab === t.id ? 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-400/15' : 'text-amber-900/45 hover:bg-amber-900/[0.02]'
               }`}>
               <t.icon className="w-3 h-3" /> {t.label}
             </button>
@@ -177,15 +177,15 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
               const fav = currentPet.favoriteFoods.includes(food.id)
               return (
                 <button key={food.id} onClick={() => feedPet(food.id)} disabled={disliked || pocketMoney < food.price}
-                  className={`w-full glass-card p-3 flex items-center gap-3 text-left transition-all ${disliked ? 'opacity-30' : 'hover:bg-white/[0.03] active:scale-[0.98]'}`}>
+                  className={`w-full glass-card p-3 flex items-center gap-3 text-left transition-all ${disliked ? 'opacity-30' : 'hover:bg-amber-900/[0.02] active:scale-[0.98]'}`}>
                   <span className="text-xl">{food.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1">
                       <span className="font-medium text-[13px]">{food.name}</span>
                       {fav && <span className="text-pink-400 text-[9px]">❤️最爱</span>}
-                      {disliked && <span className="text-white/20 text-[9px]">😤不吃</span>}
+                      {disliked && <span className="text-amber-800/25 text-[9px]">😤不吃</span>}
                     </div>
-                    <p className="text-[10px] text-white/25">饱腹+{food.hungerRestore} 心情+{food.moodRestore}</p>
+                    <p className="text-[10px] text-amber-800/30">饱腹+{food.hungerRestore} 心情+{food.moodRestore}</p>
                   </div>
                   <span className="text-amber-400/70 text-[11px]">💰{food.price}</span>
                 </button>
@@ -204,18 +204,18 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
               { type: 'bath' as const, icon: '🛀', label: '洗澡', desc: '健康+5' },
             ].map(a => (
               <button key={a.type} onClick={() => interactPet(a.type)} disabled={cs.isSleeping}
-                className="w-full glass-card p-3 flex items-center gap-3 text-left hover:bg-white/[0.03] transition-all active:scale-[0.98]">
+                className="w-full glass-card p-3 flex items-center gap-3 text-left hover:bg-amber-900/[0.02] transition-all active:scale-[0.98]">
                 <span className="text-xl">{a.icon}</span>
-                <div className="flex-1"><p className="font-medium text-[13px]">{a.label}</p><p className="text-[10px] text-white/25">{a.desc}</p></div>
-                <span className={`text-[11px] ${currentPet.interactionPreference[a.type] > 0 ? 'text-emerald-400/70' : 'text-white/20'}`}>
+                <div className="flex-1"><p className="font-medium text-[13px]">{a.label}</p><p className="text-[10px] text-amber-800/30">{a.desc}</p></div>
+                <span className={`text-[11px] ${currentPet.interactionPreference[a.type] > 0 ? 'text-emerald-400/70' : 'text-amber-800/25'}`}>
                   心情{currentPet.interactionPreference[a.type] > 0 ? '+' : ''}{currentPet.interactionPreference[a.type]}
                 </span>
               </button>
             ))}
             <button onClick={sleepPet}
-              className="w-full glass-card p-3 flex items-center gap-3 text-left hover:bg-white/[0.03] transition-all">
+              className="w-full glass-card p-3 flex items-center gap-3 text-left hover:bg-amber-900/[0.02] transition-all">
               <span className="text-xl">{cs.isSleeping ? '☀️' : '😴'}</span>
-              <div className="flex-1"><p className="font-medium text-[13px]">{cs.isSleeping ? '叫醒' : '睡觉'}</p><p className="text-[10px] text-white/25">{cs.isSleeping ? '让它起来' : '恢复能量'}</p></div>
+              <div className="flex-1"><p className="font-medium text-[13px]">{cs.isSleeping ? '叫醒' : '睡觉'}</p><p className="text-[10px] text-amber-800/30">{cs.isSleeping ? '让它起来' : '恢复能量'}</p></div>
             </button>
           </div>
         )}
@@ -230,7 +230,7 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
                   <span className="text-xl">{f.icon}</span>
                   <div className="flex-1">
                     <p className="font-medium text-[13px]">{f.name} {owned && '✅'}</p>
-                    <p className="text-[10px] text-white/25">{f.effect}</p>
+                    <p className="text-[10px] text-amber-800/30">{f.effect}</p>
                   </div>
                   {owned ? (
                     <span className="text-emerald-400/60 text-[10px]">已拥有</span>
@@ -250,10 +250,10 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
         {tab === 'events' && (
           <div className="space-y-2">
             <button onClick={triggerRandomEvent}
-              className="w-full glass-card p-4 text-center hover:bg-white/[0.03] transition-all active:scale-[0.98]">
+              className="w-full glass-card p-4 text-center hover:bg-amber-900/[0.02] transition-all active:scale-[0.98]">
               <span className="text-2xl">🎲</span>
               <p className="text-sm font-medium mt-1">触发随机事件</p>
-              <p className="text-[10px] text-white/25 mt-0.5">看看它们在干嘛~</p>
+              <p className="text-[10px] text-amber-800/30 mt-0.5">看看它们在干嘛~</p>
             </button>
             {showEvent && (() => {
               const evt = PET_FRIENDSHIP_EVENTS.find(e => e.id === showEvent)
@@ -267,8 +267,8 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
                       {evt.rarity === 'common' ? '普通' : evt.rarity === 'rare' ? '稀有' : '史诗'}
                     </span>
                   </div>
-                  <p className="text-[13px] text-white/60 leading-relaxed">{evt.description}</p>
-                  <p className="text-[10px] text-white/20 mt-2">参与者：{evt.participants.map(p => PETS[p]?.icon).join(' ')}</p>
+                  <p className="text-[13px] text-amber-800/60 leading-relaxed">{evt.description}</p>
+                  <p className="text-[10px] text-amber-800/25 mt-2">参与者：{evt.participants.map(p => PETS[p]?.icon).join(' ')}</p>
                 </div>
               )
             })()}

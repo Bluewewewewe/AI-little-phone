@@ -132,28 +132,28 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
     <div className="h-full flex flex-col">
       {/* 顶部导航 */}
       <div className="glass px-4 py-3 flex items-center gap-3">
-        <button onClick={onBack} className="p-2 -ml-2 hover:bg-white/10 rounded-full">
+        <button onClick={onBack} className="p-2 -ml-2 hover:bg-amber-900/[0.04] rounded-full">
           <ChevronLeft className="w-5 h-5" />
         </button>
         
         <div className="flex-1">
           <h2 className="font-bold">{chatName}</h2>
           {otherName && (
-            <p className="text-xs text-white/50">
+            <p className="text-xs text-amber-900/50">
               和{identity?.user_name || '宝贝'}的聊天
             </p>
           )}
         </div>
         
         <div className="flex gap-2">
-          <button className="p-2 hover:bg-white/10 rounded-full">
-            <Phone className="w-5 h-5 text-white/70" />
+          <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
+            <Phone className="w-5 h-5 text-amber-800/70" />
           </button>
-          <button className="p-2 hover:bg-white/10 rounded-full">
-            <Video className="w-5 h-5 text-white/70" />
+          <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
+            <Video className="w-5 h-5 text-amber-800/70" />
           </button>
-          <button className="p-2 hover:bg-white/10 rounded-full">
-            <MoreHorizontal className="w-5 h-5 text-white/70" />
+          <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
+            <MoreHorizontal className="w-5 h-5 text-amber-800/70" />
           </button>
         </div>
       </div>
@@ -161,7 +161,7 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
       {/* 消息列表 */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
         {messages.length === 0 && (
-          <div className="text-center text-white/40 py-8">
+          <div className="text-center text-amber-900/50 py-8">
             <p className="text-sm">还没有消息</p>
             <p className="text-xs mt-1">开始和{chatName}聊天吧~</p>
           </div>
@@ -178,11 +178,11 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
         
         {/* 正在输入提示 */}
         {isTyping.dad || isTyping.mom ? (
-          <div className="flex items-center gap-2 text-white/50 text-sm">
+          <div className="flex items-center gap-2 text-amber-900/50 text-sm">
             <div className="flex gap-1">
-              <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" />
-              <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-              <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+              <span className="w-2 h-2 bg-amber-700/30 rounded-full animate-bounce" />
+              <span className="w-2 h-2 bg-amber-700/30 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+              <span className="w-2 h-2 bg-amber-700/30 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
             </div>
             <span>
               {chatType === 'family' 
@@ -197,13 +197,13 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
       </div>
 
       {/* 输入框 */}
-      <div className="glass p-3 border-t border-white/10">
+      <div className="glass p-3 border-t border-amber-900/10">
         <div className="flex items-end gap-2">
-          <button className="p-2 hover:bg-white/10 rounded-full">
-            <Image className="w-5 h-5 text-white/70" />
+          <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
+            <Image className="w-5 h-5 text-amber-800/70" />
           </button>
-          <button className="p-2 hover:bg-white/10 rounded-full">
-            <Mic className="w-5 h-5 text-white/70" />
+          <button className="p-2 hover:bg-amber-900/[0.04] rounded-full">
+            <Mic className="w-5 h-5 text-amber-800/70" />
           </button>
           
           <div className="flex-1 relative">
@@ -213,10 +213,10 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder="输入消息..."
-              className="w-full bg-white/10 border border-white/10 rounded-2xl px-4 py-3 pr-12 text-sm focus:outline-none focus:border-purple-500/50"
+              className="w-full bg-amber-900/[0.04] border border-amber-900/10 rounded-2xl px-4 py-3 pr-12 text-sm focus:outline-none focus:border-purple-500/50"
             />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-full">
-              <Smile className="w-5 h-5 text-white/50" />
+            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-amber-900/[0.04] rounded-full">
+              <Smile className="w-5 h-5 text-amber-900/50" />
             </button>
           </div>
           
@@ -226,10 +226,10 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
             className={`p-3 rounded-full transition-all ${
               inputValue.trim() && !isLoading
                 ? 'bg-gradient-to-br from-purple-500 to-pink-500'
-                : 'bg-white/10'
+                : 'bg-amber-900/[0.04]'
             }`}
           >
-            <Send className={`w-5 h-5 ${inputValue.trim() ? 'text-white' : 'text-white/30'}`} />
+            <Send className={`w-5 h-5 ${inputValue.trim() ? 'text-white' : 'text-amber-800/35'}`} />
           </button>
         </div>
       </div>
@@ -263,14 +263,14 @@ function MessageBubble({
     <div className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''} animate-fadeIn`}>
       {/* 头像 */}
       <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarBg} flex items-center justify-center flex-shrink-0 shadow-lg`}>
-        <span className="text-xs font-bold text-white">
+        <span className="text-xs font-bold text-amber-900">
           {senderName.slice(0, 1)}
         </span>
       </div>
       
       {/* 消息内容 */}
       <div className={`max-w-[75%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-        <span className={`text-xs text-white/50 ${isOwn ? 'text-right' : 'text-left'}`}>
+        <span className={`text-xs text-amber-900/50 ${isOwn ? 'text-right' : 'text-left'}`}>
           {senderName}
         </span>
         <div className={`px-4 py-2.5 rounded-2xl ${
@@ -280,7 +280,7 @@ function MessageBubble({
         }`}>
           <p className="text-sm leading-relaxed">{message.content}</p>
         </div>
-        <span className={`text-[10px] text-white/30 ${isOwn ? 'text-right' : 'text-left'}`}>
+        <span className={`text-[10px] text-amber-800/35 ${isOwn ? 'text-right' : 'text-left'}`}>
           {message.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>

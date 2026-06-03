@@ -50,21 +50,21 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
 
   return (
     <div className="h-full flex flex-col relative">
-      {/* 壁纸层 */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#1a1508] via-[#1e1a12] to-[#2a2015]">
-        {/* 壁纸装饰 */}
-        <div className="absolute top-[15%] left-[20%] w-48 h-48 bg-amber-600/8 rounded-full blur-[60px]" />
-        <div className="absolute top-[40%] right-[10%] w-40 h-40 bg-yellow-500/6 rounded-full blur-[50px]" />
-        <div className="absolute bottom-[30%] left-[10%] w-36 h-36 bg-orange-500/6 rounded-full blur-[40px]" />
+      {/* 壁纸层 - 浅黄暖调 */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#fef9ee] via-[#fef3c7] to-[#fde68a]">
+        {/* 壁纸装饰 - 柔和暖光 */}
+        <div className="absolute top-[15%] left-[20%] w-48 h-48 bg-amber-300/20 rounded-full blur-[60px]" />
+        <div className="absolute top-[40%] right-[10%] w-40 h-40 bg-yellow-200/25 rounded-full blur-[50px]" />
+        <div className="absolute bottom-[30%] left-[10%] w-36 h-36 bg-orange-200/20 rounded-full blur-[40px]" />
       </div>
       
       <div className="relative z-10 flex-1 flex flex-col">
         {/* 顶部时钟小组件 - 像iOS锁屏/桌面大时钟 */}
         <div className="pt-4 pb-2 text-center">
-          <div className="text-[56px] font-extralight tracking-tight leading-none">
+          <div className="text-[56px] font-extralight tracking-tight leading-none text-amber-900">
             {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}
           </div>
-          <div className="text-[13px] text-white/35 mt-1">
+          <div className="text-[13px] text-amber-800/40 mt-1">
             {time.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
           </div>
         </div>
@@ -76,25 +76,25 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
             className="w-full glass-card p-3 text-left active:scale-[0.98] transition-transform duration-150"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] text-white/40 uppercase tracking-wider font-medium">家里现在</span>
+              <span className="text-[10px] text-amber-800/40 uppercase tracking-wider font-medium">家里现在</span>
               <div className="flex items-center gap-1">
-                <Heart className="w-3 h-3 text-amber-400" />
-                <span className="text-[10px] text-amber-400">{totalIntimacy}</span>
+                <Heart className="w-3 h-3 text-amber-500" />
+                <span className="text-[10px] text-amber-600">{totalIntimacy}</span>
               </div>
             </div>
             <div className="flex gap-2">
-              <div className="flex-1 flex items-center gap-2 p-1.5 rounded-lg bg-amber-500/[0.06]">
+              <div className="flex-1 flex items-center gap-2 p-1.5 rounded-lg bg-amber-500/[0.08]">
                 <span className="text-lg">{tianleiStatus.icon}</span>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium truncate">{identity?.roleA_name || '田雷'}</p>
-                  <p className="text-[9px] text-white/30 truncate">{tianleiStatus.activity}</p>
+                  <p className="text-[11px] font-medium truncate text-amber-900">{identity?.roleA_name || '田雷'}</p>
+                  <p className="text-[9px] text-amber-800/35 truncate">{tianleiStatus.activity}</p>
                 </div>
               </div>
-              <div className="flex-1 flex items-center gap-2 p-1.5 rounded-lg bg-rose-500/[0.06]">
+              <div className="flex-1 flex items-center gap-2 p-1.5 rounded-lg bg-rose-500/[0.08]">
                 <span className="text-lg">{ziyuStatus.icon}</span>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium truncate">{identity?.roleB_name || '梓渝'}</p>
-                  <p className="text-[9px] text-white/30 truncate">{ziyuStatus.activity}</p>
+                  <p className="text-[11px] font-medium truncate text-amber-900">{identity?.roleB_name || '梓渝'}</p>
+                  <p className="text-[9px] text-amber-800/35 truncate">{ziyuStatus.activity}</p>
                 </div>
               </div>
             </div>
@@ -111,7 +111,7 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
                 className="flex flex-col items-center gap-1 active:scale-90 transition-transform duration-100"
               >
                 <div className="relative">
-                  <div className="w-14 h-14 rounded-[15px] bg-white/10 backdrop-blur-sm border border-white/[0.06] flex items-center justify-center shadow-lg shadow-black/20">
+                  <div className="w-14 h-14 rounded-[15px] bg-white/60 backdrop-blur-sm border border-white/50 flex items-center justify-center shadow-lg shadow-amber-900/10">
                     <span className="text-[26px]">{app.icon}</span>
                   </div>
                   {app.badge && app.badge > 0 && (
@@ -126,14 +126,14 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-pink-500 to-fuchsia-500 rounded-full text-[7px] flex items-center justify-center text-white font-bold">N</span>
                   )}
                 </div>
-                <span className="text-[10px] text-white/60 max-w-[60px] truncate">{app.label}</span>
+                <span className="text-[10px] text-amber-900/60 max-w-[60px] truncate">{app.label}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* 底部Dock - 毛玻璃背景 */}
-        <div className="mx-4 mb-2 rounded-[22px] bg-white/[0.08] backdrop-blur-2xl border border-white/[0.06]">
+        <div className="mx-4 mb-2 rounded-[22px] bg-white/40 backdrop-blur-2xl border border-white/50">
           <div className="flex items-center justify-around py-2 px-2">
             {dockApps.map(app => (
               <button
@@ -142,7 +142,7 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
                 className="flex flex-col items-center gap-0.5 active:scale-90 transition-transform duration-100"
               >
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-[13px] bg-white/10 border border-white/[0.06] flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-[13px] bg-white/50 border border-white/50 flex items-center justify-center">
                     <span className="text-[22px]">{app.icon}</span>
                   </div>
                   {app.badge && app.badge > 0 && (
@@ -151,7 +151,7 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
                     </span>
                   )}
                 </div>
-                <span className="text-[9px] text-white/50">{app.label}</span>
+                <span className="text-[9px] text-amber-900/50">{app.label}</span>
               </button>
             ))}
           </div>
