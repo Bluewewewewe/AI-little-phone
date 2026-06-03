@@ -80,8 +80,8 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
     setShowEvent(events[Math.floor(Math.random() * events.length)].id)
   }
 
-  const statColor = (v: number) => v > 60 ? 'bg-emerald-400' : v > 30 ? 'bg-amber-400' : 'bg-rose-400'
-  const statGlow = (v: number) => v > 60 ? 'shadow-emerald-400/30' : v > 30 ? 'shadow-amber-400/30' : 'shadow-rose-400/30'
+  const statColor = (v: number | boolean) => { const n = Number(v); return n > 60 ? "bg-emerald-400" : n > 30 ? "bg-amber-400" : "bg-rose-400" }
+  const statGlow = (v: number | boolean) => { const n = Number(v); return n > 60 ? "shadow-emerald-400/30" : n > 30 ? "shadow-amber-400/30" : "shadow-rose-400/30" }
 
   return (
     <div className="h-full flex flex-col">
@@ -137,11 +137,11 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
               <div key={s.key} className="text-left">
                 <div className="flex justify-between text-[10px] mb-1">
                   <span className="text-white/40">{s.icon} {s.label}</span>
-                  <span className="text-white/50 tabular-nums">{Math.round(cs[s.key])}</span>
+                  <span className="text-white/50 tabular-nums">{Math.round(Number(cs[s.key as keyof typeof cs]))}</span>
                 </div>
                 <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                   <div className={`h-full ${statColor(cs[s.key])} rounded-full transition-all duration-700 shadow-sm ${statGlow(cs[s.key])}`}
-                    style={{ width: `${cs[s.key]}%` }} />
+                    style={{ width: ` ${Number(cs[s.key as keyof typeof cs])}%` }} />
                 </div>
               </div>
             ))}
