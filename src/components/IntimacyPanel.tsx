@@ -22,53 +22,53 @@ export default function IntimacyPanel() {
   return (
     <div className="fixed bottom-20 right-4 z-40">
       {/* 亲密度总览 */}
-      <div className="glass-card p-3 w-48 animate-fadeIn">
-        <div className="flex items-center gap-2 mb-3">
-          <Heart className="w-4 h-4 text-red-400 fill-red-400" />
-          <span className="text-sm font-medium text-amber-900">亲密度</span>
-          <span className="badge badge-gold text-[10px] ml-auto">
+      <div className="rounded-[18px] bg-white/35 backdrop-blur-2xl p-4 w-52 animate-fadeIn shadow-sm shadow-amber-900/5">
+        <div className="flex items-center gap-2 mb-4">
+          <Heart className="w-4 h-4 text-red-400/70 fill-red-400/70" />
+          <span className="text-sm font-medium text-amber-900/70">亲密度</span>
+          <span className="text-[10px] ml-auto px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700/70 font-medium">
             Ch{currentChapter}
           </span>
         </div>
         
         {/* 爸妈亲密度 */}
-        <div className="space-y-2 mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center">
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500/80 to-yellow-500/80 flex items-center justify-center">
               <span className="text-[10px] font-bold text-white">爸</span>
             </div>
             <div className="flex-1">
-              <div className="progress-bar h-2">
+              <div className="h-2 bg-amber-900/6 rounded-full overflow-hidden">
                 <div 
                   className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, (intimacyDad / 500) * 100)}%`, background: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }}
                 />
               </div>
             </div>
-            <span className="text-xs font-medium w-8 text-right text-amber-900">{intimacyDad}</span>
+            <span className="text-xs font-medium w-8 text-right text-amber-900/60">{intimacyDad}</span>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-500/80 to-rose-500/80 flex items-center justify-center">
               <span className="text-[10px] font-bold text-white">妈</span>
             </div>
             <div className="flex-1">
-              <div className="progress-bar h-2">
+              <div className="h-2 bg-amber-900/6 rounded-full overflow-hidden">
                 <div 
                   className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, (intimacyMom / 500) * 100)}%`, background: 'linear-gradient(90deg, #ec4899, #f472b6)' }}
                 />
               </div>
             </div>
-            <span className="text-xs font-medium w-8 text-right text-amber-900">{intimacyMom}</span>
+            <span className="text-xs font-medium w-8 text-right text-amber-900/60">{intimacyMom}</span>
           </div>
         </div>
         
         {/* 今日进度 */}
-        <div className="bg-amber-900/[0.04] rounded-lg p-2">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-amber-800/50">今日进度</span>
-            <span className="text-[10px] text-amber-800/50">
+        <div className="rounded-2xl bg-amber-900/[0.03] p-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] text-amber-800/35">今日进度</span>
+            <span className="text-[10px] text-amber-800/35">
               {totalDaily}/{DAILY_INTIMACY_LIMIT}
             </span>
           </div>
@@ -76,10 +76,10 @@ export default function IntimacyPanel() {
             {Array.from({ length: DAILY_INTIMACY_LIMIT / 3 }).map((_, i) => (
               <div
                 key={i}
-                className={`flex-1 h-2 rounded-sm ${
+                className={`flex-1 h-1.5 rounded-full ${
                   i < Math.floor(totalDaily / 3)
-                    ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
-                    : 'bg-amber-900/8'
+                    ? 'bg-gradient-to-r from-amber-500/70 to-yellow-400/70'
+                    : 'bg-amber-900/6'
                 }`}
               />
             ))}
@@ -88,12 +88,12 @@ export default function IntimacyPanel() {
         
         {/* 下一章进度 */}
         {nextChapterConfig && (
-          <div className="mt-2 pt-2 border-t border-amber-900/8">
+          <div className="mt-3 pt-3 border-t border-amber-900/5">
             <div className="flex items-center justify-between text-[10px]">
-              <span className="text-amber-800/50">
+              <span className="text-amber-800/35">
                 下一章：{nextChapterConfig.name}
               </span>
-              <span className="text-amber-600">
+              <span className="text-amber-600/60">
                 {nextChapterConfig.min - totalIntimacy}点
               </span>
             </div>

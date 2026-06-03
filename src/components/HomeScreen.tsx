@@ -52,106 +52,115 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
     <div className="h-full flex flex-col relative">
       {/* 壁纸层 - 浅黄暖调 */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#fef9ee] via-[#fef3c7] to-[#fde68a]">
-        {/* 壁纸装饰 - 柔和暖光 */}
-        <div className="absolute top-[15%] left-[20%] w-48 h-48 bg-amber-300/20 rounded-full blur-[60px]" />
-        <div className="absolute top-[40%] right-[10%] w-40 h-40 bg-yellow-200/25 rounded-full blur-[50px]" />
-        <div className="absolute bottom-[30%] left-[10%] w-36 h-36 bg-orange-200/20 rounded-full blur-[40px]" />
+        {/* 壁纸装饰 - 柔和暖光光晕 */}
+        <div className="absolute top-[12%] left-[15%] w-56 h-56 bg-amber-300/20 rounded-full blur-[80px]" />
+        <div className="absolute top-[35%] right-[5%] w-44 h-44 bg-yellow-200/25 rounded-full blur-[60px]" />
+        <div className="absolute bottom-[25%] left-[5%] w-40 h-40 bg-orange-200/15 rounded-full blur-[50px]" />
       </div>
       
       <div className="relative z-10 flex-1 flex flex-col">
-        {/* 顶部时钟小组件 - 像iOS锁屏/桌面大时钟 */}
-        <div className="pt-6 pb-3 text-center">
-          <div className="text-[60px] font-extralight tracking-tight leading-none text-amber-900">
+        {/* 顶部时钟 - iOS桌面大字钟 */}
+        <div className="pt-8 pb-4 text-center">
+          <div className="text-[64px] font-extralight tracking-tight leading-none text-amber-900/80">
             {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}
           </div>
-          <div className="text-[13px] text-amber-800/40 mt-2">
+          <div className="text-[13px] text-amber-800/35 mt-2 font-light">
             {time.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
           </div>
         </div>
 
-        {/* 爸妈状态小组件 - 像iOS桌面小组件 */}
-        <div className="mx-6 mb-4">
+        {/* 爸妈状态小组件 - iOS桌面小组件风格 */}
+        <div className="mx-7 mb-5">
           <button 
             onClick={() => onOpenApp('family')}
-            className="w-full glass-card p-4 text-left active:scale-[0.98] transition-transform duration-150"
+            className="w-full rounded-[20px] bg-white/35 backdrop-blur-2xl p-4 text-left active:scale-[0.98] transition-transform duration-150 shadow-sm shadow-amber-900/5"
           >
+            {/* 顶部高光线 */}
+            <div className="absolute top-0 left-[15%] right-[15%] h-[0.5px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] text-amber-800/40 uppercase tracking-wider font-medium">家里现在</span>
+              <span className="text-[10px] text-amber-800/35 tracking-wider font-medium">家里现在</span>
               <div className="flex items-center gap-1">
-                <Heart className="w-3 h-3 text-amber-500" />
-                <span className="text-[10px] text-amber-600">{totalIntimacy}</span>
+                <Heart className="w-3 h-3 text-amber-500/70" />
+                <span className="text-[10px] text-amber-600/70">{totalIntimacy}</span>
               </div>
             </div>
             <div className="flex gap-3">
-              <div className="flex-1 flex items-center gap-2.5 p-2 rounded-xl bg-amber-500/[0.08]">
-                <span className="text-lg">{tianleiStatus.icon}</span>
+              <div className="flex-1 flex items-center gap-2.5 p-2.5 rounded-2xl bg-amber-500/[0.06]">
+                <span className="text-xl">{tianleiStatus.icon}</span>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium truncate text-amber-900">{identity?.roleA_name || '田雷'}</p>
-                  <p className="text-[9px] text-amber-800/35 truncate">{tianleiStatus.activity}</p>
+                  <p className="text-[11px] font-medium truncate text-amber-900/80">{identity?.roleA_name || '田雷'}</p>
+                  <p className="text-[9px] text-amber-800/30 truncate">{tianleiStatus.activity}</p>
                 </div>
               </div>
-              <div className="flex-1 flex items-center gap-2.5 p-2 rounded-xl bg-rose-500/[0.08]">
-                <span className="text-lg">{ziyuStatus.icon}</span>
+              <div className="flex-1 flex items-center gap-2.5 p-2.5 rounded-2xl bg-rose-500/[0.06]">
+                <span className="text-xl">{ziyuStatus.icon}</span>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium truncate text-amber-900">{identity?.roleB_name || '梓渝'}</p>
-                  <p className="text-[9px] text-amber-800/35 truncate">{ziyuStatus.activity}</p>
+                  <p className="text-[11px] font-medium truncate text-amber-900/80">{identity?.roleB_name || '梓渝'}</p>
+                  <p className="text-[9px] text-amber-800/30 truncate">{ziyuStatus.activity}</p>
                 </div>
               </div>
             </div>
           </button>
         </div>
 
-        {/* APP图标网格 */}
-        <div className="flex-1 px-6">
-          <div className="grid grid-cols-4 gap-y-6 gap-x-4">
+        {/* APP图标网格 - iOS风格毛玻璃圆角方块+Emoji */}
+        <div className="flex-1 px-7">
+          <div className="grid grid-cols-4 gap-y-7 gap-x-5">
             {apps.map(app => (
+              <button
+                key={app.id}
+                onClick={() => onOpenApp(app.id)}
+                className="flex flex-col items-center gap-2 active:scale-90 transition-transform duration-100"
+              >
+                <div className="relative">
+                  {/* 毛玻璃圆角方块 - 无硬边框 */}
+                  <div className="w-[60px] h-[60px] rounded-[16px] bg-white/30 backdrop-blur-xl flex items-center justify-center shadow-sm shadow-amber-900/8">
+                    {/* 顶部高光线 */}
+                    <div className="absolute top-[1px] left-[20%] right-[20%] h-[0.5px] rounded-full bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+                    <span className="text-[30px] drop-shadow-sm">{app.icon}</span>
+                  </div>
+                  {app.badge && app.badge > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-rose-500 rounded-full text-[10px] flex items-center justify-center text-white font-bold shadow-sm">
+                      {app.badge}
+                    </span>
+                  )}
+                  {app.dot && (
+                    <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-sm" />
+                  )}
+                  {app.isNew && (
+                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-gradient-to-br from-pink-500 to-fuchsia-500 rounded-full text-[7px] flex items-center justify-center text-white font-bold shadow-sm">N</span>
+                  )}
+                </div>
+                <span className="text-[10px] text-amber-900/50 max-w-[68px] truncate font-medium">{app.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 底部Dock - 柔和毛玻璃，无硬边框 */}
+        <div className="mx-6 mb-4 rounded-[28px] bg-white/30 backdrop-blur-2xl shadow-sm shadow-amber-900/5">
+          {/* 顶部高光线 */}
+          <div className="absolute top-0 left-[10%] right-[10%] h-[0.5px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+          <div className="flex items-center justify-around py-3 px-4">
+            {dockApps.map(app => (
               <button
                 key={app.id}
                 onClick={() => onOpenApp(app.id)}
                 className="flex flex-col items-center gap-1.5 active:scale-90 transition-transform duration-100"
               >
                 <div className="relative">
-                  <div className="w-[58px] h-[58px] rounded-[16px] bg-white/60 backdrop-blur-sm border border-white/50 flex items-center justify-center shadow-lg shadow-amber-900/10">
-                    <span className="text-[28px]">{app.icon}</span>
+                  {/* Dock图标 - 更透一点的毛玻璃方块 */}
+                  <div className="w-[52px] h-[52px] rounded-[14px] bg-white/35 backdrop-blur-xl flex items-center justify-center shadow-sm shadow-amber-900/8">
+                    <div className="absolute top-[1px] left-[20%] right-[20%] h-[0.5px] rounded-full bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+                    <span className="text-[26px] drop-shadow-sm">{app.icon}</span>
                   </div>
                   {app.badge && app.badge > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 rounded-full text-[10px] flex items-center justify-center text-white font-bold">
-                      {app.badge}
-                    </span>
-                  )}
-                  {app.dot && (
-                    <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-emerald-400 rounded-full" />
-                  )}
-                  {app.isNew && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-pink-500 to-fuchsia-500 rounded-full text-[7px] flex items-center justify-center text-white font-bold">N</span>
-                  )}
-                </div>
-                <span className="text-[10px] text-amber-900/60 max-w-[64px] truncate">{app.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 底部Dock - 毛玻璃背景 */}
-        <div className="mx-5 mb-3 rounded-[24px] bg-white/40 backdrop-blur-2xl border border-white/50">
-          <div className="flex items-center justify-around py-3 px-3">
-            {dockApps.map(app => (
-              <button
-                key={app.id}
-                onClick={() => onOpenApp(app.id)}
-                className="flex flex-col items-center gap-1 active:scale-90 transition-transform duration-100"
-              >
-                <div className="relative">
-                  <div className="w-[50px] h-[50px] rounded-[14px] bg-white/50 border border-white/50 flex items-center justify-center">
-                    <span className="text-[24px]">{app.icon}</span>
-                  </div>
-                  {app.badge && app.badge > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 bg-rose-500 rounded-full text-[9px] flex items-center justify-center text-white font-bold">
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 bg-rose-500 rounded-full text-[9px] flex items-center justify-center text-white font-bold shadow-sm">
                       {app.badge}
                     </span>
                   )}
                 </div>
-                <span className="text-[9px] text-amber-900/50">{app.label}</span>
+                <span className="text-[9px] text-amber-900/40 font-medium">{app.label}</span>
               </button>
             ))}
           </div>

@@ -12,53 +12,52 @@ export default function DesktopInfoPanel() {
   const petsUnlocked = chapter >= 2
 
   return (
-    <div className="hidden lg:flex flex-col gap-5 w-[220px] animate-fadeIn">
+    <div className="hidden lg:flex flex-col gap-6 w-[230px] animate-fadeIn">
       {/* 等级与章节 */}
-      <div className="glass-card p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Shield className="w-5 h-5 text-amber-500" />
-          <span className="text-sm font-medium text-amber-900">等级</span>
-          <span className="badge badge-gold text-[10px] ml-auto">
+      <div className="rounded-[20px] bg-white/35 backdrop-blur-2xl p-5 shadow-sm shadow-amber-900/5">
+        <div className="flex items-center gap-2.5 mb-4">
+          <Shield className="w-5 h-5 text-amber-500/70" />
+          <span className="text-sm font-medium text-amber-900/70">等级</span>
+          <span className="text-[10px] ml-auto px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700/70 font-medium">
             Ch{levelInfo.level}
           </span>
         </div>
-        <div className="text-center mb-3">
-          <span className="text-lg font-bold text-amber-700">{levelInfo.title}</span>
+        <div className="text-center mb-4">
+          <span className="text-lg font-bold text-amber-700/80">{levelInfo.title}</span>
         </div>
-        <div className="progress-bar h-2.5">
+        <div className="h-2 bg-amber-900/6 rounded-full overflow-hidden">
           <div
-            className="progress-fill"
+            className="h-full rounded-full transition-all duration-500"
             style={{
               width: `${levelInfo.progress * 100}%`,
               background: 'linear-gradient(90deg, #f59e0b, #eab308, #fbbf24)',
-              boxShadow: '0 0 12px rgba(234, 179, 8, 0.3)',
             }}
           />
         </div>
-        <div className="flex items-center justify-between mt-2 text-[10px] text-amber-800/40">
+        <div className="flex items-center justify-between mt-3 text-[10px] text-amber-800/35">
           <span>{formatIntimacy(totalIntimacy)} 点</span>
           <span>下一章: {levelInfo.next === '💕' ? '💕' : `${levelInfo.next}点`}</span>
         </div>
       </div>
 
       {/* 爸妈亲密度 */}
-      <div className="glass-card p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Heart className="w-5 h-5 text-red-400 fill-red-400" />
-          <span className="text-sm font-medium text-amber-900">亲密度</span>
+      <div className="rounded-[20px] bg-white/35 backdrop-blur-2xl p-5 shadow-sm shadow-amber-900/5">
+        <div className="flex items-center gap-2.5 mb-5">
+          <Heart className="w-5 h-5 text-red-400/70 fill-red-400/70" />
+          <span className="text-sm font-medium text-amber-900/70">亲密度</span>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center">
-                  <span className="text-[9px] font-bold text-white">爸</span>
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500/80 to-yellow-500/80 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-white">爸</span>
                 </div>
-                <span className="text-xs text-amber-900">爸爸</span>
+                <span className="text-xs text-amber-900/70">爸爸</span>
               </div>
-              <span className="text-xs font-medium text-amber-600">{intimacyDad}</span>
+              <span className="text-xs font-medium text-amber-600/70">{intimacyDad}</span>
             </div>
-            <div className="progress-bar h-2">
+            <div className="h-2 bg-amber-900/6 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
@@ -69,16 +68,16 @@ export default function DesktopInfoPanel() {
             </div>
           </div>
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
-                  <span className="text-[9px] font-bold text-white">妈</span>
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-500/80 to-rose-500/80 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-white">妈</span>
                 </div>
-                <span className="text-xs text-amber-900">妈妈</span>
+                <span className="text-xs text-amber-900/70">妈妈</span>
               </div>
-              <span className="text-xs font-medium text-pink-500">{intimacyMom}</span>
+              <span className="text-xs font-medium text-pink-500/70">{intimacyMom}</span>
             </div>
-            <div className="progress-bar h-2">
+            <div className="h-2 bg-amber-900/6 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
@@ -93,25 +92,23 @@ export default function DesktopInfoPanel() {
 
       {/* 宠物健康值 - 解锁后显示 */}
       {petsUnlocked && (
-        <div className="glass-card p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <PawPrint className="w-5 h-5 text-emerald-500" />
-            <span className="text-sm font-medium text-amber-900">宠物</span>
-            <Sparkles className="w-3 h-3 text-amber-500 ml-auto" />
+        <div className="rounded-[20px] bg-white/35 backdrop-blur-2xl p-5 shadow-sm shadow-amber-900/5">
+          <div className="flex items-center gap-2.5 mb-5">
+            <PawPrint className="w-5 h-5 text-emerald-500/70" />
+            <span className="text-sm font-medium text-amber-900/70">宠物</span>
+            <Sparkles className="w-3 h-3 text-amber-500/50 ml-auto" />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {Object.values(PETS).map((pet) => (
               <div key={pet.id} className="flex items-center gap-3">
-                <span className="text-lg">{pet.icon}</span>
+                <span className="text-xl">{pet.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-medium truncate text-amber-900">{pet.name}</span>
-                    <span className="text-[9px] text-amber-800/40">{pet.species}</span>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-medium truncate text-amber-900/70">{pet.name}</span>
+                    <span className="text-[9px] text-amber-800/30">{pet.species}</span>
                   </div>
-                  <div className="flex gap-1">
-                    <div className="flex-1 h-1.5 bg-amber-900/8 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-400/70 rounded-full" style={{ width: '100%' }} />
-                    </div>
+                  <div className="h-1.5 bg-amber-900/6 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-400/60 rounded-full" style={{ width: '100%' }} />
                   </div>
                 </div>
               </div>
