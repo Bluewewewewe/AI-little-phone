@@ -57,12 +57,12 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
   const rooms = [
     { name: '主卧', icon: '🛏️', color: 'from-pink-500/8 to-rose-500/4', accent: 'border-pink-400/8',
       occupants: isNight ? ['👨', '🧑'] : [] },
-    { name: '浴室', icon: '🚿', color: 'from-sky-500/8 to-blue-500/4', accent: 'border-sky-400/8', occupants: [] },
-    { name: '厨房', icon: '🍳', color: 'from-orange-500/8 to-amber-500/4', accent: 'border-orange-400/8', occupants: [] },
+    { name: '浴室', icon: '🚿', color: 'from-sky-500/8 to-blue-500/4', accent: 'border-sky-400/8', occupants: [] as string[] },
+    { name: '厨房', icon: '🍳', color: 'from-orange-500/8 to-amber-500/4', accent: 'border-orange-400/8', occupants: [] as string[] },
     { name: '客厅', icon: '🛋️', color: 'from-violet-500/8 to-purple-500/4', accent: 'border-violet-400/8',
-      occupants: [], petHere: true },
-    { name: '书房', icon: '📚', color: 'from-emerald-500/8 to-green-500/4', accent: 'border-emerald-400/8', occupants: [] },
-    { name: '阳台', icon: '🌿', color: 'from-teal-500/8 to-cyan-500/4', accent: 'border-teal-400/8', occupants: [] },
+      occupants: [] as string[], petHere: true },
+    { name: '书房', icon: '📚', color: 'from-emerald-500/8 to-green-500/4', accent: 'border-emerald-400/8', occupants: [] as string[] },
+    { name: '阳台', icon: '🌿', color: 'from-teal-500/8 to-cyan-500/4', accent: 'border-teal-400/8', occupants: [] as string[] },
   ]
 
   if (tianlei && !isNight) {
