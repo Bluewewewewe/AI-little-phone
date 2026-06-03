@@ -22,13 +22,10 @@ export default function StatusBar() {
   }, [])
 
   return (
-    <div className="h-8 px-6 flex items-center justify-between text-xs">
-      {/* 左侧：时间 */}
-      <span className="font-medium">{timeString || '--:--'}</span>
+    <div className="status-bar">
+      <span className="font-semibold text-[14px]">{timeString || '--:--'}</span>
       
-      {/* 右侧：状态图标 */}
       <div className="flex items-center gap-2">
-        {/* 主题切换 */}
         <button 
           onClick={toggleTheme}
           className="p-1 hover:bg-white/10 rounded transition-colors"
@@ -40,13 +37,8 @@ export default function StatusBar() {
           )}
         </button>
         
-        {/* 信号强度 */}
         <Signal className="w-3.5 h-3.5" />
-        
-        {/* WiFi */}
         <Wifi className="w-3.5 h-3.5" />
-        
-        {/* 电池 */}
         <div className="flex items-center gap-0.5">
           <Battery className="w-4 h-3.5" />
           <span className="text-[10px]">87%</span>

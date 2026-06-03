@@ -76,8 +76,8 @@ export default function PhoneScreen() {
           animating && animDir === 'open' ? 'animate-appOpen' : ''
         }`}>
           {/* APP内状态栏（覆盖式） */}
-          <div className="flex items-center justify-between px-6 h-8 flex-shrink-0">
-            <span className="text-xs font-medium">
+          <div className="app-status-bar">
+            <span className="font-semibold text-[14px]">
               {appBarTime || '--:--'}
             </span>
             <div className="flex items-center gap-2 text-xs">

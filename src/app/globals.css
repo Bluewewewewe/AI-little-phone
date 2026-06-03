@@ -326,6 +326,7 @@ html, body {
 /* 手机外框 - 桌面端显示，移动端隐藏全屏 */
 .phone-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: #06060f;
   display: flex;
   align-items: center;
@@ -344,8 +345,8 @@ html, body {
   border-radius: 55px;
   padding: 12px;
   position: relative;
-  width: min(390px, calc(100vh * 9 / 19.5));
-  height: min(844px, 96vh);
+  width: min(390px, calc(100dvh * 9 / 19.5));
+  height: min(844px, 96dvh);
   flex-shrink: 0;
 }
 
@@ -365,12 +366,15 @@ html, body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
 }
 
 /* Dynamic Island - 桌面端 */
 .dynamic-island {
   position: absolute;
-  top: 10px;
+  top: 22px;
   left: 50%;
   transform: translateX(-50%);
   width: 126px;
@@ -381,11 +385,58 @@ html, body {
   box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
 }
 
+/* Home Indicator - 底部横条 */
+.home-indicator {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 8px;
+  padding-top: 4px;
+}
+
+/* iOS 风格状态栏 */
+.status-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px 0 28px;
+  min-height: 54px;
+  font-size: 12px;
+  position: relative;
+  z-index: 10;
+}
+
+/* APP 内状态栏 */
+.app-status-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px 0 28px;
+  min-height: 54px;
+  font-size: 12px;
+  position: relative;
+  z-index: 10;
+}
+
+/* 桌面端：StatusBar 在 Dynamic Island 下方，留出空间 */
+@media (min-width: 769px) {
+  .status-bar {
+    padding-top: 44px;
+    min-height: 80px;
+  }
+  .app-status-bar {
+    padding-top: 44px;
+  }
+}
+
 /* ===== 移动端：全屏APP体验 ===== */
 @media (max-width: 768px) {
   .phone-page {
     min-height: 100dvh;
-    background: #06060f;
+    background: transparent;
     align-items: stretch;
     justify-content: stretch;
   }
