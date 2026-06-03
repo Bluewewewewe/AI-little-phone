@@ -60,37 +60,37 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
       
       <div className="relative z-10 flex-1 flex flex-col">
         {/* 顶部时钟小组件 - 像iOS锁屏/桌面大时钟 */}
-        <div className="pt-4 pb-2 text-center">
-          <div className="text-[56px] font-extralight tracking-tight leading-none text-amber-900">
+        <div className="pt-6 pb-3 text-center">
+          <div className="text-[60px] font-extralight tracking-tight leading-none text-amber-900">
             {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}
           </div>
-          <div className="text-[13px] text-amber-800/40 mt-1">
+          <div className="text-[13px] text-amber-800/40 mt-2">
             {time.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
           </div>
         </div>
 
         {/* 爸妈状态小组件 - 像iOS桌面小组件 */}
-        <div className="mx-5 mb-3">
+        <div className="mx-6 mb-4">
           <button 
             onClick={() => onOpenApp('family')}
-            className="w-full glass-card p-3 text-left active:scale-[0.98] transition-transform duration-150"
+            className="w-full glass-card p-4 text-left active:scale-[0.98] transition-transform duration-150"
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] text-amber-800/40 uppercase tracking-wider font-medium">家里现在</span>
               <div className="flex items-center gap-1">
                 <Heart className="w-3 h-3 text-amber-500" />
                 <span className="text-[10px] text-amber-600">{totalIntimacy}</span>
               </div>
             </div>
-            <div className="flex gap-2">
-              <div className="flex-1 flex items-center gap-2 p-1.5 rounded-lg bg-amber-500/[0.08]">
+            <div className="flex gap-3">
+              <div className="flex-1 flex items-center gap-2.5 p-2 rounded-xl bg-amber-500/[0.08]">
                 <span className="text-lg">{tianleiStatus.icon}</span>
                 <div className="min-w-0">
                   <p className="text-[11px] font-medium truncate text-amber-900">{identity?.roleA_name || '田雷'}</p>
                   <p className="text-[9px] text-amber-800/35 truncate">{tianleiStatus.activity}</p>
                 </div>
               </div>
-              <div className="flex-1 flex items-center gap-2 p-1.5 rounded-lg bg-rose-500/[0.08]">
+              <div className="flex-1 flex items-center gap-2.5 p-2 rounded-xl bg-rose-500/[0.08]">
                 <span className="text-lg">{ziyuStatus.icon}</span>
                 <div className="min-w-0">
                   <p className="text-[11px] font-medium truncate text-amber-900">{identity?.roleB_name || '梓渝'}</p>
@@ -102,17 +102,17 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
         </div>
 
         {/* APP图标网格 */}
-        <div className="flex-1 px-5">
-          <div className="grid grid-cols-4 gap-y-4 gap-x-3">
+        <div className="flex-1 px-6">
+          <div className="grid grid-cols-4 gap-y-6 gap-x-4">
             {apps.map(app => (
               <button
                 key={app.id}
                 onClick={() => onOpenApp(app.id)}
-                className="flex flex-col items-center gap-1 active:scale-90 transition-transform duration-100"
+                className="flex flex-col items-center gap-1.5 active:scale-90 transition-transform duration-100"
               >
                 <div className="relative">
-                  <div className="w-14 h-14 rounded-[15px] bg-white/60 backdrop-blur-sm border border-white/50 flex items-center justify-center shadow-lg shadow-amber-900/10">
-                    <span className="text-[26px]">{app.icon}</span>
+                  <div className="w-[58px] h-[58px] rounded-[16px] bg-white/60 backdrop-blur-sm border border-white/50 flex items-center justify-center shadow-lg shadow-amber-900/10">
+                    <span className="text-[28px]">{app.icon}</span>
                   </div>
                   {app.badge && app.badge > 0 && (
                     <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 rounded-full text-[10px] flex items-center justify-center text-white font-bold">
@@ -126,24 +126,24 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-pink-500 to-fuchsia-500 rounded-full text-[7px] flex items-center justify-center text-white font-bold">N</span>
                   )}
                 </div>
-                <span className="text-[10px] text-amber-900/60 max-w-[60px] truncate">{app.label}</span>
+                <span className="text-[10px] text-amber-900/60 max-w-[64px] truncate">{app.label}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* 底部Dock - 毛玻璃背景 */}
-        <div className="mx-4 mb-2 rounded-[22px] bg-white/40 backdrop-blur-2xl border border-white/50">
-          <div className="flex items-center justify-around py-2 px-2">
+        <div className="mx-5 mb-3 rounded-[24px] bg-white/40 backdrop-blur-2xl border border-white/50">
+          <div className="flex items-center justify-around py-3 px-3">
             {dockApps.map(app => (
               <button
                 key={app.id}
                 onClick={() => onOpenApp(app.id)}
-                className="flex flex-col items-center gap-0.5 active:scale-90 transition-transform duration-100"
+                className="flex flex-col items-center gap-1 active:scale-90 transition-transform duration-100"
               >
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-[13px] bg-white/50 border border-white/50 flex items-center justify-center">
-                    <span className="text-[22px]">{app.icon}</span>
+                  <div className="w-[50px] h-[50px] rounded-[14px] bg-white/50 border border-white/50 flex items-center justify-center">
+                    <span className="text-[24px]">{app.icon}</span>
                   </div>
                   {app.badge && app.badge > 0 && (
                     <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 bg-rose-500 rounded-full text-[9px] flex items-center justify-center text-white font-bold">

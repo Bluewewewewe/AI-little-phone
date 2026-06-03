@@ -403,7 +403,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 28px 0 28px;
+  padding: 14px 24px 0 24px;
   min-height: 54px;
   font-size: 12px;
   position: relative;
@@ -416,7 +416,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 28px 0 28px;
+  padding: 14px 24px 0 24px;
   min-height: 54px;
   font-size: 12px;
   position: relative;
