@@ -344,8 +344,8 @@ html, body {
   border-radius: 55px;
   padding: 12px;
   position: relative;
-  width: 390px;
-  height: 844px;
+  width: min(390px, calc(100vh * 9 / 19.5));
+  height: min(844px, 96vh);
   flex-shrink: 0;
 }
 
