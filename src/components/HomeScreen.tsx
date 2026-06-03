@@ -5,7 +5,7 @@ import { getParentStatus } from '@/lib/parent-status'
 import { 
   Heart, MessageCircle, Users, Star, Crown,
   Sparkles, ChevronRight, Gift, Music, Camera,
-  PawPrint, House2, Eye, Shirt
+  PawPrint, HousePlus, Eye, Shirt
 } from 'lucide-react'
 import { CHAPTER_UNLOCK } from '@/lib/prompts'
 
@@ -66,7 +66,7 @@ export default function HomeScreen() {
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-medium text-white/50 flex items-center gap-1.5">
-              <House2 className="w-3.5 h-3.5 text-violet-400" /> 家里现在
+              <HousePlus className="w-3.5 h-3.5 text-violet-400" /> 家里现在
             </span>
             <ChevronRight className="w-3.5 h-3.5 text-white/20" />
           </div>
@@ -113,7 +113,7 @@ export default function HomeScreen() {
         </div>
 
         <div className="grid grid-cols-4 gap-2.5">
-          <QuickEntry icon={House2} label="家里" color="from-orange-500 to-amber-600" onClick={() => setCurrentApp('family')} isNew />
+          <QuickEntry icon={HousePlus} label="家里" color="from-orange-500 to-amber-600" onClick={() => setCurrentApp('family')} isNew />
           <QuickEntry icon={PawPrint} label="宠物" color="from-emerald-500 to-green-600" onClick={() => setCurrentApp('pets')} isNew />
           <QuickEntry icon={Shirt} label="换装" color="from-fuchsia-500 to-pink-600" onClick={() => setCurrentApp('dressup')} isNew />
           <QuickEntry icon={Gift} label="福利" color="from-cyan-500 to-blue-600" onClick={() => {}} />
@@ -125,7 +125,7 @@ export default function HomeScreen() {
           <div className="glass-card overflow-hidden">
             <MenuItem icon={Star} title="解锁故事" subtitle="体验完整的叙事旅程" right={<span className="badge badge-purple">Ch{chapter}/6</span>} onClick={() => {}} />
             <MenuItem icon={PawPrint} title="宠物之家" subtitle="照顾辛巴、大鱼、小十一" onClick={() => setCurrentApp('pets')} isNew />
-            <MenuItem icon={House2} title="家庭场景" subtitle="看看爸妈在干嘛" onClick={() => setCurrentApp('family')} isNew />
+            <MenuItem icon={HousePlus} title="家庭场景" subtitle="看看爸妈在干嘛" onClick={() => setCurrentApp('family')} isNew />
             <MenuItem icon={Shirt} title="甜玉米换装" subtitle="给自己换个新造型" onClick={() => setCurrentApp('dressup')} isNew />
             <MenuItem icon={Music} title="语音信箱" subtitle="收听爸妈的留言" onClick={() => {}} />
             <MenuItem icon={Camera} title="相册" subtitle="珍藏美好瞬间" onClick={() => {}} />
