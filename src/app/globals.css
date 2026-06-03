@@ -372,19 +372,6 @@ html, body {
   position: relative;
 }
 
-/* Dynamic Island - 桌面端 */
-.dynamic-island {
-  position: absolute;
-  top: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 126px;
-  height: 36px;
-  background: #1a1a1a;
-  border-radius: 20px;
-  z-index: 50;
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
-}
 
 /* Home Indicator - 底部横条 */
 .home-indicator {
@@ -422,14 +409,14 @@ html, body {
   z-index: 10;
 }
 
-/* 桌面端：StatusBar 在 Dynamic Island 下方，留出空间 */
+/* 桌面端：状态栏适当留出顶部空间 */
 @media (min-width: 769px) {
   .status-bar {
-    padding-top: 44px;
-    min-height: 80px;
+    padding-top: 20px;
+    min-height: 60px;
   }
   .app-status-bar {
-    padding-top: 44px;
+    padding-top: 20px;
   }
 }
 
@@ -455,9 +442,6 @@ html, body {
   }
   .phone-screen {
     border-radius: 0 !important;
-  }
-  .dynamic-island {
-    display: none !important;
   }
   .home-indicator {
     display: none !important;

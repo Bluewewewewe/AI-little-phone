@@ -87,7 +87,7 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
         onClick={(e) => e.stopPropagation()}
       >
         {/* 顶部栏 */}
-        <div className="flex items-center justify-between p-4 border-b border-amber-900/10">
+        <div className="flex items-center justify-between p-4 border-b border-amber-900/[0.03]">
           <div className="flex items-center gap-3">
             <h2 className="font-bold text-lg">通知中心</h2>
             {unreadCount > 0 && (
@@ -125,7 +125,7 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
               <button
                 key={notification.id}
                 onClick={() => markAsRead(notification.id)}
-                className={`w-full p-4 flex gap-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0 ${
+                className={`w-full p-4 flex gap-3 hover:bg-white/5 transition-colors border-b border-amber-900/[0.03] last:border-0 ${
                   !notification.isRead ? 'bg-white/5' : ''
                 }`}
               >

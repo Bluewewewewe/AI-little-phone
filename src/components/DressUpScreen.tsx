@@ -66,7 +66,7 @@ export default function DressUpScreen({ onBack }: { onBack: () => void }) {
 
           <div className="relative z-10">
             {/* 展示台 */}
-            <div className={`w-28 h-28 mx-auto rounded-3xl bg-gradient-to-br from-pink-400/20 via-violet-400/20 to-indigo-400/20 flex items-center justify-center mb-3 border border-amber-900/10 shadow-2xl transition-all duration-500 ${equipAnim ? 'scale-105' : ''}`}
+            <div className={`w-28 h-28 mx-auto rounded-3xl bg-gradient-to-br from-pink-400/20 via-violet-400/20 to-indigo-400/20 flex items-center justify-center mb-3 shadow-2xl transition-all duration-500 ${equipAnim ? 'scale-105' : ''}`}
               style={{ boxShadow: '0 8px 40px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
               <span className="text-5xl">🐱</span>
             </div>
@@ -76,7 +76,7 @@ export default function DressUpScreen({ onBack }: { onBack: () => void }) {
               {['top', 'hat', 'accessory'].map(cat => {
                 const item = getEquippedItem(cat)
                 return item ? (
-                  <span key={cat} className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300/70 border border-violet-400/10">
+                  <span key={cat} className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300/70 ">
                     {item.icon} {item.name}
                   </span>
                 ) : null
@@ -90,7 +90,7 @@ export default function DressUpScreen({ onBack }: { onBack: () => void }) {
           {categories.map(cat => (
             <button key={cat.id} onClick={() => setCategory(cat.id)}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] transition-all duration-300 ${
-                category === cat.id ? 'bg-pink-500/15 text-pink-300 ring-1 ring-pink-400/15' : 'text-amber-900/45 hover:bg-amber-900/[0.02]'
+                category === cat.id ? 'bg-pink-500/15 text-pink-300' : 'text-amber-900/45 hover:bg-amber-900/[0.02]'
               }`}>
               {cat.icon} {cat.label}
             </button>

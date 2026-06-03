@@ -129,7 +129,7 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
                 placeholder="记录美好生活..."
-                className="w-full bg-white/5 border border-amber-900/10 rounded-xl p-3 text-sm resize-none focus:outline-none focus:border-purple-500/50"
+                className="w-full bg-white/25 backdrop-blur-xl rounded-xl p-3 text-sm resize-none focus:outline-none focus:bg-white/35"
                 rows={2}
               />
               <div className="flex justify-end mt-2">
@@ -243,11 +243,11 @@ export default function MomentsScreen({ onBack }: MomentsScreenProps) {
                       onChange={(e) => setCommentText(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleComment(moment.id)}
                       placeholder="写评论..."
-                      className="flex-1 bg-amber-900/[0.04] border border-amber-900/10 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-purple-500/50"
+                      className="flex-1 bg-amber-900/[0.04] backdrop-blur-xl rounded-full px-4 py-2 text-sm focus:outline-none focus:bg-white/35"
                     />
                     <button
                       onClick={() => handleComment(moment.id)}
-                      className="p-2 bg-purple-500 rounded-full hover:bg-purple-600 transition-colors"
+                      className="p-2 bg-purple-500/20 backdrop-blur-xl rounded-full hover:bg-purple-500/30 transition-colors"
                     >
                       <Send className="w-4 h-4" />
                     </button>

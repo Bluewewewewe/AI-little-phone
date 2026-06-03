@@ -137,7 +137,7 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
             ))}
           </div>
           {/* 宠物角 */}
-          <div className="mt-1.5 rounded-xl bg-gradient-to-r from-amber-500/[0.06] to-orange-500/[0.06] border border-amber-400/[0.06] p-2 flex items-center gap-2 relative">
+          <div className="mt-1.5 rounded-xl bg-gradient-to-r from-amber-500/[0.06] to-orange-500/[0.06] p-2 flex items-center gap-2 relative">
             <div className="flex gap-1">
               <span className="text-sm" title="辛巴">🐕</span>
               <span className="text-sm" title="大鱼">🐱</span>
@@ -145,7 +145,7 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
             </div>
             <span className="text-[9px] text-amber-800/30">宠物角</span>
             {petBubble && (
-              <div className="absolute -top-9 right-2 bg-amber-900/[0.05] backdrop-blur-xl px-3 py-1.5 rounded-xl text-[10px] text-amber-800/70 animate-fadeIn whitespace-nowrap border border-amber-900/10 shadow-lg">
+              <div className="absolute -top-9 right-2 bg-amber-900/[0.05] backdrop-blur-xl px-3 py-1.5 rounded-xl text-[10px] text-amber-800/70 animate-fadeIn whitespace-nowrap shadow-lg">
                 {petBubble}
               </div>
             )}
@@ -162,7 +162,7 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
 
         {/* 偷看浮层 */}
         {showPeek && peekTarget && (
-          <div className="glass-card p-4 border-pink-400/10 animate-fadeIn">
+          <div className="glass-card p-4 animate-fadeIn">
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-pink-400/30 to-transparent" />
             <div className="flex items-center gap-2 mb-2">
               <div className="w-5 h-5 rounded-lg bg-pink-500/15 flex items-center justify-center">
@@ -177,14 +177,14 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
 
         {/* 深夜卧室 */}
         {isNight && (
-          <div className="glass-card p-5 border-indigo-400/[0.06]">
+          <div className="glass-card p-5">
             <div className="text-center">
               <div className="text-3xl mb-2 animate-breathe">🔒</div>
               <p className="text-xs text-amber-900/50 mb-1">卧室门已关</p>
               <p className="text-[11px] text-amber-800/30">{getBedroomScene(chapter)}</p>
               <div className="flex gap-2 mt-3 justify-center">
                 <button onClick={() => setShowBedroom(true)}
-                  className="glass-btn text-[11px] px-4 py-1.5 !bg-rose-500/10 !border-rose-400/10 !text-rose-300/80 hover:!bg-rose-500/20">
+                  className="glass-btn text-[11px] px-4 py-1.5 !bg-rose-500/10  !text-rose-300/80 hover:!bg-rose-500/20">
                   <DoorOpen className="w-3 h-3" /> 推门
                 </button>
                 <button className="glass-btn text-[11px] px-4 py-1.5 !text-amber-800/35">
@@ -192,7 +192,7 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
                 </button>
               </div>
               {showBedroom && (
-                <div className="mt-3 p-3 bg-rose-500/[0.06] rounded-xl animate-fadeIn border border-rose-400/[0.06]">
+                <div className="mt-3 p-3 bg-rose-500/[0.06] rounded-xl animate-fadeIn">
                   <p className="text-xs text-rose-300/70 leading-relaxed">
                     {chapter < 3 ? '"宝贝怎么还没睡？快去睡觉！"' : '"你你你进来干嘛！出去出去出去！😳"'}
                   </p>
@@ -204,7 +204,7 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
 
         {/* 情侣互动快报 */}
         {tianlei && ziyu && tianlei.status === 'home' && ziyu.status === 'home' && !isNight && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-pink-500/[0.04] border border-pink-400/[0.04]">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-pink-500/[0.04]">
             <Heart className="w-3.5 h-3.5 text-pink-400/60 animate-pulse" />
             <span className="text-[11px] text-amber-800/45">爸妈都在家~现在感情好好</span>
           </div>

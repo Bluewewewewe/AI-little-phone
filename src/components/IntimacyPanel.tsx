@@ -88,7 +88,7 @@ export default function IntimacyPanel() {
         
         {/* 下一章进度 */}
         {nextChapterConfig && (
-          <div className="mt-3 pt-3 border-t border-amber-900/5">
+          <div className="mt-3 pt-3 border-t border-amber-900/[0.04]">
             <div className="flex items-center justify-between text-[10px]">
               <span className="text-amber-800/35">
                 下一章：{nextChapterConfig.name}

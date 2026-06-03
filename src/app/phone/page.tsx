@@ -30,10 +30,7 @@ export default function PhonePage() {
 
       {/* 手机外框 */}
       <div className="phone-frame">
-        {/* Dynamic Island */}
-        <div className="dynamic-island" />
-
-        {/* 手机内屏 */}
+{/* 手机内屏 */}
         <div className="phone-screen">
           <StatusBar />
           <div className="flex-1 overflow-hidden">

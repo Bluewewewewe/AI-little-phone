@@ -150,7 +150,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
       <div className="flex-1 overflow-auto">
         {/* 热搜榜入口 */}
         {activeTab === 'home' && (
-          <div className="p-4 border-b border-white/10">
+          <div className="p-4 border-b border-amber-900/[0.03]">
             <div className="glass-card p-3 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-white" />
@@ -166,7 +166,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
 
         {/* 微博内容 */}
         {(activeTab === 'home' ? samplePosts : samplePosts.filter(p => p.isHot)).map((post) => (
-          <div key={post.id} className="p-4 border-b border-white/10">
+          <div key={post.id} className="p-4 border-b border-amber-900/[0.03]">
             <div className="flex gap-3">
               <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${getAuthorAvatar(post.author)} flex items-center justify-center flex-shrink-0`}>
                 <span className="text-sm font-bold text-white">
@@ -210,7 +210,7 @@ export default function WeiboScreen({ onBack }: WeiboScreenProps) {
                 </p>
                 
                 {/* 互动栏 */}
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-amber-900/[0.03]">
                   <button
                     onClick={() => toggleLike(post.id)}
                     className="flex items-center gap-1 text-sm text-amber-800/60 hover:text-red-400 transition-colors"

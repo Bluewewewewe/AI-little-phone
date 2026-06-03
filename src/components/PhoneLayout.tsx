@@ -15,7 +15,7 @@ export default function PhoneLayout({ children }: PhoneLayoutProps) {
       <div className="hidden md:block absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-300/10 rounded-full blur-[100px] pointer-events-none" />
       <DesktopInfoPanel />
       <div className="phone-frame">
-        <div className="dynamic-island" />
+
         <div className="phone-screen">
           <StatusBar />
           <div className="flex-1 overflow-hidden">

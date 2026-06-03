@@ -99,7 +99,7 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
         {Object.values(PETS).map(pet => (
           <button key={pet.id} onClick={() => setSelectedPet(pet.id)}
             className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-2xl transition-all duration-300 ${
-              selectedPet === pet.id ? 'bg-violet-500/15 ring-1 ring-violet-400/20' : 'hover:bg-amber-900/[0.02]'
+              selectedPet === pet.id ? 'bg-violet-500/15' : 'hover:bg-amber-900/[0.02]'
             }`}>
             <span className={`text-xl transition-transform duration-300 ${selectedPet === pet.id ? 'scale-110' : ''}`}>{pet.icon}</span>
             <span className={`text-[10px] ${selectedPet === pet.id ? 'text-violet-300' : 'text-amber-900/45'}`}>{pet.name}</span>
@@ -162,7 +162,7 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id as any)}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] transition-all duration-300 ${
-                tab === t.id ? 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-400/15' : 'text-amber-900/45 hover:bg-amber-900/[0.02]'
+                tab === t.id ? 'bg-violet-500/15 text-violet-300' : 'text-amber-900/45 hover:bg-amber-900/[0.02]'
               }`}>
               <t.icon className="w-3 h-3" /> {t.label}
             </button>
@@ -236,7 +236,7 @@ export default function PetScreen({ onBack }: { onBack: () => void }) {
                     <span className="text-emerald-400/60 text-[10px]">已拥有</span>
                   ) : (
                     <button onClick={() => buyFurniture(f.id)} disabled={pocketMoney < f.price}
-                      className="glass-btn text-[10px] px-2.5 py-1 !bg-violet-500/15 !border-violet-400/15 !text-violet-300/70 disabled:opacity-30">
+                      className="glass-btn text-[10px] px-2.5 py-1 !bg-violet-500/15  !text-violet-300/70 disabled:opacity-30">
                       💰{f.price}
                     </button>
                   )}
