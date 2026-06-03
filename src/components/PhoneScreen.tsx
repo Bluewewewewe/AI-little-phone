@@ -12,7 +12,7 @@ import PetScreen from './PetScreen'
 import FamilyHomeScreen from './FamilyHomeScreen'
 import DressUpScreen from './DressUpScreen'
 import { 
-  Home, MessageCircle, Users, PawPrint, House2, Sparkles
+  Home, MessageCircle, Users, PawPrint, HousePlus, Sparkles
 } from 'lucide-react'
 
 export default function PhoneScreen() {
@@ -47,7 +47,7 @@ export default function PhoneScreen() {
   const navItems = [
     { id: 'home', icon: Home, label: '首页' },
     { id: 'chat', icon: MessageCircle, label: '聊天', badge: 3 },
-    { id: 'family', icon: House2, label: '家里', dot: true },
+    { id: 'family', icon: HousePlus, label: '家里', dot: true },
     { id: 'pets', icon: PawPrint, label: '宠物' },
     { id: 'dressup', icon: Sparkles, label: '换装' },
   ]
