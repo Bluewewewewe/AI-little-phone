@@ -802,10 +802,10 @@ export default function PhonePage() {
         const pump = (): Promise<void> => reader.read().then(({ done, value }) => {
           if (done) {
             const comment = text.replace(/\n/g, '').trim();
-            if (comment && comment.length < 50) {
-              setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '爸爸', text: comment }] } : m));
+            if (comment) {
+              setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '爸爸', text: comment.slice(0, 80) }] } : m));
               // 妈咪可能回复爸爸的评论
-              if (Math.random() > 0.35) {
+              if (Math.random() > 0.3) {
                 setTimeout(() => {
                   fetch('/api/chat', {
                     method: 'POST',
@@ -818,8 +818,8 @@ export default function PhonePage() {
                     const pump2 = (): Promise<void> => reader2.read().then(({ done: d2, value: v2 }) => {
                       if (d2) {
                         const c2 = text2.replace(/\n/g, '').trim();
-                        if (c2 && c2.length < 50) {
-                          setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '妈咪', text: c2, replyTo: '爸爸' }] } : m));
+                        if (c2) {
+                          setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '妈咪', text: c2.slice(0, 80), replyTo: '爸爸' }] } : m));
                         }
                         return;
                       }
@@ -861,10 +861,10 @@ export default function PhonePage() {
           const pump = (): Promise<void> => reader.read().then(({ done, value }) => {
             if (done) {
               const comment = text.replace(/\n/g, '').trim();
-              if (comment && comment.length < 50) {
-                setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '妈咪', text: comment }] } : m));
+              if (comment) {
+                setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '妈咪', text: comment.slice(0, 80) }] } : m));
                 // 爸爸可能回复妈咪的评论
-                if (Math.random() > 0.35) {
+                if (Math.random() > 0.3) {
                   setTimeout(() => {
                     fetch('/api/chat', {
                       method: 'POST',
