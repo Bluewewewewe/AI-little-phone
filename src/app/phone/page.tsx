@@ -9,6 +9,127 @@ interface Message {
   id: number;
 }
 
+interface WBSection {
+  id: string;
+  icon: string;
+  title: string;
+  subtitle: string;
+  color: string;
+  content: string;
+}
+
+// ========== 世界书 APP 组件 ==========
+function WorldBookApp() {
+  const [sections, setSections] = useState<WBSection[]>([]);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [tab, setTab] = useState<'characters' | 'rules'>('characters');
+
+  useEffect(() => {
+    fetch('/api/world-book')
+      .then(r => r.json())
+      .then(data => setSections(data.sections || []))
+      .catch(() => {});
+  }, []);
+
+  const characterSections = sections.filter(s => ['dad', 'mom', 'cp'].includes(s.id));
+  const ruleSections = sections.filter(s => !['dad', 'mom', 'cp'].includes(s.id));
+
+  const formatContent = (text: string) => {
+    return text.split('\n').map((line, i) => {
+      if (line.startsWith('【') || line.startsWith('|')) {
+        return <div key={i} style={{ fontWeight: 600, marginTop: 8, marginBottom: 2, fontSize: 11, color: '#92400e' }}>{line}</div>;
+      }
+      if (line.startsWith('•')) {
+        return <div key={i} style={{ paddingLeft: 12, fontSize: 11, lineHeight: '18px', color: '#78350f' }}>{line}</div>;
+      }
+      if (line.startsWith('-')) {
+        return <div key={i} style={{ paddingLeft: 12, fontSize: 11, lineHeight: '18px', color: '#78350f' }}>{line}</div>;
+      }
+      if (line.match(/^\d+\./)) {
+        return <div key={i} style={{ paddingLeft: 12, fontSize: 11, lineHeight: '18px', color: '#78350f' }}>{line}</div>;
+      }
+      if (line.trim() === '') return <div key={i} style={{ height: 4 }} />;
+      return <div key={i} style={{ fontSize: 11, lineHeight: '18px', color: '#78350f' }}>{line}</div>;
+    });
+  };
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg, #fef9ee 0%, #fef3c7 100%)' }}>
+      {/* Header */}
+      <div style={{ padding: '14px 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <span style={{ fontSize: 17, fontWeight: 700, color: '#78350f' }}>📖 世界书</span>
+        <span style={{ fontSize: 11, color: '#a16207', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: 8 }}>🔒 只读</span>
+      </div>
+
+      {/* Tab 切换 */}
+      <div style={{ display: 'flex', padding: '0 16px 8px', gap: 8, flexShrink: 0 }}>
+        <button
+          onClick={() => setTab('characters')}
+          style={{
+            flex: 1, padding: '6px 0', borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 600,
+            background: tab === 'characters' ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.35)',
+            color: tab === 'characters' ? '#92400e' : '#a16207',
+            backdropFilter: 'blur(12px)', cursor: 'pointer'
+          }}
+        >👤 人物</button>
+        <button
+          onClick={() => setTab('rules')}
+          style={{
+            flex: 1, padding: '6px 0', borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 600,
+            background: tab === 'rules' ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.35)',
+            color: tab === 'rules' ? '#92400e' : '#a16207',
+            backdropFilter: 'blur(12px)', cursor: 'pointer'
+          }}
+        >📋 规则</button>
+      </div>
+
+      {/* 内容区 */}
+      <div style={{ flex: 1, overflow: 'auto', padding: '0 12px 16px' }}>
+        {(tab === 'characters' ? characterSections : ruleSections).map(s => (
+          <div key={s.id} style={{
+            background: 'rgba(255,255,255,0.45)',
+            backdropFilter: 'blur(16px)',
+            borderRadius: 14,
+            marginBottom: 10,
+            overflow: 'hidden',
+            border: `1.5px solid ${s.color}25`
+          }}>
+            {/* 卡片头部 */}
+            <div
+              onClick={() => setExpanded(expanded === s.id ? null : s.id)}
+              style={{
+                padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer'
+              }}
+            >
+              <div style={{
+                width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 22, background: `${s.color}18`, flexShrink: 0
+              }}>{s.icon}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#78350f' }}>{s.title}</div>
+                <div style={{ fontSize: 11, color: '#a16207', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.subtitle}</div>
+              </div>
+              <span style={{ fontSize: 12, color: '#d97706', transition: 'transform 0.2s', transform: expanded === s.id ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+            </div>
+
+            {/* 展开内容 */}
+            {expanded === s.id && (
+              <div style={{
+                padding: '0 14px 14px',
+                borderTop: `1px solid ${s.color}15`,
+                maxHeight: 320,
+                overflow: 'auto'
+              }}>
+                <div style={{ paddingTop: 10 }}>{formatContent(s.content)}</div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface ChatHistory {
   dad: Message[];
   mom: Message[];
@@ -612,50 +733,7 @@ export default function PhonePage() {
   }
 
   function renderWorldBook() {
-    const sections = [
-      { icon: '⏰', title: 'TPES 时间感知', desc: 'AI知道现在几点、爸妈在做什么、该什么语气', color: '#f59e0b',
-        detail: '时间永远向前流动，用户离线时AI仍有作息和互动。深夜回复更慵懒，上班时回复简短，做饭/追剧/逛街时消息融入当前活动。' },
-      { icon: '💑', title: 'CP设定 · 栩你渝生', desc: '田雷和梓渝的恋人关系', color: '#ec4899',
-        detail: '两人是恋人关系，Ch1-Ch4对外保密。田雷是占有欲强的攻，梓渝是嘴硬炸毛的受。日常互怼但甜，偷偷约会牵手。' },
-      { icon: '😡', title: '吃醋规则', desc: '恋爱脑互醋机制', color: '#ef4444',
-        detail: '女儿提另一个爸→不吃醋。另一个爸跟女儿互动→会吃醋！田雷冷脸+嘴硬像大金毛等人哄，梓渝正话反说+炸毛"我才没有吃醋呢哼"。' },
-      { icon: '👨', title: '爸爸 · 田栩宁', desc: '190cm 山东人，偏执占有欲强，嘴硬心软', color: '#f59e0b',
-        detail: '互联网产品经理，拿手红烧排骨，偷偷关注梓渝微博。消息很短"嗯""好""知道了"，关心时说"吃了没""早点睡"。吃醋变沉默。' },
-      { icon: '👩', title: '妈咪 · 梓渝', desc: '180cm 连云港人，外柔内刚，嘴硬炸毛', color: '#ec4899',
-        detail: '自由职业/博主，追剧逛街拍照美妆。消息带波浪号"哼~""才不是呢""你猜~"。关心时连发好几条，追剧时回消息变慢。' },
-      { icon: '🐕', title: '辛巴', desc: '中华田园犬 · 忠诚稳重', color: '#92400e',
-        detail: '大哥哥气质，守在田雷身边，晚上守卧室门口。饱腹-4/h 心情-2/h 能量-6/h。最爱骨头和牛排。' },
-      { icon: '🐱', title: '大鱼', desc: '豹猫 · 傲娇女王', color: '#6366f1',
-        detail: '只粘梓渝，睡在梓渝脚边，别人碰会哈气。饱腹-3/h 心情-4/h 能量-8/h。最爱小鱼干和奶酪。' },
-      { icon: '🐱', title: '小十一', desc: '阿比西尼亚猫 · 社牛小疯子', color: '#10b981',
-        detail: '跟谁都亲，常驻客厅追尾巴。饱腹-6/h 心情-3/h 能量-10/h。什么都爱吃，特别爱星光零食。' },
-      { icon: '📢', title: '称谓模式', desc: '当前：爸妈妈咪', color: '#06b6d4',
-        detail: '可选：爸妈妈咪 / 爹爹妈咪 / 爹爹爸爸 / 双爸 / 自定义。选定后全平台统一不混用。' },
-      { icon: '📚', title: '章节系统', desc: '当前：Ch1 地下秘密', color: '#8b5cf6',
-        detail: 'Ch1地下秘密→Ch2暗流涌动→Ch3偷窥真心→Ch4粉圈潜行→Ch5官宣天下→Ch6身份风暴。每章解锁新功能。' },
-    ];
-    return (
-      <div className="worldbook-page">
-        <div className="worldbook-header">
-          <span className="worldbook-title">📖 世界书</span>
-          <span className="worldbook-lock">🔒 只读</span>
-        </div>
-        <div className="worldbook-list">
-          {sections.map((s, i) => (
-            <div key={i} className="worldbook-item">
-              <div className="worldbook-item-header">
-                <span className="worldbook-item-icon" style={{ background: s.color + '20', color: s.color }}>{s.icon}</span>
-                <div className="worldbook-item-text">
-                  <div className="worldbook-item-title">{s.title}</div>
-                  <div className="worldbook-item-desc">{s.desc}</div>
-                </div>
-              </div>
-              <div className="worldbook-item-detail">{s.detail}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <WorldBookApp />;
   }
 
   function renderCall() {
