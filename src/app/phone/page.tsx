@@ -699,13 +699,15 @@ export default function PhonePage() {
   const nextMomentId = useRef(4);
 
   // 米米评论后，爸妈/宠物自动回复评论
-  const autoReplyToComment = async (momentId: number, commentText: string, replyToWho: string | undefined) => {
-    // 情绪关键词——涉及这些一定回复
-    const emotionKeywords = ['不开心', '难过', '伤心', '生气', '烦', '累', '想', '哭', '怕', '焦虑', '压力', '委屈', '孤独', '无聊', '寂寞', '害怕', '讨厌', '讨厌', '郁闷', '崩溃', '受不了', '好烦', '好累', '好怕', '好想', '心痛', '心碎', '分手', '吵架', '对不起', '抱歉', '不开心', '不舒服', '生病', '难受', '头痛', '肚子疼', '发烧', '感冒', '失眠', '噩梦', '考试', '面试', '加油', '加油啊', '好难', '困难', '撑不住', '不想', '失望'];
+  const autoReplyToComment = async (momentId: number, commentText: string, commentFrom: string | undefined) => {
+    // commentFrom 是发这条评论的人（米米/爸/妈等）
+    // 回复应该指向发评论的人，而不是评论的 replyTo
+    const emotionKeywords = ['不开心', '难过', '伤心', '生气', '烦', '累', '想', '哭', '怕', '焦虑', '压力', '委屈', '孤独', '无聊', '寂寞', '害怕', '讨厌', '郁闷', '崩溃', '受不了', '好烦', '好累', '好怕', '好想', '心痛', '心碎', '分手', '吵架', '对不起', '抱歉', '不舒服', '生病', '难受', '头痛', '肚子疼', '发烧', '感冒', '失眠', '噩梦', '考试', '面试', '好难', '困难', '撑不住', '不想', '失望'];
     const hasEmotion = emotionKeywords.some(kw => commentText.includes(kw));
     
     const reactors = ['老爸', '妈咪', '辛巴🐕', '大鱼🐱', '小十一🐱'];
-    const possibleRepliers = reactors.filter(r => r !== replyToWho);
+    // 排除发评论的人自己
+    const possibleRepliers = reactors.filter(r => r !== commentFrom);
     
     // 选择性回复：情绪相关必回（2-3人），否则50%概率不回或1人回
     let repliers: string[] = [];
@@ -726,9 +728,10 @@ export default function PhonePage() {
     for (const replier of repliers) {
       await new Promise(r => setTimeout(r, 1500 + Math.random() * 3000));
       
-      const whoCommented = replyToWho || '米米';
+      // replyTo 指向发评论的人，而不是评论的原始replyTo
+      const replyToName = commentFrom || '米米';
       const emotionHint = hasEmotion ? '注意：对方的话带有情绪，请温柔关心地回复。' : '';
-      const contextInfo = `这是朋友圈的一条评论：${whoCommented}说了"${commentText}"。${emotionHint}`;
+      const contextInfo = `这是朋友圈的一条评论：${replyToName}说了"${commentText}"。${emotionHint}`;
       
       let aiText = '';
       try {
@@ -764,9 +767,10 @@ export default function PhonePage() {
         aiText = defaults[Math.floor(Math.random() * defaults.length)];
       }
       
+      // replyTo 指向发评论的人
       setMomentsData(prev => prev.map(m => {
         if (m.id !== momentId) return m;
-        return { ...m, comments: [...(m.comments || []), { from: replier, text: aiText, replyTo: whoCommented }] };
+        return { ...m, comments: [...(m.comments || []), { from: replier, text: aiText, replyTo: replyToName }] };
       }));
     }
     
@@ -774,14 +778,46 @@ export default function PhonePage() {
     const crossReplyProb = hasEmotion ? 0.8 : 0.6;
     if (Math.random() < crossReplyProb && repliers.length >= 2 && repliers.includes('老爸') && repliers.includes('妈咪')) {
       await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
-      const banterDefaults = [
-        '你说得对', '就是就是', '嗯嗯同意', '对呀对呀',
-        '又来了又来了', '你闭嘴啦', '哼，谁让你说的',
-      ];
-      const banter = banterDefaults[Math.floor(Math.random() * banterDefaults.length)];
+      // 谁最后评论，另一个人回复谁
+      const lastReplier = repliers[repliers.length - 1];
+      const crossReplier = lastReplier === '老爸' ? '妈咪' : '老爸';
+      const crossCharacter = crossReplier === '妈咪' ? 'mom' : 'dad';
+      let crossText = '';
+      try {
+        const crossRes = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `朋友圈评论区，${lastReplier}刚说了话，请你用一句话简短回复${lastReplier}（20字以内），要像老夫老妻互怼/撒娇的语气`,
+            character: crossCharacter,
+            speaker: crossCharacter,
+            history: [],
+          }),
+        });
+        if (crossRes.ok && crossRes.body) {
+          const reader = crossRes.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = new TextDecoder().decode(value);
+            for (const line of chunk.split('\n')) {
+              if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                try { const data = JSON.parse(line.slice(6)); crossText += data.content || ''; } catch { /* skip */ }
+              }
+            }
+          }
+        }
+      } catch { /* */ }
+      if (!crossText) {
+        const banterDefaults = ['你说得对', '就是就是', '又来了又来了', '你闭嘴啦', '哼，谁让你说的', '听他的吧'];
+        crossText = banterDefaults[Math.floor(Math.random() * banterDefaults.length)];
+      }
+      const finalCrossReplier = crossReplier;
+      const finalLastReplier = lastReplier;
+      const finalCrossText = crossText;
       setMomentsData(prev => prev.map(m => {
         if (m.id !== momentId) return m;
-        return { ...m, comments: [...(m.comments || []), { from: '妈咪', text: banter, replyTo: '老爸' }] };
+        return { ...m, comments: [...(m.comments || []), { from: finalCrossReplier, text: finalCrossText, replyTo: finalLastReplier }] };
       }));
     }
   };
@@ -1031,7 +1067,7 @@ export default function PhonePage() {
                         setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, comments: [...m.comments, { from: '米米', replyTo: rp, text: txt }] } : m));
                         setCommentInput('');
                         setReplyTo(null);
-                        setTimeout(() => autoReplyToComment(item.id, txt, rp), 2000 + Math.random() * 4000);
+                        setTimeout(() => autoReplyToComment(item.id, txt, '米米'), 2000 + Math.random() * 4000);
                       }
                     }}
                     placeholder={replyTo?.momentId === item.id ? `回复 ${replyTo.commentFrom}...` : '写评论...'}
@@ -1045,7 +1081,7 @@ export default function PhonePage() {
                         setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, comments: [...m.comments, { from: '米米', replyTo: rp, text: txt }] } : m));
                         setCommentInput('');
                         setReplyTo(null);
-                        setTimeout(() => autoReplyToComment(item.id, txt, rp), 2000 + Math.random() * 4000);
+                        setTimeout(() => autoReplyToComment(item.id, txt, '米米'), 2000 + Math.random() * 4000);
                       }
                     }}
                   >发送</button>
