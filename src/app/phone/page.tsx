@@ -201,6 +201,7 @@ export default function PhonePage() {
   const touchStartX = useRef(0);
   const touchDeltaX = useRef(0);
   const isDragging = useRef(false);
+  const mouseDownPending = useRef(false);
   const sliderRef = useRef<HTMLDivElement>(null);
 
   // Chat
@@ -328,34 +329,52 @@ export default function PhonePage() {
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     touchStartX.current = e.clientX;
-    isDragging.current = true;
-    e.preventDefault();
+    touchDeltaX.current = 0;
+    isDragging.current = false; // 还没开始拖
+    mouseDownPending.current = true; // 标记鼠标按下，等待移动
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging.current) return;
-    touchDeltaX.current = e.clientX - touchStartX.current;
-    if (sliderRef.current) {
-      const offset = -currentPage * 100;
-      const pxToPercent = (touchDeltaX.current / sliderRef.current.parentElement!.offsetWidth) * 100;
-      sliderRef.current.style.transition = 'none';
-      sliderRef.current.style.transform = `translateX(${offset + pxToPercent}%)`;
-    }
-  }, [currentPage]);
-
-  const handleMouseUp = useCallback(() => {
-    if (!isDragging.current) return;
-    isDragging.current = false;
-    if (sliderRef.current) {
-      const threshold = sliderRef.current.parentElement!.offsetWidth * 0.15;
-      let newPage = currentPage;
-      if (touchDeltaX.current < -threshold && currentPage < 1) newPage = currentPage + 1;
-      else if (touchDeltaX.current > threshold && currentPage > 0) newPage = currentPage - 1;
-      setCurrentPage(newPage);
-      sliderRef.current.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-      sliderRef.current.style.transform = `translateX(${-newPage * 100}%)`;
-    }
-    touchDeltaX.current = 0;
+  // 用 useEffect 在 window 上监听 mousemove/mouseup，避免鼠标移出元素后丢失事件
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!mouseDownPending.current && !isDragging.current) return;
+      const delta = e.clientX - touchStartX.current;
+      // 移动超过 5px 才算开始拖动（区分点击和拖拽）
+      if (mouseDownPending.current && Math.abs(delta) > 5) {
+        mouseDownPending.current = false;
+        isDragging.current = true;
+      }
+      if (!isDragging.current) return;
+      touchDeltaX.current = delta;
+      if (sliderRef.current) {
+        const offset = -currentPage * 100;
+        const pxToPercent = (delta / sliderRef.current.parentElement!.offsetWidth) * 100;
+        sliderRef.current.style.transition = 'none';
+        sliderRef.current.style.transform = `translateX(${offset + pxToPercent}%)`;
+      }
+    };
+    const onMouseUp = () => {
+      if (!isDragging.current && !mouseDownPending.current) return;
+      mouseDownPending.current = false;
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      if (sliderRef.current) {
+        const threshold = sliderRef.current.parentElement!.offsetWidth * 0.15;
+        let newPage = currentPage;
+        if (touchDeltaX.current < -threshold && currentPage < 1) newPage = currentPage + 1;
+        else if (touchDeltaX.current > threshold && currentPage > 0) newPage = currentPage - 1;
+        setCurrentPage(newPage);
+        sliderRef.current.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        sliderRef.current.style.transform = `translateX(${-newPage * 100}%)`;
+      }
+      touchDeltaX.current = 0;
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
   }, [currentPage]);
 
   // ========== App Open/Close ==========
@@ -935,8 +954,6 @@ export default function PhonePage() {
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
               >
                 <div className="app-grid-slider" ref={sliderRef} style={{ transform: `translateX(${-currentPage * 100}%)` }}>
                   <div className="app-page-grid">
