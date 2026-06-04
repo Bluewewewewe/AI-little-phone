@@ -72,11 +72,11 @@ export default function PhoneScreen() {
 
       {/* APP层 - 打开时从底部滑上来 */}
       {!isHome && (
-        <div className={`absolute inset-0 transition-all duration-300 ease-out ${
+        <div className={`absolute inset-0 flex flex-col transition-all duration-300 ease-out ${
           animating && animDir === 'open' ? 'animate-appOpen' : ''
         }`}>
-          {/* APP内状态栏（覆盖式） */}
-          <div className="app-status-bar text-amber-900">
+          {/* APP内状态栏 */}
+          <div className="app-status-bar text-amber-900 flex-shrink-0">
             <span className="font-semibold text-[14px]">
               {appBarTime || '--:--'}
             </span>
@@ -86,27 +86,25 @@ export default function PhoneScreen() {
             </div>
           </div>
           
-          {/* APP内容 */}
+          {/* APP内容 - flex-1 撑满剩余空间 */}
           <div className="flex-1 overflow-hidden">
             {renderApp()}
+          </div>
+
+          {/* Home Indicator - 暖色半透明底条 */}
+          <div className="flex-shrink-0">
+            <button 
+              onClick={goHome}
+              className="w-full flex items-center justify-center py-2 bg-amber-900/10 backdrop-blur-md active:bg-amber-900/20 transition-colors"
+            >
+              <div className="w-[134px] h-[5px] bg-amber-900/20 rounded-full" />
+            </button>
           </div>
         </div>
       )}
 
-      {/* 底部Home条 - 在APP内显示，点击回桌面 */}
-      {!isHome && (
-        <div className="absolute bottom-0 left-0 right-0 z-50">
-          <button 
-            onClick={goHome}
-            className="w-full flex items-center justify-center py-2 bg-black/40 backdrop-blur-md active:bg-black/60 transition-colors"
-          >
-            <div className="w-[134px] h-[5px] bg-white/30 rounded-full" />
-          </button>
-        </div>
-      )}
-
       {showNotifications && <NotificationCenter onClose={() => setShowNotifications(false)} />}
-      {incomingCall && <CallScreen />}
+      {incomingCall && <CallScreen onBack={goHome} />}
     </div>
   )
 }

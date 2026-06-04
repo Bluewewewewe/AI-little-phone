@@ -26,26 +26,26 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
 
   // 所有APP
   const apps = [
-    { id: 'chat', icon: '💬', label: '家庭群', badge: 2 },
-    { id: 'chat-dad', icon: '👨', label: identity?.roleA_name || '爸爸', dot: true },
-    { id: 'chat-mom', icon: '👩', label: identity?.roleB_name || '妈妈', dot: true },
-    { id: 'moments', icon: '📸', label: '朋友圈' },
-    { id: 'weibo', icon: '🔥', label: '微博' },
-    { id: 'family', icon: '🏠', label: '家里', isNew: true },
-    { id: 'pets', icon: '🐾', label: '宠物', isNew: true },
-    { id: 'dressup', icon: '👗', label: '换装', isNew: true },
-    { id: 'stories', icon: '📖', label: '故事' },
-    { id: 'album', icon: '🎞️', label: '相册' },
-    { id: 'voicemail', icon: '🎙️', label: '语音信箱' },
-    { id: 'memory', icon: '📝', label: '记忆本' },
+    { id: 'chat', icon: '💬', label: '家庭群', badge: 2, color: 'rgba(52,199,89,0.85)', colorDark: 'rgba(52,199,89,0.70)' },
+    { id: 'chat-dad', icon: '👨', label: identity?.roleA_name || '爸爸', dot: true, color: 'rgba(0,122,255,0.85)', colorDark: 'rgba(0,122,255,0.70)' },
+    { id: 'chat-mom', icon: '👩', label: identity?.roleB_name || '妈妈', dot: true, color: 'rgba(255,45,85,0.85)', colorDark: 'rgba(255,45,85,0.70)' },
+    { id: 'moments', icon: '📸', label: '朋友圈', color: 'rgba(88,86,214,0.85)', colorDark: 'rgba(88,86,214,0.70)' },
+    { id: 'weibo', icon: '🔥', label: '微博', color: 'rgba(255,149,0,0.85)', colorDark: 'rgba(255,149,0,0.70)' },
+    { id: 'family', icon: '🏠', label: '家里', isNew: true, color: 'rgba(255,179,64,0.85)', colorDark: 'rgba(255,179,64,0.70)' },
+    { id: 'pets', icon: '🐾', label: '宠物', isNew: true, color: 'rgba(90,200,250,0.85)', colorDark: 'rgba(90,200,250,0.70)' },
+    { id: 'dressup', icon: '👗', label: '换装', isNew: true, color: 'rgba(255,55,95,0.85)', colorDark: 'rgba(255,55,95,0.70)' },
+    { id: 'stories', icon: '📖', label: '故事', color: 'rgba(175,82,222,0.85)', colorDark: 'rgba(175,82,222,0.70)' },
+    { id: 'album', icon: '🎞️', label: '相册', color: 'rgba(255,80,60,0.85)', colorDark: 'rgba(255,80,60,0.70)' },
+    { id: 'voicemail', icon: '🎙️', label: '语音信箱', color: 'rgba(48,209,88,0.85)', colorDark: 'rgba(48,209,88,0.70)' },
+    { id: 'memory', icon: '📝', label: '记忆本', color: 'rgba(162,132,94,0.85)', colorDark: 'rgba(162,132,94,0.70)' },
   ]
 
   // 底部Dock 4个
   const dockApps = [
-    { id: 'chat', icon: '💬', label: '消息', badge: 2 },
-    { id: 'family', icon: '🏠', label: '家里' },
-    { id: 'pets', icon: '🐾', label: '宠物' },
-    { id: 'dressup', icon: '👗', label: '换装' },
+    { id: 'chat', icon: '💬', label: '消息', badge: 2, color: 'rgba(52,199,89,0.85)', colorDark: 'rgba(52,199,89,0.70)' },
+    { id: 'family', icon: '🏠', label: '家里', color: 'rgba(255,179,64,0.85)', colorDark: 'rgba(255,179,64,0.70)' },
+    { id: 'pets', icon: '🐾', label: '宠物', color: 'rgba(90,200,250,0.85)', colorDark: 'rgba(90,200,250,0.70)' },
+    { id: 'dressup', icon: '👗', label: '换装', color: 'rgba(255,55,95,0.85)', colorDark: 'rgba(255,55,95,0.70)' },
   ]
 
   return (
@@ -113,10 +113,12 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
                 className="flex flex-col items-center gap-2 active:scale-90 transition-transform duration-100"
               >
                 <div className="relative">
-                  {/* 毛玻璃圆角方块 - 无硬边框 */}
-                  <div className="w-[60px] h-[60px] rounded-[16px] bg-white/30 backdrop-blur-xl flex items-center justify-center shadow-sm shadow-amber-900/8">
-                    {/* 顶部高光线 */}
-                    <div className="absolute top-[1px] left-[20%] right-[20%] h-[0.5px] rounded-full bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+                  {/* iOS风格圆角方块图标 - 像真手机APP图标 */}
+                  <div className="w-[60px] h-[60px] rounded-[14px] flex items-center justify-center shadow-lg shadow-amber-900/10"
+                       style={{
+                         background: `linear-gradient(145deg, ${app.color || 'rgba(255,255,255,0.8)'}, ${app.colorDark || 'rgba(255,255,255,0.6)'})`,
+                         boxShadow: '0 4px 12px rgba(120,53,0,0.10), inset 0 1px 0 rgba(255,255,255,0.6)',
+                       }}>
                     <span className="text-[30px] drop-shadow-sm">{app.icon}</span>
                   </div>
                   {app.badge && app.badge > 0 && (
@@ -143,10 +145,10 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
           <span className="w-[6px] h-[6px] rounded-full bg-amber-900/15" />
         </div>
 
-        {/* 底部Dock - 柔和毛玻璃，无硬边框 */}
-        <div className="mx-6 mb-4 rounded-[28px] bg-white/30 backdrop-blur-2xl shadow-sm shadow-amber-900/5">
+        {/* 底部Dock - iOS风格毛玻璃 */}
+        <div className="relative mx-6 mb-4 rounded-[28px] bg-white/50 backdrop-blur-2xl shadow-md shadow-amber-900/[0.08]">
           {/* 顶部高光线 */}
-          <div className="absolute top-0 left-[10%] right-[10%] h-[0.5px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+          <div className="absolute top-[1px] left-[10%] right-[10%] h-[0.5px] bg-gradient-to-r from-transparent via-white/60 to-transparent" />
           <div className="flex items-center justify-around py-3 px-4">
             {dockApps.map(app => (
               <button

@@ -4,7 +4,7 @@ import { useStore } from '@/store/useStore'
 import { useState, useEffect } from 'react'
 
 
-export default function CallScreen() {
+export default function CallScreen({ onBack }: { onBack?: () => void }) {
   const { incomingCall, setIncomingCall, identity } = useStore()
   const [isAccepted, setIsAccepted] = useState(false)
   const [callDuration, setCallDuration] = useState(0)
