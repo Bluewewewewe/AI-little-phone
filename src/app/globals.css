@@ -382,6 +382,7 @@ body {
 .feed-comment-input input:focus { border-color: #f59e0b; }
 .feed-comment-input button { background: #f59e0b; color: white; border: none; border-radius: 8px; padding: 6px 14px; font-size: 12px; cursor: pointer; }
 .feed-comment-input button:active { transform: scale(0.9); }
+.feed-likes { margin-top: 6px; padding: 6px 10px; background: rgba(239,68,68,0.08); border-radius: 8px; font-size: 11px; color: #ef4444; line-height: 1.5; }
 
 /* Pet */
 .pet-page { padding: 16px; }

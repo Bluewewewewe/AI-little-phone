@@ -698,12 +698,24 @@ export default function PhonePage() {
                   {comments.map((c, ci) => <div key={ci} className="feed-comment">{c}</div>)}
                 </div>
               )}
+              {(liked || item.likes > 0) && (
+                <div className="feed-likes">
+                  ❤️ {[
+                    ...(liked ? ['米米'] : []),
+                    ...(item.likes > 8 ? ['爸爸'] : []),
+                    ...(item.likes > 5 ? ['妈咪'] : []),
+                    ...(item.likes > 15 ? ['辛巴🐕'] : []),
+                    ...(item.likes > 20 ? ['小十一🐱', '大鱼🐱'] : []),
+                    ...(item.likes > (liked ? 2 : 1) ? [`等${item.likes + (liked ? 1 : 0)}人`] : []),
+                  ].filter((v, idx, arr) => arr.indexOf(v) === idx).join('、')}
+                </div>
+              )}
               <div className="feed-actions">
                 <span
                   className={`feed-action ${liked ? 'feed-action-liked' : ''}`}
                   onClick={() => setMomentsLikes(prev => ({ ...prev, [i]: !liked }))}
                 >
-                  {liked ? '❤️' : '🤍'} {liked ? '已赞' : '赞'} · {(item.likes + (liked ? 1 : 0))}
+                  {liked ? '❤️ 已赞' : '🤍 赞'}
                 </span>
                 <span
                   className="feed-action"
@@ -719,7 +731,7 @@ export default function PhonePage() {
                     onChange={e => setCommentInput(e.target.value)}
                     onKeyDown={e => {
                       if (e.key === 'Enter' && commentInput.trim()) {
-                        setMomentsComments(prev => ({ ...prev, [i]: commentInput.trim() }));
+                        setMomentsComments(prev => ({ ...prev, [i]: '米米：' + commentInput.trim() }));
                         setCommentInput('');
                         setActiveCommentIdx(null);
                       }
