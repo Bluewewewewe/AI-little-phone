@@ -293,11 +293,11 @@ export default function PhonePage() {
       }));
 
       if (character === 'family') {
-        // 家庭群：随机决定谁回复
-        // 30%只有爸爸回, 30%只有妈妈回, 40%两人都回
+        // 家庭群：随机决定谁回复，自由自然
+        // 40%只有爸爸回, 40%只有妈妈回, 20%两人都回
         const rand = Math.random();
-        const dadReplies = rand < 0.7;   // 70%概率爸爸回
-        const momReplies = rand > 0.3;   // 70%概率妈妈回
+        const dadReplies = rand < 0.6;   // 60%概率爸爸回
+        const momReplies = rand > 0.4;   // 60%概率妈妈回
         // 随机顺序
         const dadFirst = Math.random() < 0.5;
 
