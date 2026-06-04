@@ -670,29 +670,121 @@ export default function PhonePage() {
     );
   }
 
-  const [myMoments, setMyMoments] = useState<{text: string, time: string}[]>([]);
+  interface MomentItem {
+    id: number;
+    avatar: string;
+    name: string;
+    time: string;
+    text: string;
+    color: string;
+    isMine?: boolean;
+    likes: string[];       // 点赞人列表
+    comments: string[];    // 评论列表 "名字：内容"
+  }
+  const [momentsData, setMomentsData] = useState<MomentItem[]>([
+    { id: 1, avatar: '👩', name: '妈咪', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899', likes: ['爸爸', '辛巴🐕'], comments: ['爸爸：我拍的更好看 😤'] },
+    { id: 2, avatar: '👨', name: '爸爸', time: '5小时前', text: '做了宝贝爱吃的红烧排骨，一口就吃光了 😎', color: '#f59e0b', likes: ['妈咪'], comments: ['妈咪：明明是我做的'] },
+    { id: 3, avatar: '👩', name: '妈咪', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899', likes: ['爸爸', '小十一🐱', '大鱼🐱'], comments: ['爸爸：下次我背你'] },
+  ]);
   const [newMomentText, setNewMomentText] = useState('');
   const [showNewMoment, setShowNewMoment] = useState(false);
-  const [momentsLikes, setMomentsLikes] = useState<Record<number, boolean>>({});
-  const [momentsComments, setMomentsComments] = useState<Record<number, string>>({});
   const [commentInput, setCommentInput] = useState('');
   const [activeCommentIdx, setActiveCommentIdx] = useState<number|null>(null);
+  const nextMomentId = useRef(4);
 
   function renderMoments() {
-    const presetItems = [
-      { avatar: '👩', name: '妈咪', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899', likes: 12, comments: ['爸爸：我拍的更好看 😤'] },
-      { avatar: '👨', name: '爸爸', time: '5小时前', text: '做了宝贝爱吃的红烧排骨，一口就吃光了 😎', color: '#f59e0b', likes: 8, comments: ['妈咪：明明是我做的'] },
-      { avatar: '👩', name: '妈咪', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899', likes: 23, comments: ['爸爸：下次我背你'] },
-    ];
-    const myItems = myMoments.map((m, mi) => ({
-      avatar: '👧', name: '米米', time: m.time, text: m.text, color: '#06b6d4', likes: 0, comments: [],
-      isMine: true as const, myIdx: mi,
-    }));
-    const allItems = [...myItems, ...presetItems];
+    const handlePostMoment = () => {
+      if (!newMomentText.trim()) return;
+      const newMoment: MomentItem = {
+        id: nextMomentId.current++,
+        avatar: '👧', name: '米米', time: '刚刚', text: newMomentText.trim(), color: '#06b6d4',
+        isMine: true, likes: [], comments: [],
+      };
+      setMomentsData(prev => [newMoment, ...prev]);
+      setNewMomentText('');
+      setShowNewMoment(false);
+
+      // 爸妈自动互动（延迟模拟）
+      const momentId = newMoment.id;
+      setTimeout(() => {
+        setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, likes: [...m.likes, '爸爸'] } : m));
+      }, 2000 + Math.random() * 2000);
+      setTimeout(() => {
+        setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, likes: [...m.likes, '妈咪'] } : m));
+      }, 4000 + Math.random() * 3000);
+
+      // AI 评论互动
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `我在朋友圈发了：${newMomentText.trim()}`, character: 'family', speaker: 'dad', history: [], context: '朋友圈互动' }),
+      }).then(res => {
+        const reader = res.body?.getReader();
+        if (!reader) return;
+        let text = '';
+        const pump = (): Promise<void> => reader.read().then(({ done, value }) => {
+          if (done) {
+            const comment = text.replace(/\n/g, '').trim();
+            if (comment && comment.length < 50) {
+              setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, `爸爸：${comment}`] } : m));
+            }
+            return;
+          }
+          const chunk = new TextDecoder().decode(value);
+          chunk.split('\n').forEach(line => {
+            if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+              try { text += JSON.parse(line.slice(6)).content; } catch {}
+            }
+          });
+          return pump();
+        });
+        return pump();
+      }).catch(() => {});
+
+      setTimeout(() => {
+        fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `我在朋友圈发了：${newMomentText.trim()}`, character: 'family', speaker: 'mom', history: [], context: '朋友圈互动' }),
+        }).then(res => {
+          const reader = res.body?.getReader();
+          if (!reader) return;
+          let text = '';
+          const pump = (): Promise<void> => reader.read().then(({ done, value }) => {
+            if (done) {
+              const comment = text.replace(/\n/g, '').trim();
+              if (comment && comment.length < 50) {
+                setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, `妈咪：${comment}`] } : m));
+              }
+              return;
+            }
+            const chunk = new TextDecoder().decode(value);
+            chunk.split('\n').forEach(line => {
+              if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                try { text += JSON.parse(line.slice(6)).content; } catch {}
+              }
+            });
+            return pump();
+          });
+          return pump();
+        }).catch(() => {});
+      }, 3500);
+
+      // 宠物随机点赞
+      if (Math.random() > 0.4) {
+        setTimeout(() => {
+          setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, likes: [...m.likes, '辛巴🐕'] } : m));
+        }, 6000 + Math.random() * 2000);
+      }
+      if (Math.random() > 0.5) {
+        setTimeout(() => {
+          setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, likes: [...m.likes, '小十一🐱'] } : m));
+        }, 7000 + Math.random() * 3000);
+      }
+    };
 
     return (
       <div className="feed-list">
-        {/* 发朋友圈按钮 */}
         <div style={{ padding: '12px 16px' }}>
           <div
             className="glass-btn"
@@ -706,95 +798,74 @@ export default function PhonePage() {
               <input
                 value={newMomentText}
                 onChange={e => setNewMomentText(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && newMomentText.trim()) {
-                    setMyMoments(prev => [{ text: newMomentText.trim(), time: '刚刚' }, ...prev]);
-                    setNewMomentText('');
-                    setShowNewMoment(false);
-                  }
-                }}
+                onKeyDown={e => { if (e.key === 'Enter') handlePostMoment(); }}
                 placeholder="分享你的心情..."
                 autoFocus
                 style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none', background: 'rgba(255,255,255,0.5)', fontSize: 13, outline: 'none' }}
               />
-              <button
-                onClick={() => {
-                  if (newMomentText.trim()) {
-                    setMyMoments(prev => [{ text: newMomentText.trim(), time: '刚刚' }, ...prev]);
-                    setNewMomentText('');
-                    setShowNewMoment(false);
-                  }
-                }}
-                style={{ padding: '8px 14px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
-              >发布</button>
+              <button onClick={handlePostMoment} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>发布</button>
             </div>
           )}
         </div>
 
-        {allItems.map((item, i) => {
-          const liked = momentsLikes[i] || false;
-          const isMine = 'isMine' in item && item.isMine;
-          const itemComments = 'comments' in item ? item.comments : [];
-          const comments = momentsComments[i] ? [...itemComments, momentsComments[i]!] : itemComments;
-          const itemLikes = 'likes' in item ? item.likes : 0;
+        {momentsData.map((item) => {
+          const iLiked = item.likes.includes('米米');
           return (
-            <div key={i} className="feed-card">
+            <div key={item.id} className="feed-card">
               <div className="feed-header">
                 <div className="feed-avatar" style={{ background: item.color + '20' }}>{item.avatar}</div>
                 <div><div className="feed-name" style={{ color: item.color }}>{item.name}</div><div className="feed-time">{item.time}</div></div>
               </div>
               <div className="feed-text">{item.text}</div>
-              {comments.length > 0 && (
-                <div className="feed-comments">
-                  {comments.map((c, ci) => <div key={ci} className="feed-comment">{c}</div>)}
-                </div>
+              {item.likes.length > 0 && (
+                <div className="feed-likes">❤️ {item.likes.join('、')}</div>
               )}
-              {(liked || itemLikes > 0) && (
-                <div className="feed-likes">
-                  ❤️ {[
-                    ...(liked ? ['米米'] : []),
-                    ...(itemLikes > 8 ? ['爸爸'] : []),
-                    ...(itemLikes > 5 ? ['妈咪'] : []),
-                    ...(itemLikes > 15 ? ['辛巴🐕'] : []),
-                    ...(itemLikes > 20 ? ['小十一🐱', '大鱼🐱'] : []),
-                    ...(itemLikes > (liked ? 2 : 1) ? [`等${itemLikes + (liked ? 1 : 0)}人`] : []),
-                  ].filter((v, idx, arr) => arr.indexOf(v) === idx).join('、')}
+              {item.comments.length > 0 && (
+                <div className="feed-comments">
+                  {item.comments.map((c, ci) => (
+                    <div key={ci} className="feed-comment" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>{c}</span>
+                      {c.startsWith('米米：') && (
+                        <span
+                          style={{ color: '#999', fontSize: '10px', cursor: 'pointer', marginLeft: 8, flexShrink: 0 }}
+                          onClick={() => setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, comments: m.comments.filter((_, idx) => idx !== ci) } : m))}
+                        >删除</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
               <div className="feed-actions">
                 <span
-                  className={`feed-action ${liked ? 'feed-action-liked' : ''}`}
-                  onClick={() => setMomentsLikes(prev => ({ ...prev, [i]: !liked }))}
+                  className={`feed-action ${iLiked ? 'feed-action-liked' : ''}`}
+                  onClick={() => setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, likes: iLiked ? m.likes.filter(n => n !== '米米') : [...m.likes, '米米'] } : m))}
                 >
-                  {liked ? '❤️ 已赞' : '🤍 赞'}
+                  {iLiked ? '❤️ 已赞' : '🤍 赞'} {item.likes.length > 0 ? item.likes.length : ''}
                 </span>
                 <span
                   className="feed-action"
-                  onClick={() => { setActiveCommentIdx(activeCommentIdx === i ? null : i); setCommentInput(''); }}
+                  onClick={() => { setActiveCommentIdx(activeCommentIdx === item.id ? null : item.id); setCommentInput(''); }}
                 >
                   💬 评论
                 </span>
-                {isMine === true && (
+                {item.isMine && (
                   <span
                     className="feed-action"
                     style={{ color: '#ef4444' }}
-                    onClick={() => {
-                      const mi = (item as unknown as { myIdx: number }).myIdx;
-                      setMyMoments(prev => prev.filter((_, idx) => idx !== mi));
-                    }}
+                    onClick={() => setMomentsData(prev => prev.filter(m => m.id !== item.id))}
                   >
                     🗑️ 删除
                   </span>
                 )}
               </div>
-              {activeCommentIdx === i && (
+              {activeCommentIdx === item.id && (
                 <div className="feed-comment-input">
                   <input
                     value={commentInput}
                     onChange={e => setCommentInput(e.target.value)}
                     onKeyDown={e => {
                       if (e.key === 'Enter' && commentInput.trim()) {
-                        setMomentsComments(prev => ({ ...prev, [i]: '米米：' + commentInput.trim() }));
+                        setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, comments: [...m.comments, '米米：' + commentInput.trim()] } : m));
                         setCommentInput('');
                         setActiveCommentIdx(null);
                       }
@@ -802,13 +873,15 @@ export default function PhonePage() {
                     placeholder="写评论..."
                     autoFocus
                   />
-                  <button onClick={() => {
-                    if (commentInput.trim()) {
-                      setMomentsComments(prev => ({ ...prev, [i]: '米米：' + commentInput.trim() }));
-                      setCommentInput('');
-                      setActiveCommentIdx(null);
-                    }
-                  }}>发送</button>
+                  <button
+                    onClick={() => {
+                      if (commentInput.trim()) {
+                        setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, comments: [...m.comments, '米米：' + commentInput.trim()] } : m));
+                        setCommentInput('');
+                        setActiveCommentIdx(null);
+                      }
+                    }}
+                  >发送</button>
                 </div>
               )}
             </div>
