@@ -689,7 +689,7 @@ export default function PhonePage() {
   const [momentsData, setMomentsData] = useState<MomentItem[]>([
     { id: 1, avatar: '👩', name: '妈咪', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899', likes: ['爸爸', '辛巴🐕', '米米'], comments: [{from:'爸爸', text:'我拍的更好看 😤'}, {from:'妈咪', text:'回复 爸爸：你就嘴硬吧，明明是我找的角度 🙄', replyTo:'爸爸'}, {from:'爸爸', text:'回复 妈咪：好好好你拍的最好看 ❤️', replyTo:'妈咪'}, {from:'辛巴🐕', text:'汪汪！🌅'}] },
     { id: 2, avatar: '👨', name: '爸爸', time: '5小时前', text: '做了宝贝爱吃的红烧排骨，一口就吃光了 😎', color: '#f59e0b', likes: ['妈咪', '米米', '大鱼🐱'], comments: [{from:'妈咪', text:'明明是我做的'}, {from:'爸爸', text:'回复 妈咪：你就负责了切了个葱好吧 😂', replyTo:'妈咪'}, {from:'妈咪', text:'回复 爸爸：切葱也很重要的好不好！哼！', replyTo:'爸爸'}, {from:'大鱼🐱', text:'喵~我想吃鱼不是排骨🐟'}] },
-    { id: 3, avatar: '👩', name: '妈咪', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899', likes: ['爸爸', '小十一🐱', '大鱼🐱'], comments: [{from:'爸爸', text:'下次我背你'}] },
+    { id: 3, avatar: '👩', name: '妈咪', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899', likes: ['爸爸', '小十一🐱', '大鱼🐱'], comments: [{from:'爸爸', text:'下次我背你'}, {from:'妈咪', text:'回复 爸爸：说话算话哦', replyTo:'爸爸'}, {from:'爸爸', text:'回复 妈咪：什么时候骗过你', replyTo:'妈咪'}, {from:'小十一🐱', text:'喵喵~我要坐肩上！'}] },
   ]);
   const [newMomentText, setNewMomentText] = useState('');
   const [showNewMoment, setShowNewMoment] = useState(false);
@@ -700,20 +700,36 @@ export default function PhonePage() {
 
   // 米米评论后，爸妈/宠物自动回复评论
   const autoReplyToComment = async (momentId: number, commentText: string, replyToWho: string | undefined) => {
+    // 情绪关键词——涉及这些一定回复
+    const emotionKeywords = ['不开心', '难过', '伤心', '生气', '烦', '累', '想', '哭', '怕', '焦虑', '压力', '委屈', '孤独', '无聊', '寂寞', '害怕', '讨厌', '讨厌', '郁闷', '崩溃', '受不了', '好烦', '好累', '好怕', '好想', '心痛', '心碎', '分手', '吵架', '对不起', '抱歉', '不开心', '不舒服', '生病', '难受', '头痛', '肚子疼', '发烧', '感冒', '失眠', '噩梦', '考试', '面试', '加油', '加油啊', '好难', '困难', '撑不住', '不想', '失望'];
+    const hasEmotion = emotionKeywords.some(kw => commentText.includes(kw));
+    
     const reactors = ['老爸', '妈咪', '辛巴🐕', '大鱼🐱', '小十一🐱'];
-    // 排除被回复的人（不用自己回复自己）
     const possibleRepliers = reactors.filter(r => r !== replyToWho);
-    // 随机1-2个回复
-    const replyCount = Math.floor(Math.random() * 2) + 1;
-    const repliers = possibleRepliers.sort(() => Math.random() - 0.5).slice(0, replyCount);
+    
+    // 选择性回复：情绪相关必回（2-3人），否则50%概率不回或1人回
+    let repliers: string[] = [];
+    if (hasEmotion) {
+      // 情绪相关——爸妈一定回，可能宠物也回
+      repliers = possibleRepliers.filter(r => r === '老爸' || r === '妈咪');
+      if (Math.random() < 0.4) {
+        const petReplier = possibleRepliers.find(r => r !== '老爸' && r !== '妈咪');
+        if (petReplier) repliers.push(petReplier);
+      }
+    } else {
+      // 普通评论——50%概率不回，50%概率1-2人回
+      if (Math.random() < 0.5) return; // 50%概率没人回
+      const replyCount = Math.random() < 0.6 ? 1 : 2;
+      repliers = possibleRepliers.sort(() => Math.random() - 0.5).slice(0, replyCount);
+    }
     
     for (const replier of repliers) {
-      await new Promise(r => setTimeout(r, 2000 + Math.random() * 4000));
+      await new Promise(r => setTimeout(r, 1500 + Math.random() * 3000));
       
       const whoCommented = replyToWho || '米米';
-      const contextInfo = `这是朋友圈的一条评论：${whoCommented}说了"${commentText}"`;
+      const emotionHint = hasEmotion ? '注意：对方的话带有情绪，请温柔关心地回复。' : '';
+      const contextInfo = `这是朋友圈的一条评论：${whoCommented}说了"${commentText}"。${emotionHint}`;
       
-      // 用 AI 生成回复内容
       let aiText = '';
       try {
         const character = replier === '老爸' ? 'dad' : replier === '妈咪' ? 'mom' : 'pet';
@@ -721,7 +737,7 @@ export default function PhonePage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: `${contextInfo}，请你用一句话简短回复，语气要符合${replier}的角色`,
+            message: `${contextInfo}，请你用一句话简短回复（20字以内），语气要符合${replier}的角色`,
             character,
             speaker: character === 'mom' ? 'mom' : 'dad',
             history: [],
@@ -742,7 +758,9 @@ export default function PhonePage() {
         }
       } catch { /* AI失败用默认 */ }
       if (!aiText) {
-        const defaults = ['哈哈', '说的对！', '嗯嗯', '好呀~', '可不是嘛', '我也觉得！'];
+        const defaults = hasEmotion 
+          ? ['怎么了？跟爸说', '没事吧宝贝？妈在呢', '抱抱~', '别怕，有我们在', '谁欺负你了？']
+          : ['哈哈', '说的对！', '嗯嗯', '好呀~', '可不是嘛'];
         aiText = defaults[Math.floor(Math.random() * defaults.length)];
       }
       
@@ -752,19 +770,18 @@ export default function PhonePage() {
       }));
     }
     
-    // 爸妈之间也可能互相回复（60%概率）
-    if (Math.random() < 0.6 && repliers.length >= 2) {
-      await new Promise(r => setTimeout(r, 3000 + Math.random() * 3000));
-      const firstR = repliers[0];
-      const secondR = repliers[1];
+    // 爸妈之间也可能互相回复（60%概率，情绪相关时80%）
+    const crossReplyProb = hasEmotion ? 0.8 : 0.6;
+    if (Math.random() < crossReplyProb && repliers.length >= 2 && repliers.includes('老爸') && repliers.includes('妈咪')) {
+      await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
       const banterDefaults = [
-        '你少说两句吧', '说得好像你很懂似的', '就你会说', '又来了又来了',
-        '你闭嘴啦', '哼，谁让你说的', '就是就是', '老公/老婆说得对',
+        '你说得对', '就是就是', '嗯嗯同意', '对呀对呀',
+        '又来了又来了', '你闭嘴啦', '哼，谁让你说的',
       ];
       const banter = banterDefaults[Math.floor(Math.random() * banterDefaults.length)];
       setMomentsData(prev => prev.map(m => {
         if (m.id !== momentId) return m;
-        return { ...m, comments: [...(m.comments || []), { from: secondR, text: banter, replyTo: firstR }] };
+        return { ...m, comments: [...(m.comments || []), { from: '妈咪', text: banter, replyTo: '老爸' }] };
       }));
     }
   };
