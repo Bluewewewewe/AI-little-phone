@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 // ========== Types ==========
 interface Message {
-  from: 'me' | 'dad' | 'mom';
+  from: 'me' | 'dad' | 'mom' | 'system';
   text: string;
   id: number;
 }
@@ -252,7 +252,17 @@ export default function PhonePage() {
           scheduleAutoChat();
           return;
         }
-        const speaker: 'dad' | 'mom' = Math.random() > 0.5 ? 'dad' : 'mom';
+        // 随机选一个人，如果在睡觉就换另一个
+        let speaker: 'dad' | 'mom' = Math.random() > 0.5 ? 'dad' : 'mom';
+        const s = speaker === 'dad' ? parentStatus.dadStatus : parentStatus.momStatus;
+        if (s.includes('睡觉') || s.includes('💤')) {
+          speaker = speaker === 'dad' ? 'mom' : 'dad';
+          const s2 = speaker === 'dad' ? parentStatus.dadStatus : parentStatus.momStatus;
+          if (s2.includes('睡觉') || s2.includes('💤')) {
+            scheduleAutoChat();
+            return;
+          }
+        }
         try {
           const recentMsgs = chatHistory.family.slice(-6).map(m => ({
             from: m.from,
@@ -413,21 +423,55 @@ export default function PhonePage() {
         content: m.from === 'me' ? m.text : `${m.from === 'dad' ? '田雷' : '梓渝'}：${m.text}`,
       }));
 
-      if (character === 'family') {
-        // 家庭群：随机决定谁回复，自由自然
-        // 40%只有爸爸回, 40%只有妈妈回, 20%两人都回
-        const rand = Math.random();
-        const dadReplies = rand < 0.6;   // 60%概率爸爸回
-        const momReplies = rand > 0.4;   // 60%概率妈妈回
-        // 随机顺序
-        const dadFirst = Math.random() < 0.5;
+      // 检查对方是否在睡觉/忙碌/出门
+      const isSleeping = (who: 'dad' | 'mom') => {
+        const s = who === 'dad' ? parentStatus.dadStatus : parentStatus.momStatus;
+        return s.includes('睡觉') || s.includes('💤');
+      };
+      const isBusy = (who: 'dad' | 'mom') => {
+        const s = who === 'dad' ? parentStatus.dadStatus : parentStatus.momStatus;
+        return s.includes('忙碌') || s.includes('🔴');
+      };
+      const isOut = (who: 'dad' | 'mom') => {
+        const s = who === 'dad' ? parentStatus.dadStatus : parentStatus.momStatus;
+        return s.includes('出门') || s.includes('🟡');
+      };
+      const getDelay = (who: 'dad' | 'mom', isFirst: boolean) => {
+        if (isBusy(who)) return 5000 + Math.random() * 5000;
+        if (isOut(who)) return 3000 + Math.random() * 5000;
+        return isFirst ? 1000 + Math.random() * 2000 : 3000 + Math.random() * 3000;
+      };
 
+      if (character === 'family') {
+        // 家庭群：先检查谁醒着
+        const dadAwake = !isSleeping('dad');
+        const momAwake = !isSleeping('mom');
+
+        if (!dadAwake && !momAwake) {
+          setChatHistory(prev => ({
+            ...prev,
+            family: [...prev.family, { from: 'system' as const, text: '💤 爸爸妈妈都睡了，明天再聊吧~', id: nextId() }],
+          }));
+          return;
+        }
+
+        // 只让醒着的人参与回复
+        const rand = Math.random();
         const replyOrder: Array<'dad' | 'mom'> = [];
-        if (dadReplies && momReplies) {
-          replyOrder.push(dadFirst ? 'dad' : 'mom', dadFirst ? 'mom' : 'dad');
-        } else if (dadReplies) {
+        if (dadAwake && momAwake) {
+          const dadReplies = rand < 0.6;
+          const momReplies = rand > 0.4;
+          const dadFirst = Math.random() < 0.5;
+          if (dadReplies && momReplies) {
+            replyOrder.push(dadFirst ? 'dad' : 'mom', dadFirst ? 'mom' : 'dad');
+          } else if (dadReplies) {
+            replyOrder.push('dad');
+          } else if (momReplies) {
+            replyOrder.push('mom');
+          }
+        } else if (dadAwake) {
           replyOrder.push('dad');
-        } else if (momReplies) {
+        } else {
           replyOrder.push('mom');
         }
 
@@ -436,13 +480,10 @@ export default function PhonePage() {
 
         for (let i = 0; i < replyOrder.length; i++) {
           const speaker = replyOrder[i];
-
-          // 模拟活人延迟：第一个人等1-3秒，第二个人等3-6秒
-          const baseDelay = i === 0 ? 1000 + Math.random() * 2000 : 3000 + Math.random() * 3000;
+          const baseDelay = getDelay(speaker, i === 0);
           setTypingWho(speaker);
           await new Promise(r => setTimeout(r, baseDelay));
 
-          // 如果之前有人回复了，把那条消息加入上下文
           const speakerHistory = lastSpeakerText
             ? [...updatedHistory, { role: 'assistant' as const, content: `${speaker === 'dad' ? '梓渝' : '田雷'}：${lastSpeakerText}` }]
             : updatedHistory;
@@ -475,9 +516,18 @@ export default function PhonePage() {
           updatedHistory = [...updatedHistory, { role: 'assistant' as const, content: `${speaker === 'dad' ? '田雷' : '梓渝'}：${fullText}` }];
         }
       } else {
-        // 私聊：单人回复，模拟活人延迟1-3秒
+        // 私聊：检查对方是否在睡觉
+        if (isSleeping(character as 'dad' | 'mom')) {
+          setChatHistory(prev => ({
+            ...prev,
+            [character]: [...prev[character], { from: 'system' as const, text: `💤 ${character === 'dad' ? '爸爸' : '妈咪'}睡了，明天再聊吧~`, id: nextId() }],
+          }));
+          return;
+        }
+
+        const baseDelay = getDelay(character as 'dad' | 'mom', true);
         setTypingWho(character);
-        await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
+        await new Promise(r => setTimeout(r, baseDelay));
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -541,22 +591,28 @@ export default function PhonePage() {
       <div className="chat-detail">
         <div className="chat-messages">
           {msgs.map((m) => (
-            <div key={m.id} className={`msg-row ${m.from === 'me' ? 'me' : 'other'}`}>
-              {m.from !== 'me' && (
-                <div className="msg-avatar" style={{ background: m.from === 'dad' ? '#f59e0b' : '#ec4899' }}>
-                  {m.from === 'dad' ? '👨' : '👩'}
-                </div>
-              )}
-              <div className="msg-content">
-                {m.from !== 'me' && character === 'family' && (
-                  <div className="msg-name" style={{ color: m.from === 'dad' ? '#f59e0b' : '#ec4899' }}>
-                    {m.from === 'dad' ? '爸爸' : '妈咪'}
+            <div key={m.id} className={`msg-row ${m.from === 'me' ? 'me' : m.from === 'system' ? 'system' : 'other'}`}>
+              {m.from === 'system' ? (
+                <div className="msg-system">{m.text}</div>
+              ) : (
+                <>
+                  {m.from !== 'me' && (
+                    <div className="msg-avatar" style={{ background: m.from === 'dad' ? '#f59e0b' : '#ec4899' }}>
+                      {m.from === 'dad' ? '👨' : '👩'}
+                    </div>
+                  )}
+                  <div className="msg-content">
+                    {m.from !== 'me' && character === 'family' && (
+                      <div className="msg-name" style={{ color: m.from === 'dad' ? '#f59e0b' : '#ec4899' }}>
+                        {m.from === 'dad' ? '爸爸' : '妈咪'}
+                      </div>
+                    )}
+                    <div className="msg-bubble">{m.text}</div>
                   </div>
-                )}
-                <div className="msg-bubble">{m.text}</div>
-              </div>
-              {m.from === 'me' && (
-                <div className="msg-avatar me-avatar">👧</div>
+                  {m.from === 'me' && (
+                    <div className="msg-avatar me-avatar">👧</div>
+                  )}
+                </>
               )}
             </div>
           ))}

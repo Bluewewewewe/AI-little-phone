@@ -354,6 +354,8 @@ body {
 .msg-row.other .msg-bubble { background: #fff; color: #1a1a1a; border-top-left-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
 .msg-row.me .msg-bubble { background: #95ec69; color: #1a1a1a; border-top-right-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
 .msg-bubble.typing { color: #999; font-style: italic; background: #fff; }
+.msg-row.system { justify-content: center; }
+.msg-system { background: rgba(0,0,0,0.06); color: #999; font-size: 12px; padding: 5px 12px; border-radius: 10px; text-align: center; }
 .chat-input-bar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #f6f6f6; border-top: 1px solid #e0e0e0; }
 .chat-input { flex: 1; border: none; border-radius: 6px; padding: 9px 12px; font-size: 15px; outline: none; background: #fff; }
 .chat-input:focus { background: #fff; }
