@@ -190,7 +190,7 @@ export default function PhonePage() {
   // Time
   const [time, setTime] = useState('--:--');
   const [dateStr, setDateStr] = useState('');
-  const [parentStatus, setParentStatus] = useState(getParentStatus(new Date().getHours()));
+  const [parentStatus, setParentStatus] = useState<{dadStatus:string,dadDesc:string,momStatus:string,momDesc:string}>({dadStatus:'···',dadDesc:'',momStatus:'···',momDesc:''});
 
   // Navigation
   const [currentPage, setCurrentPage] = useState(0);
