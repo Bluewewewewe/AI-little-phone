@@ -15,6 +15,169 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   user-select: none;
   -webkit-user-select: none;
+  background: linear-gradient(135deg, #fef9ee 0%, #fef3c7 50%, #fde68a 100%);
+}
+
+/* ===== 桌面端布局 ===== */
+.desktop-layout {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  padding: 20px;
+}
+
+/* ===== 左侧信息面板 ===== */
+.info-panel {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  width: 240px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 1024px) {
+  .info-panel {
+    display: flex;
+  }
+}
+
+.info-card {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 2px 12px rgba(120, 53, 0, 0.06),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.info-card-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(120, 53, 0, 0.7);
+  margin-bottom: 12px;
+}
+
+.info-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-level {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.info-chapter {
+  font-size: 13px;
+  color: rgba(120, 53, 0, 0.55);
+}
+
+.info-progress-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(120, 53, 0, 0.08);
+  overflow: hidden;
+}
+
+.info-progress-track.flex-1 {
+  flex: 1;
+}
+
+.info-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: #f59e0b;
+  transition: width 0.3s ease;
+}
+
+.info-intimacy-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-intimacy-label {
+  font-size: 13px;
+  font-weight: 600;
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.info-intimacy-val {
+  font-size: 12px;
+  color: rgba(120, 53, 0, 0.5);
+  width: 24px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.info-pet-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(120, 53, 0, 0.7);
+}
+
+.info-pet-health {
+  font-size: 12px;
+  color: rgba(120, 53, 0, 0.45);
+}
+
+/* ===== 手机外框 ===== */
+.phone-frame {
+  position: relative;
+  width: min(390px, calc(96dvh * 9 / 19.5));
+  height: min(844px, 96dvh);
+  border-radius: 55px;
+  background: linear-gradient(180deg, #f5f0e8 0%, #e8e0d0 100%);
+  padding: 8px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+/* 手机边框侧面高光 */
+.phone-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 55px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ===== Dynamic Island ===== */
+.dynamic-island {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 34px;
+  border-radius: 20px;
+  background: #1a1a1a;
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== 手机屏幕 ===== */
+.phone-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 48px;
+  overflow: hidden;
+  background: #fef9ee;
 }
 
 /* ===== 壁纸 ===== */
@@ -72,9 +235,9 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px 0 24px;
-  min-height: 48px;
-  font-size: 14px;
+  padding: 52px 24px 0 24px;
+  min-height: 74px;
+  font-size: 15px;
   font-weight: 600;
   color: rgba(120, 53, 0, 0.75);
   flex-shrink: 0;
@@ -116,24 +279,24 @@ html, body {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 16px;
+  padding-top: 8px;
 }
 
 .icon-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 22px 0;
+  gap: 20px 0;
   width: 100%;
-  max-width: 360px;
-  padding: 0 16px;
+  max-width: 340px;
+  padding: 0 20px;
 }
 
-/* ===== APP 图标 ===== */
+/* ===== APP 图标（iOS 彩色圆角方块） ===== */
 .app-icon {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   background: none;
   border: none;
   cursor: pointer;
@@ -150,23 +313,34 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 58px;
-  height: 58px;
+  width: 56px;
+  height: 56px;
   border-radius: 14px;
-  font-size: 30px;
-  background: linear-gradient(145deg, rgba(255,255,255,0.55), rgba(255,255,255,0.35));
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  font-size: 28px;
   box-shadow:
-    0 2px 8px rgba(120, 53, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    inset 0 -0.5px 0 rgba(0, 0, 0, 0.04);
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 顶部高光线 */
+.icon-emoji::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  border-radius: 1px;
 }
 
 .icon-label {
   font-size: 10px;
-  color: rgba(120, 53, 0, 0.55);
-  max-width: 68px;
+  color: rgba(120, 53, 0, 0.6);
+  max-width: 66px;
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -182,7 +356,7 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 0;
+  padding: 6px 0;
   flex-shrink: 0;
 }
 
@@ -207,10 +381,10 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-around;
-  margin: 0 20px 6px 20px;
+  margin: 0 16px 4px 16px;
   padding: 12px 8px;
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.45);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   box-shadow:
@@ -227,7 +401,7 @@ html, body {
   border: none;
   cursor: pointer;
   outline: none;
-  padding: 4px 12px;
+  padding: 4px;
   transition: transform 0.15s ease;
 }
 
@@ -235,10 +409,10 @@ html, body {
   transform: scale(0.85);
 }
 
-.dock-icon .icon-emoji {
-  width: 50px;
-  height: 50px;
-  font-size: 26px;
+.dock-emoji {
+  width: 48px;
+  height: 48px;
+  font-size: 24px;
   border-radius: 12px;
 }
 
@@ -249,7 +423,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 0 8px 0;
+  padding: 6px 0 10px 0;
   flex-shrink: 0;
 }
 
@@ -273,17 +447,19 @@ html, body {
 
 .back-btn {
   position: fixed;
-  top: 12px;
-  left: 12px;
+  top: 56px;
+  left: 20px;
   z-index: 200;
-  background: none;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: none;
-  color: rgba(0, 0, 0, 0.45);
-  font-size: 15px;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   padding: 8px 14px;
-  border-radius: 10px;
+  border-radius: 12px;
   transition: background 0.15s ease, color 0.15s ease;
   font-family: inherit;
 }
@@ -293,30 +469,41 @@ html, body {
   color: rgba(0, 0, 0, 0.7);
 }
 
-/* ===== 响应式 ===== */
-@media (max-width: 400px) {
-  .icon-grid {
-    gap: 18px 0;
-    padding: 0 12px;
+/* ===== 移动端全屏模式 ===== */
+@media (max-width: 767px) {
+  .desktop-layout {
+    padding: 0;
+    gap: 0;
   }
-  .icon-emoji {
-    width: 52px;
-    height: 52px;
-    font-size: 27px;
-  }
-  .dock {
-    margin: 0 12px 4px 12px;
-  }
-  .dock-icon .icon-emoji {
-    width: 46px;
-    height: 46px;
-    font-size: 24px;
-  }
-}
 
-@media (min-width: 768px) {
+  .phone-frame {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    background: none;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .phone-frame::before {
+    display: none;
+  }
+
+  .dynamic-island {
+    display: none;
+  }
+
+  .phone-screen {
+    border-radius: 0;
+  }
+
   .status-bar {
-    padding-top: 16px;
-    min-height: 54px;
+    padding-top: 14px;
+    min-height: 44px;
+  }
+
+  .back-btn {
+    top: 16px;
+    left: 12px;
   }
 }
