@@ -1183,22 +1183,42 @@ export default function PhonePage() {
   }
 
   function renderWeibo() {
-    const items = [
-      { avatar: '🔥', name: 'CP超话', time: '刚刚', text: '【路透】今天又有人拍到他们一起逛超市了！提着同款购物袋！', color: '#ef4444' },
-      { avatar: '📢', name: '娱乐热搜', time: '1小时前', text: '#他们是不是在一起了# 阅读量突破3亿', color: '#ef4444' },
+    const weiboPosts = [
+      { avatar: '👨', name: '田栩宁_', tag: '演员', verified: true, time: '3小时前', text: '今天收工早，回家做了顿饭。某人吃了三碗还嫌不够 😏', color: '#f59e0b', likes: 128340, comments: 5621, reposts: 8932 },
+      { avatar: '👩', name: '我是梓渝_', tag: '歌手', verified: true, time: '5小时前', text: '新歌demo录完啦！这次尝试了不一样的风格，期待吗～ 🎵', color: '#ec4899', likes: 95670, comments: 4280, reposts: 6210 },
+      { avatar: '🔥', name: 'CP超话', time: '刚刚', text: '【路透】今天又有人拍到他们一起逛超市了！提着同款购物袋！甜玉米尖叫！！！', color: '#ef4444', likes: 28340, comments: 3210, reposts: 5932 },
+      { avatar: '👨', name: '田栩宁_', tag: '演员', verified: true, time: '昨天', text: '谢谢大家喜欢《逆爱》，每个角色都值得被认真对待。', color: '#f59e0b', likes: 256700, comments: 12300, reposts: 18500 },
+      { avatar: '👩', name: '我是梓渝_', tag: '歌手', verified: true, time: '昨天', text: '练习室待了一整天，腿都要断了… 但很充实！💪', color: '#ec4899', likes: 78900, comments: 3450, reposts: 4320 },
+      { avatar: '📢', name: '娱乐热搜', time: '2小时前', text: '#他们是不是在一起了# 阅读量突破3亿，网友：这不是情侣我倒立洗头', color: '#ef4444', likes: 45600, comments: 8900, reposts: 12300 },
+      { avatar: '🔥', name: 'CP超话', time: '1小时前', text: '【分析帖】田栩宁今天微博发的"某人"是谁我不说🤏 翻译：梓渝吃了三碗饭', color: '#ef4444', likes: 19800, comments: 2450, reposts: 3670 },
     ];
     return (
       <div className="feed-list">
-        {items.map((item, i) => (
+        {/* 顶部推荐关注 */}
+        <div style={{ padding: '8px 16px', display: 'flex', gap: 8, overflowX: 'auto' }}>
+          <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(245,158,11,0.15)', fontSize: 11, fontWeight: 600, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>👨 田栩宁_ ✓</div>
+          <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(236,72,153,0.15)', fontSize: 11, fontWeight: 600, color: '#ec4899', display: 'flex', alignItems: 'center', gap: 4 }}>👩 我是梓渝_ ✓</div>
+        </div>
+        {weiboPosts.map((item, i) => (
           <div key={i} className="feed-card">
             <div className="feed-header">
               <div className="feed-avatar" style={{ background: item.color + '20' }}>{item.avatar}</div>
-              <div><div className="feed-name">{item.name}</div><div className="feed-time">{item.time}</div></div>
+              <div style={{ flex: 1 }}>
+                <div className="feed-name" style={{ color: item.color }}>
+                  {item.name}
+                  {item.verified && <span style={{ marginLeft: 4, fontSize: 10, background: item.color, color: '#fff', padding: '1px 4px', borderRadius: 4, verticalAlign: 'middle' }}>V</span>}
+                </div>
+                <div className="feed-time" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span>{item.time}</span>
+                  {item.tag && <span style={{ fontSize: 9, color: '#999', background: '#f3f4f6', padding: '0 4px', borderRadius: 3 }}>{item.tag}</span>}
+                </div>
+              </div>
             </div>
             <div className="feed-text">{item.text}</div>
-            <div className="feed-actions">
-              <span className="feed-action">❤️ 赞</span>
-              <span className="feed-action">💬 评论</span>
+            <div className="feed-actions" style={{ color: '#999', fontSize: 11 }}>
+              <span>🔁 {(item.reposts / 10000).toFixed(1)}万</span>
+              <span>💬 {(item.comments / 10000).toFixed(1)}万</span>
+              <span>❤️ {(item.likes / 10000).toFixed(1)}万</span>
             </div>
           </div>
         ))}
