@@ -670,6 +670,11 @@ export default function PhonePage() {
     );
   }
 
+  interface MomentComment {
+    from: string;       // 评论人
+    replyTo?: string;   // 回复谁（可选）
+    text: string;       // 评论内容
+  }
   interface MomentItem {
     id: number;
     avatar: string;
@@ -678,19 +683,91 @@ export default function PhonePage() {
     text: string;
     color: string;
     isMine?: boolean;
-    likes: string[];       // 点赞人列表
-    comments: string[];    // 评论列表 "名字：内容"
+    likes: string[];             // 点赞人列表
+    comments: MomentComment[];   // 评论列表
   }
   const [momentsData, setMomentsData] = useState<MomentItem[]>([
-    { id: 1, avatar: '👩', name: '妈咪', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899', likes: ['爸爸', '辛巴🐕'], comments: ['爸爸：我拍的更好看 😤'] },
-    { id: 2, avatar: '👨', name: '爸爸', time: '5小时前', text: '做了宝贝爱吃的红烧排骨，一口就吃光了 😎', color: '#f59e0b', likes: ['妈咪'], comments: ['妈咪：明明是我做的'] },
-    { id: 3, avatar: '👩', name: '妈咪', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899', likes: ['爸爸', '小十一🐱', '大鱼🐱'], comments: ['爸爸：下次我背你'] },
+    { id: 1, avatar: '👩', name: '妈咪', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899', likes: ['爸爸', '辛巴🐕'], comments: [{from:'爸爸', text:'我拍的更好看 😤'}] },
+    { id: 2, avatar: '👨', name: '爸爸', time: '5小时前', text: '做了宝贝爱吃的红烧排骨，一口就吃光了 😎', color: '#f59e0b', likes: ['妈咪'], comments: [{from:'妈咪', text:'明明是我做的'}] },
+    { id: 3, avatar: '👩', name: '妈咪', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899', likes: ['爸爸', '小十一🐱', '大鱼🐱'], comments: [{from:'爸爸', text:'下次我背你'}] },
   ]);
   const [newMomentText, setNewMomentText] = useState('');
   const [showNewMoment, setShowNewMoment] = useState(false);
   const [commentInput, setCommentInput] = useState('');
   const [activeCommentIdx, setActiveCommentIdx] = useState<number|null>(null);
+  const [replyTo, setReplyTo] = useState<{momentId:number, commentFrom:string}|null>(null);
   const nextMomentId = useRef(4);
+
+  // 米米评论后，爸妈/宠物自动回复评论
+  const autoReplyToComment = async (momentId: number, commentText: string, replyToWho: string | undefined) => {
+    const reactors = ['老爸', '妈咪', '辛巴🐕', '大鱼🐱', '小十一🐱'];
+    // 排除被回复的人（不用自己回复自己）
+    const possibleRepliers = reactors.filter(r => r !== replyToWho);
+    // 随机1-2个回复
+    const replyCount = Math.floor(Math.random() * 2) + 1;
+    const repliers = possibleRepliers.sort(() => Math.random() - 0.5).slice(0, replyCount);
+    
+    for (const replier of repliers) {
+      await new Promise(r => setTimeout(r, 2000 + Math.random() * 4000));
+      
+      const whoCommented = replyToWho || '米米';
+      const contextInfo = `这是朋友圈的一条评论：${whoCommented}说了"${commentText}"`;
+      
+      // 用 AI 生成回复内容
+      let aiText = '';
+      try {
+        const character = replier === '老爸' ? 'dad' : replier === '妈咪' ? 'mom' : 'pet';
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `${contextInfo}，请你用一句话简短回复，语气要符合${replier}的角色`,
+            character,
+            speaker: character === 'mom' ? 'mom' : 'dad',
+            history: [],
+          }),
+        });
+        if (res.ok && res.body) {
+          const reader = res.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = new TextDecoder().decode(value);
+            for (const line of chunk.split('\n')) {
+              if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                try { const data = JSON.parse(line.slice(6)); aiText += data.content || ''; } catch { /* skip */ }
+              }
+            }
+          }
+        }
+      } catch { /* AI失败用默认 */ }
+      if (!aiText) {
+        const defaults = ['哈哈', '说的对！', '嗯嗯', '好呀~', '可不是嘛', '我也觉得！'];
+        aiText = defaults[Math.floor(Math.random() * defaults.length)];
+      }
+      
+      setMomentsData(prev => prev.map(m => {
+        if (m.id !== momentId) return m;
+        return { ...m, comments: [...(m.comments || []), { from: replier, text: aiText, replyTo: whoCommented }] };
+      }));
+    }
+    
+    // 爸妈之间也可能互相回复（30%概率）
+    if (Math.random() < 0.3 && repliers.length >= 2) {
+      await new Promise(r => setTimeout(r, 3000 + Math.random() * 3000));
+      const firstR = repliers[0];
+      const secondR = repliers[1];
+      const banterDefaults = [
+        '你少说两句吧', '说得好像你很懂似的', '就你会说', '又来了又来了',
+        '你闭嘴啦', '哼，谁让你说的', '就是就是', '老公/老婆说得对',
+      ];
+      const banter = banterDefaults[Math.floor(Math.random() * banterDefaults.length)];
+      setMomentsData(prev => prev.map(m => {
+        if (m.id !== momentId) return m;
+        return { ...m, comments: [...(m.comments || []), { from: secondR, text: banter, replyTo: firstR }] };
+      }));
+    }
+  };
 
   function renderMoments() {
     const handlePostMoment = () => {
@@ -726,7 +803,7 @@ export default function PhonePage() {
           if (done) {
             const comment = text.replace(/\n/g, '').trim();
             if (comment && comment.length < 50) {
-              setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, `爸爸：${comment}`] } : m));
+              setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '爸爸', text: comment }] } : m));
             }
             return;
           }
@@ -754,7 +831,7 @@ export default function PhonePage() {
             if (done) {
               const comment = text.replace(/\n/g, '').trim();
               if (comment && comment.length < 50) {
-                setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, `妈咪：${comment}`] } : m));
+                setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '妈咪', text: comment }] } : m));
               }
               return;
             }
@@ -823,14 +900,19 @@ export default function PhonePage() {
               {item.comments.length > 0 && (
                 <div className="feed-comments">
                   {item.comments.map((c, ci) => (
-                    <div key={ci} className="feed-comment" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{c}</span>
-                      {c.startsWith('米米：') && (
-                        <span
-                          style={{ color: '#999', fontSize: '10px', cursor: 'pointer', marginLeft: 8, flexShrink: 0 }}
-                          onClick={() => setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, comments: m.comments.filter((_, idx) => idx !== ci) } : m))}
-                        >删除</span>
-                      )}
+                    <div key={ci} className="feed-comment" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span>
+                        <b style={{ color: c.from === '米米' ? '#06b6d4' : c.from === '爸爸' ? '#f59e0b' : c.from === '妈咪' ? '#ec4899' : '#666' }}>{c.from}</b>
+                        {c.replyTo && <span style={{color:'#999'}}> 回复 </span>}
+                        {c.replyTo && <b style={{ color: c.replyTo === '米米' ? '#06b6d4' : c.replyTo === '爸爸' ? '#f59e0b' : c.replyTo === '妈咪' ? '#ec4899' : '#666' }}>{c.replyTo}</b>}
+                        ：{c.text}
+                      </span>
+                      <span style={{ display:'flex', gap:8, flexShrink:0 }}>
+                        <span style={{ color:'#999', fontSize:'10px', cursor:'pointer' }} onClick={() => { setActiveCommentIdx(item.id); setReplyTo({momentId:item.id, commentFrom:c.from}); setCommentInput(''); }}>回复</span>
+                        {c.from === '米米' && (
+                          <span style={{ color:'#ef4444', fontSize:'10px', cursor:'pointer' }} onClick={() => setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, comments: m.comments.filter((_, idx) => idx !== ci) } : m))}>删除</span>
+                        )}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -865,20 +947,26 @@ export default function PhonePage() {
                     onChange={e => setCommentInput(e.target.value)}
                     onKeyDown={e => {
                       if (e.key === 'Enter' && commentInput.trim()) {
-                        setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, comments: [...m.comments, '米米：' + commentInput.trim()] } : m));
+                        const txt = commentInput.trim();
+                        const rp = replyTo?.momentId === item.id ? replyTo.commentFrom : undefined;
+                        setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, comments: [...m.comments, { from: '米米', replyTo: rp, text: txt }] } : m));
                         setCommentInput('');
-                        setActiveCommentIdx(null);
+                        setReplyTo(null);
+                        setTimeout(() => autoReplyToComment(item.id, txt, rp), 2000 + Math.random() * 4000);
                       }
                     }}
-                    placeholder="写评论..."
+                    placeholder={replyTo?.momentId === item.id ? `回复 ${replyTo.commentFrom}...` : '写评论...'}
                     autoFocus
                   />
                   <button
                     onClick={() => {
                       if (commentInput.trim()) {
-                        setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, comments: [...m.comments, '米米：' + commentInput.trim()] } : m));
+                        const txt = commentInput.trim();
+                        const rp = replyTo?.momentId === item.id ? replyTo.commentFrom : undefined;
+                        setMomentsData(prev => prev.map(m => m.id === item.id ? { ...m, comments: [...m.comments, { from: '米米', replyTo: rp, text: txt }] } : m));
                         setCommentInput('');
-                        setActiveCommentIdx(null);
+                        setReplyTo(null);
+                        setTimeout(() => autoReplyToComment(item.id, txt, rp), 2000 + Math.random() * 4000);
                       }
                     }}
                   >发送</button>
