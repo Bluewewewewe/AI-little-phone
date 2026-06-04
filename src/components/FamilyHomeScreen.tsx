@@ -70,14 +70,14 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
   const isEvening = hour >= 18 && hour < 22
 
   const rooms = [
-    { name: '主卧', icon: '🛏️', color: 'from-pink-500/8 to-rose-500/4', accent: 'border-pink-400/8',
+    { name: '主卧', icon: '🛏️', color: 'from-pink-500/8 to-rose-500/4',
       occupants: isNight ? ['👨', '🧑'] : [] },
-    { name: '浴室', icon: '🚿', color: 'from-sky-500/8 to-blue-500/4', accent: 'border-sky-400/8', occupants: [] as string[] },
-    { name: '厨房', icon: '🍳', color: 'from-orange-500/8 to-amber-500/4', accent: 'border-orange-400/8', occupants: [] as string[] },
-    { name: '客厅', icon: '🛋️', color: 'from-violet-500/8 to-purple-500/4', accent: 'border-violet-400/8',
+    { name: '浴室', icon: '🚿', color: 'from-sky-500/8 to-blue-500/4', occupants: [] as string[] },
+    { name: '厨房', icon: '🍳', color: 'from-orange-500/8 to-amber-500/4', occupants: [] as string[] },
+    { name: '客厅', icon: '🛋️', color: 'from-violet-500/8 to-purple-500/4',
       occupants: [] as string[], petHere: true },
-    { name: '书房', icon: '📚', color: 'from-emerald-500/8 to-green-500/4', accent: 'border-emerald-400/8', occupants: [] as string[] },
-    { name: '阳台', icon: '🌿', color: 'from-teal-500/8 to-cyan-500/4', accent: 'border-teal-400/8', occupants: [] as string[] },
+    { name: '书房', icon: '📚', color: 'from-emerald-500/8 to-green-500/4', occupants: [] as string[] },
+    { name: '阳台', icon: '🌿', color: 'from-teal-500/8 to-cyan-500/4', occupants: [] as string[] },
   ]
 
   if (tianlei && !isNight) {
@@ -115,9 +115,9 @@ export default function FamilyHomeScreen({ onBack }: { onBack: () => void }) {
           <div className="grid grid-cols-2 gap-1.5">
             {rooms.map(room => (
               <div key={room.name}
-                className={`relative rounded-xl bg-gradient-to-br ${room.color} ${room.accent} border p-2.5 transition-all duration-300 hover:scale-[1.02] min-h-[60px] ${
+                className={`relative rounded-xl bg-gradient-to-br ${room.color}  p-2.5 transition-all duration-300 hover:scale-[1.02] min-h-[60px] ${
                   room.name === '主卧' ? 'min-h-[85px]' : ''
-                } ${room.occupants.length > 0 ? 'ring-1 ring-amber-900/5' : ''}`}
+                } ${room.occupants.length > 0 ? 'ring-1 ring-amber-900/[0.03]' : ''}`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-base">{room.icon}</span>
@@ -218,8 +218,8 @@ function ParentCard({ status, color, onPeek, onChat }: {
   status: ParentStatus; color: 'violet' | 'rose'; onPeek: () => void; onChat: () => void
 }) {
   const c = {
-    violet: { bg: 'from-violet-500/[0.06] to-purple-500/[0.03]', accent: 'border-violet-400/[0.06]', btn: 'bg-violet-500/10 text-violet-300/70 hover:bg-violet-500/20' },
-    rose: { bg: 'from-rose-500/[0.06] to-pink-500/[0.03]', accent: 'border-rose-400/[0.06]', btn: 'bg-rose-500/10 text-rose-300/70 hover:bg-rose-500/20' },
+    violet: { bg: 'from-violet-500/[0.06] to-purple-500/[0.03]', btn: 'bg-violet-500/10 text-violet-300/70 hover:bg-violet-500/20' },
+    rose: { bg: 'from-rose-500/[0.06] to-pink-500/[0.03]', btn: 'bg-rose-500/10 text-rose-300/70 hover:bg-rose-500/20' },
   }[color]
 
   const statusDot = {
@@ -229,9 +229,9 @@ function ParentCard({ status, color, onPeek, onChat }: {
   const statusLabel = { home: '在家', out: '外出', busy: '忙碌', sleeping: '睡觉' }[status.status] || '未知'
 
   return (
-    <div className={`glass-card p-3 bg-gradient-to-br ${c.bg} ${c.accent} border text-center`}>
+    <div className={`glass-card p-3 bg-gradient-to-br ${c.bg}  text-center`}>
       <div className="relative w-12 h-12 mx-auto mb-2">
-        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${c.bg} flex items-center justify-center border ${c.accent}`}>
+        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${c.bg} flex items-center justify-center `}>
           <span className="text-xl">{status.icon}</span>
         </div>
         <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ${statusDot} border-2 border-amber-100`} />
