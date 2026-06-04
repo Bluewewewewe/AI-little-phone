@@ -434,8 +434,13 @@ export default function PhonePage() {
         let lastSpeakerText = '';
         let updatedHistory = [...history];
 
-        for (const speaker of replyOrder) {
+        for (let i = 0; i < replyOrder.length; i++) {
+          const speaker = replyOrder[i];
+
+          // 模拟活人延迟：第一个人等1-3秒，第二个人等3-6秒
+          const baseDelay = i === 0 ? 1000 + Math.random() * 2000 : 3000 + Math.random() * 3000;
           setTypingWho(speaker);
+          await new Promise(r => setTimeout(r, baseDelay));
 
           // 如果之前有人回复了，把那条消息加入上下文
           const speakerHistory = lastSpeakerText
@@ -470,8 +475,9 @@ export default function PhonePage() {
           updatedHistory = [...updatedHistory, { role: 'assistant' as const, content: `${speaker === 'dad' ? '田雷' : '梓渝'}：${fullText}` }];
         }
       } else {
-        // 私聊：单人回复
+        // 私聊：单人回复，模拟活人延迟1-3秒
         setTypingWho(character);
+        await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
