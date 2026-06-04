@@ -32,7 +32,7 @@ export default function DesktopInfoPanel() {
         <div className="text-center mb-4">
           <span className="text-lg font-bold text-amber-700/80">{levelInfo.title}</span>
         </div>
-        <div className="h-2 bg-amber-900/6 rounded-full overflow-hidden">
+        <div className="h-2 bg-amber-900/[0.06] rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{
@@ -71,7 +71,7 @@ export default function DesktopInfoPanel() {
               </div>
               <span className="text-xs font-medium text-amber-600/70">{intimacyDad}</span>
             </div>
-            <div className="h-2 bg-amber-900/6 rounded-full overflow-hidden">
+            <div className="h-2 bg-amber-900/[0.06] rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
@@ -91,7 +91,7 @@ export default function DesktopInfoPanel() {
               </div>
               <span className="text-xs font-medium text-pink-500/70">{intimacyMom}</span>
             </div>
-            <div className="h-2 bg-amber-900/6 rounded-full overflow-hidden">
+            <div className="h-2 bg-amber-900/[0.06] rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
@@ -128,7 +128,7 @@ export default function DesktopInfoPanel() {
                     <span className="text-[11px] font-medium truncate text-amber-900/70">{pet.name}</span>
                     <span className="text-[9px] text-amber-800/30">{pet.species}</span>
                   </div>
-                  <div className="h-1.5 bg-amber-900/6 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-amber-900/[0.06] rounded-full overflow-hidden">
                     <div className="h-full bg-emerald-400/60 rounded-full" style={{ width: '100%' }} />
                   </div>
                 </div>

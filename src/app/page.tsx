@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useStore } from '@/store/useStore'
 import PhoneLayout from '@/components/PhoneLayout'
@@ -10,10 +10,11 @@ export default function HomePage() {
   const { hasCompletedSetup, identity } = useStore()
   const [showSetup, setShowSetup] = useState(!hasCompletedSetup)
 
-  if (hasCompletedSetup && identity) {
-    router.push('/phone')
-    return null
-  }
+  useEffect(() => {
+    if (hasCompletedSetup && identity) {
+      router.push('/phone')
+    }
+  }, [hasCompletedSetup, identity, router])
 
   return (
     <PhoneLayout>

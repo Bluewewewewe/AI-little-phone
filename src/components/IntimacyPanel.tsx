@@ -38,7 +38,7 @@ export default function IntimacyPanel() {
               <span className="text-[10px] font-bold text-white">爸</span>
             </div>
             <div className="flex-1">
-              <div className="h-2 bg-amber-900/6 rounded-full overflow-hidden">
+              <div className="h-2 bg-amber-900/[0.06] rounded-full overflow-hidden">
                 <div 
                   className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, (intimacyDad / 500) * 100)}%`, background: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }}
@@ -53,7 +53,7 @@ export default function IntimacyPanel() {
               <span className="text-[10px] font-bold text-white">妈</span>
             </div>
             <div className="flex-1">
-              <div className="h-2 bg-amber-900/6 rounded-full overflow-hidden">
+              <div className="h-2 bg-amber-900/[0.06] rounded-full overflow-hidden">
                 <div 
                   className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, (intimacyMom / 500) * 100)}%`, background: 'linear-gradient(90deg, #ec4899, #f472b6)' }}
@@ -79,7 +79,7 @@ export default function IntimacyPanel() {
                 className={`flex-1 h-1.5 rounded-full ${
                   i < Math.floor(totalDaily / 3)
                     ? 'bg-gradient-to-r from-amber-500/70 to-yellow-400/70'
-                    : 'bg-amber-900/6'
+                    : 'bg-amber-900/[0.06]'
                 }`}
               />
             ))}

@@ -265,7 +265,7 @@ export default function AdminPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
+              onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
               placeholder="输入管理员密码"
               className="input"
             />

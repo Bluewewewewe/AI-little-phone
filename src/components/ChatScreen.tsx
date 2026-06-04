@@ -200,7 +200,7 @@ export default function ChatScreen({ chatType, onBack }: ChatScreenProps) {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="输入消息..."
               className="w-full bg-white/30 backdrop-blur-xl rounded-2xl px-4 py-3 pr-10 text-sm focus:outline-none focus:bg-white/40 transition-colors"
               style={{ boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.5)' }}
