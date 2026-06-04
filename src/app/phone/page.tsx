@@ -752,8 +752,8 @@ export default function PhonePage() {
       }));
     }
     
-    // 爸妈之间也可能互相回复（30%概率）
-    if (Math.random() < 0.3 && repliers.length >= 2) {
+    // 爸妈之间也可能互相回复（60%概率）
+    if (Math.random() < 0.6 && repliers.length >= 2) {
       await new Promise(r => setTimeout(r, 3000 + Math.random() * 3000));
       const firstR = repliers[0];
       const secondR = repliers[1];
@@ -804,6 +804,37 @@ export default function PhonePage() {
             const comment = text.replace(/\n/g, '').trim();
             if (comment && comment.length < 50) {
               setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '爸爸', text: comment }] } : m));
+              // 妈咪可能回复爸爸的评论
+              if (Math.random() > 0.35) {
+                setTimeout(() => {
+                  fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: `我在朋友圈发了：${newMomentText.trim()}，爸爸评论了：${comment}`, character: 'family', speaker: 'mom', history: [], context: '朋友圈回复爸爸的评论，简短回应他' }),
+                  }).then(res2 => {
+                    const reader2 = res2.body?.getReader();
+                    if (!reader2) return;
+                    let text2 = '';
+                    const pump2 = (): Promise<void> => reader2.read().then(({ done: d2, value: v2 }) => {
+                      if (d2) {
+                        const c2 = text2.replace(/\n/g, '').trim();
+                        if (c2 && c2.length < 50) {
+                          setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '妈咪', text: c2, replyTo: '爸爸' }] } : m));
+                        }
+                        return;
+                      }
+                      const ch2 = new TextDecoder().decode(v2);
+                      ch2.split('\n').forEach(l2 => {
+                        if (l2.startsWith('data: ') && l2 !== 'data: [DONE]') {
+                          try { text2 += JSON.parse(l2.slice(6)).content; } catch {}
+                        }
+                      });
+                      return pump2();
+                    });
+                    return pump2();
+                  }).catch(() => {});
+                }, 2000 + Math.random() * 2000);
+              }
             }
             return;
           }
@@ -832,6 +863,37 @@ export default function PhonePage() {
               const comment = text.replace(/\n/g, '').trim();
               if (comment && comment.length < 50) {
                 setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '妈咪', text: comment }] } : m));
+                // 爸爸可能回复妈咪的评论
+                if (Math.random() > 0.35) {
+                  setTimeout(() => {
+                    fetch('/api/chat', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ message: `我在朋友圈发了：${newMomentText.trim()}，妈咪评论了：${comment}`, character: 'family', speaker: 'dad', history: [], context: '朋友圈回复妈咪的评论，简短回应她' }),
+                    }).then(res2 => {
+                      const reader2 = res2.body?.getReader();
+                      if (!reader2) return;
+                      let text2 = '';
+                      const pump2 = (): Promise<void> => reader2.read().then(({ done: d2, value: v2 }) => {
+                        if (d2) {
+                          const c2 = text2.replace(/\n/g, '').trim();
+                          if (c2 && c2.length < 50) {
+                            setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '爸爸', text: c2, replyTo: '妈咪' }] } : m));
+                          }
+                          return;
+                        }
+                        const ch2 = new TextDecoder().decode(v2);
+                        ch2.split('\n').forEach(l2 => {
+                          if (l2.startsWith('data: ') && l2 !== 'data: [DONE]') {
+                            try { text2 += JSON.parse(l2.slice(6)).content; } catch {}
+                          }
+                        });
+                        return pump2();
+                      });
+                      return pump2();
+                    }).catch(() => {});
+                  }, 2000 + Math.random() * 2000);
+                }
               }
               return;
             }
