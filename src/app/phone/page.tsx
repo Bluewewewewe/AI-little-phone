@@ -293,57 +293,60 @@ export default function PhonePage() {
       }));
 
       if (character === 'family') {
-        // 家庭群：先发爸爸的消息，再发妈妈的消息
-        // 1. 爸爸回复
-        setTypingWho('dad');
-        const res1 = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userMsg, character: 'family', speaker: 'dad', history }),
-        });
-        if (!res1.ok) throw new Error('请求失败');
-        setTypingWho(null);
+        // 家庭群：随机决定谁回复
+        // 30%只有爸爸回, 30%只有妈妈回, 40%两人都回
+        const rand = Math.random();
+        const dadReplies = rand < 0.7;   // 70%概率爸爸回
+        const momReplies = rand > 0.3;   // 70%概率妈妈回
+        // 随机顺序
+        const dadFirst = Math.random() < 0.5;
 
-        // 添加爸爸空消息
-        const dadMsgId = nextId();
-        setChatHistory(prev => ({
-          ...prev,
-          family: [...prev.family, { from: 'dad', text: '', id: dadMsgId }],
-        }));
+        const replyOrder: Array<'dad' | 'mom'> = [];
+        if (dadReplies && momReplies) {
+          replyOrder.push(dadFirst ? 'dad' : 'mom', dadFirst ? 'mom' : 'dad');
+        } else if (dadReplies) {
+          replyOrder.push('dad');
+        } else if (momReplies) {
+          replyOrder.push('mom');
+        }
 
-        const dadText = await readSSEStream(res1, (text) => {
-          setChatHistory(prev => {
-            const msgs = [...prev.family];
-            const idx = msgs.findIndex(m => m.id === dadMsgId);
-            if (idx !== -1) msgs[idx] = { from: 'dad', text, id: dadMsgId };
-            return { ...prev, family: msgs };
+        let lastSpeakerText = '';
+        let updatedHistory = [...history];
+
+        for (const speaker of replyOrder) {
+          setTypingWho(speaker);
+
+          // 如果之前有人回复了，把那条消息加入上下文
+          const speakerHistory = lastSpeakerText
+            ? [...updatedHistory, { role: 'assistant' as const, content: `${speaker === 'dad' ? '梓渝' : '田雷'}：${lastSpeakerText}` }]
+            : updatedHistory;
+
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: userMsg, character: 'family', speaker, history: speakerHistory }),
           });
-        });
+          setTypingWho(null);
 
-        // 2. 妈妈回复（基于爸爸已回复的上下文）
-        setTypingWho('mom');
-        const momHistory = [...history, { role: 'assistant' as const, content: `田雷：${dadText}` }];
-        const res2 = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userMsg, character: 'family', speaker: 'mom', history: momHistory }),
-        });
-        setTypingWho(null);
+          if (!res.ok) continue;
 
-        if (res2.ok) {
-          const momMsgId = nextId();
+          const msgId = nextId();
           setChatHistory(prev => ({
             ...prev,
-            family: [...prev.family, { from: 'mom', text: '', id: momMsgId }],
+            family: [...prev.family, { from: speaker, text: '', id: msgId }],
           }));
-          await readSSEStream(res2, (text) => {
+
+          const fullText = await readSSEStream(res, (text) => {
             setChatHistory(prev => {
               const msgs = [...prev.family];
-              const idx = msgs.findIndex(m => m.id === momMsgId);
-              if (idx !== -1) msgs[idx] = { from: 'mom', text, id: momMsgId };
+              const idx = msgs.findIndex(m => m.id === msgId);
+              if (idx !== -1) msgs[idx] = { from: speaker, text, id: msgId };
               return { ...prev, family: msgs };
             });
           });
+
+          lastSpeakerText = fullText;
+          updatedHistory = [...updatedHistory, { role: 'assistant' as const, content: `${speaker === 'dad' ? '田雷' : '梓渝'}：${fullText}` }];
         }
       } else {
         // 私聊：单人回复
