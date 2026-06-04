@@ -1,0 +1,82 @@
+import { NextRequest } from 'next/server';
+import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
+import { buildSystemPrompt } from '@/lib/world-book';
+
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
+export async function POST(request: NextRequest) {
+  try {
+    const { message, character, history } = await request.json();
+
+    if (!message || !character) {
+      return new Response(JSON.stringify({ error: '缺少参数' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const customHeaders = HeaderUtils.extractForwardHeaders(request.headers);
+    const config = new Config();
+    const client = new LLMClient(config, customHeaders);
+
+    // 构建消息列表
+    const systemPrompt = buildSystemPrompt(character);
+    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: systemPrompt },
+    ];
+
+    // 加入历史消息
+    if (history && Array.isArray(history)) {
+      for (const msg of history) {
+        if (msg.role === 'user' || msg.role === 'assistant') {
+          messages.push({ role: msg.role, content: msg.content });
+        }
+      }
+    }
+
+    // 加入当前用户消息
+    messages.push({ role: 'user', content: message });
+
+    // 使用流式输出
+    const stream = client.stream(messages, {
+      model: 'doubao-seed-2-0-lite-260215',
+      temperature: 0.8,
+    });
+
+    // 返回 SSE 流
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of stream) {
+            if (chunk.content) {
+              const text = chunk.content.toString();
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: text })}\n\n`));
+            }
+          }
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        } catch (err) {
+          console.error('Stream error:', err);
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: '生成失败' })}\n\n`));
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    });
+  } catch (error) {
+    console.error('Chat API error:', error);
+    return new Response(JSON.stringify({ error: '服务器错误' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
