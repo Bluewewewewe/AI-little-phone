@@ -670,22 +670,73 @@ export default function PhonePage() {
     );
   }
 
+  const [myMoments, setMyMoments] = useState<{text: string, time: string}[]>([]);
+  const [newMomentText, setNewMomentText] = useState('');
+  const [showNewMoment, setShowNewMoment] = useState(false);
   const [momentsLikes, setMomentsLikes] = useState<Record<number, boolean>>({});
   const [momentsComments, setMomentsComments] = useState<Record<number, string>>({});
   const [commentInput, setCommentInput] = useState('');
   const [activeCommentIdx, setActiveCommentIdx] = useState<number|null>(null);
 
   function renderMoments() {
-    const items = [
+    const presetItems = [
       { avatar: '👩', name: '妈咪', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899', likes: 12, comments: ['爸爸：我拍的更好看 😤'] },
       { avatar: '👨', name: '爸爸', time: '5小时前', text: '做了宝贝爱吃的红烧排骨，一口就吃光了 😎', color: '#f59e0b', likes: 8, comments: ['妈咪：明明是我做的'] },
       { avatar: '👩', name: '妈咪', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899', likes: 23, comments: ['爸爸：下次我背你'] },
     ];
+    const myItems = myMoments.map((m, mi) => ({
+      avatar: '👧', name: '米米', time: m.time, text: m.text, color: '#06b6d4', likes: 0, comments: [],
+      isMine: true as const, myIdx: mi,
+    }));
+    const allItems = [...myItems, ...presetItems];
+
     return (
       <div className="feed-list">
-        {items.map((item, i) => {
+        {/* 发朋友圈按钮 */}
+        <div style={{ padding: '12px 16px' }}>
+          <div
+            className="glass-btn"
+            style={{ width: '100%', padding: '10px', textAlign: 'center', fontSize: '13px', fontWeight: 500 }}
+            onClick={() => setShowNewMoment(!showNewMoment)}
+          >
+            ✏️ 发朋友圈
+          </div>
+          {showNewMoment && (
+            <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+              <input
+                value={newMomentText}
+                onChange={e => setNewMomentText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && newMomentText.trim()) {
+                    setMyMoments(prev => [{ text: newMomentText.trim(), time: '刚刚' }, ...prev]);
+                    setNewMomentText('');
+                    setShowNewMoment(false);
+                  }
+                }}
+                placeholder="分享你的心情..."
+                autoFocus
+                style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none', background: 'rgba(255,255,255,0.5)', fontSize: 13, outline: 'none' }}
+              />
+              <button
+                onClick={() => {
+                  if (newMomentText.trim()) {
+                    setMyMoments(prev => [{ text: newMomentText.trim(), time: '刚刚' }, ...prev]);
+                    setNewMomentText('');
+                    setShowNewMoment(false);
+                  }
+                }}
+                style={{ padding: '8px 14px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+              >发布</button>
+            </div>
+          )}
+        </div>
+
+        {allItems.map((item, i) => {
           const liked = momentsLikes[i] || false;
-          const comments = momentsComments[i] ? [...item.comments, momentsComments[i]!] : item.comments;
+          const isMine = 'isMine' in item && item.isMine;
+          const itemComments = 'comments' in item ? item.comments : [];
+          const comments = momentsComments[i] ? [...itemComments, momentsComments[i]!] : itemComments;
+          const itemLikes = 'likes' in item ? item.likes : 0;
           return (
             <div key={i} className="feed-card">
               <div className="feed-header">
@@ -698,15 +749,15 @@ export default function PhonePage() {
                   {comments.map((c, ci) => <div key={ci} className="feed-comment">{c}</div>)}
                 </div>
               )}
-              {(liked || item.likes > 0) && (
+              {(liked || itemLikes > 0) && (
                 <div className="feed-likes">
                   ❤️ {[
                     ...(liked ? ['米米'] : []),
-                    ...(item.likes > 8 ? ['爸爸'] : []),
-                    ...(item.likes > 5 ? ['妈咪'] : []),
-                    ...(item.likes > 15 ? ['辛巴🐕'] : []),
-                    ...(item.likes > 20 ? ['小十一🐱', '大鱼🐱'] : []),
-                    ...(item.likes > (liked ? 2 : 1) ? [`等${item.likes + (liked ? 1 : 0)}人`] : []),
+                    ...(itemLikes > 8 ? ['爸爸'] : []),
+                    ...(itemLikes > 5 ? ['妈咪'] : []),
+                    ...(itemLikes > 15 ? ['辛巴🐕'] : []),
+                    ...(itemLikes > 20 ? ['小十一🐱', '大鱼🐱'] : []),
+                    ...(itemLikes > (liked ? 2 : 1) ? [`等${itemLikes + (liked ? 1 : 0)}人`] : []),
                   ].filter((v, idx, arr) => arr.indexOf(v) === idx).join('、')}
                 </div>
               )}
@@ -723,6 +774,18 @@ export default function PhonePage() {
                 >
                   💬 评论
                 </span>
+                {isMine === true && (
+                  <span
+                    className="feed-action"
+                    style={{ color: '#ef4444' }}
+                    onClick={() => {
+                      const mi = (item as unknown as { myIdx: number }).myIdx;
+                      setMyMoments(prev => prev.filter((_, idx) => idx !== mi));
+                    }}
+                  >
+                    🗑️ 删除
+                  </span>
+                )}
               </div>
               {activeCommentIdx === i && (
                 <div className="feed-comment-input">
@@ -741,7 +804,7 @@ export default function PhonePage() {
                   />
                   <button onClick={() => {
                     if (commentInput.trim()) {
-                      setMomentsComments(prev => ({ ...prev, [i]: commentInput.trim() }));
+                      setMomentsComments(prev => ({ ...prev, [i]: '米米：' + commentInput.trim() }));
                       setCommentInput('');
                       setActiveCommentIdx(null);
                     }
