@@ -1,136 +1,322 @@
-/* ABOUTME: Main stylesheet for native-static template */
-/* ABOUTME: Provides layout, typography, and theme styles without external dependencies */
-
-/* Reset and base styles */
+/* ===== Reset ===== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-:root {
-  /* Light theme colors */
-  --background: #ffffff;
-  --foreground: #171717;
-  --muted-foreground: #71717a;
-
-  /* Spacing */
-  --spacing-2: 0.5rem;
-  --spacing-4: 1rem;
-  --spacing-16: 4rem;
-  --spacing-32: 8rem;
-
-  /* Typography */
-  --font-size-base: 1rem;
-  --font-size-sm: 0.875rem;
-  --line-height-tight: 1.25;
-  --line-height-relaxed: 2;
-  --letter-spacing-tight: -0.025em;
-
-  /* Transitions */
-  --transition-duration: 300ms;
-}
-
-/* Dark theme */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --muted-foreground: #a1a1aa;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  margin: 0;
-  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-/* App container */
-#app {
+/* ===== 壁纸 ===== */
+.wallpaper {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #fef9ee 0%, #fef3c7 50%, #fde68a 100%);
+  z-index: 0;
+}
+
+.wallpaper::before {
+  content: '';
+  position: absolute;
+  top: 12%;
+  left: 18%;
+  width: 200px;
+  height: 200px;
+  background: rgba(251, 191, 36, 0.18);
+  border-radius: 50%;
+  filter: blur(70px);
+}
+
+.wallpaper::after {
+  content: '';
+  position: absolute;
+  top: 45%;
+  right: 8%;
+  width: 160px;
+  height: 160px;
+  background: rgba(253, 230, 138, 0.25);
+  border-radius: 50%;
+  filter: blur(60px);
+}
+
+/* ===== 屏幕 ===== */
+.screen {
+  position: absolute;
+  inset: 0;
   display: flex;
-  height: 100%;
-  min-height: 100vh;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.screen.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ===== 状态栏 ===== */
+.status-bar {
+  position: relative;
+  z-index: 10;
+  display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  padding: 12px 24px 0 24px;
+  min-height: 48px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(120, 53, 0, 0.75);
+  flex-shrink: 0;
+}
+
+.status-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.battery {
+  font-size: 12px;
+}
+
+/* ===== 图标网格滑动区域 ===== */
+.grid-container {
+  position: relative;
+  z-index: 5;
+  flex: 1;
   overflow: hidden;
 }
 
-/* Main content wrapper */
-.main-wrapper {
+.grid-slider {
   display: flex;
+  height: 100%;
+  will-change: transform;
+}
+
+.grid-page {
+  flex: 0 0 100%;
   width: 100%;
   height: 100%;
-  max-width: 48rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 16px;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px 0;
+  width: 100%;
+  max-width: 360px;
+  padding: 0 16px;
+}
+
+/* ===== APP 图标 ===== */
+.app-icon {
+  display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  transition: transform 0.15s ease;
+}
+
+.app-icon:active {
+  transform: scale(0.85);
+}
+
+.icon-emoji {
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding-left: var(--spacing-16);
-  padding-right: var(--spacing-16);
-  padding-top: var(--spacing-32);
-  padding-bottom: var(--spacing-32);
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  font-size: 30px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.55), rgba(255,255,255,0.35));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 2px 8px rgba(120, 53, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.04);
 }
 
-/* Content container */
-.content-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-4);
-}
-
-/* Logo image */
-.logo-image {
-  width: 156px;
-  height: 130px;
-  object-fit: contain;
-}
-
-/* Text container */
-.text-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-2);
+.icon-label {
+  font-size: 10px;
+  color: rgba(120, 53, 0, 0.55);
+  max-width: 68px;
   text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
 }
 
-/* Heading */
-.heading {
-  max-width: 36rem;
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  line-height: var(--line-height-tight);
-  letter-spacing: var(--letter-spacing-tight);
-  color: var(--foreground);
+/* ===== 分页指示点 ===== */
+.page-dots {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+  flex-shrink: 0;
 }
 
-/* Description text */
-.description {
-  max-width: 42rem;
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-relaxed);
-  color: var(--muted-foreground);
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(120, 53, 0, 0.15);
+  transition: all 0.2s ease;
 }
 
-/* Responsive design */
-@media (max-width: 640px) {
-  .main-wrapper {
-    padding-left: 1rem;
-    padding-right: 1rem;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+.dot.active {
+  width: 18px;
+  border-radius: 3px;
+  background: rgba(120, 53, 0, 0.4);
+}
+
+/* ===== Dock 栏 ===== */
+.dock {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin: 0 20px 6px 20px;
+  padding: 12px 8px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow:
+    0 2px 16px rgba(120, 53, 0, 0.06),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.dock-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  padding: 4px 12px;
+  transition: transform 0.15s ease;
+}
+
+.dock-icon:active {
+  transform: scale(0.85);
+}
+
+.dock-icon .icon-emoji {
+  width: 50px;
+  height: 50px;
+  font-size: 26px;
+  border-radius: 12px;
+}
+
+/* ===== Home Indicator ===== */
+.home-indicator {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0 8px 0;
+  flex-shrink: 0;
+}
+
+.indicator-bar {
+  width: 140px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(120, 53, 0, 0.18);
+}
+
+/* ===== APP 全屏内容区 ===== */
+#appScreen {
+  background: #ffffff;
+  z-index: 100;
+}
+
+#appContent {
+  width: 100%;
+  height: 100%;
+}
+
+.back-btn {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  background: none;
+  border: none;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition: background 0.15s ease, color 0.15s ease;
+  font-family: inherit;
+}
+
+.back-btn:active {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 400px) {
+  .icon-grid {
+    gap: 18px 0;
+    padding: 0 12px;
   }
+  .icon-emoji {
+    width: 52px;
+    height: 52px;
+    font-size: 27px;
+  }
+  .dock {
+    margin: 0 12px 4px 12px;
+  }
+  .dock-icon .icon-emoji {
+    width: 46px;
+    height: 46px;
+    font-size: 24px;
+  }
+}
 
-  .logo-image {
-    width: 120px;
-    height: 100px;
+@media (min-width: 768px) {
+  .status-bar {
+    padding-top: 16px;
+    min-height: 54px;
   }
 }
