@@ -741,38 +741,60 @@ export default function PhonePage() {
     const emotionKeywords = ['不开心', '难过', '伤心', '生气', '烦', '累', '想', '哭', '怕', '焦虑', '压力', '委屈', '孤独', '无聊', '寂寞', '害怕', '讨厌', '郁闷', '崩溃', '受不了', '好烦', '好累', '好怕', '好想', '心痛', '心碎', '分手', '吵架', '对不起', '抱歉', '不舒服', '生病', '难受', '头痛', '肚子疼', '发烧', '感冒', '失眠', '噩梦', '考试', '面试', '好难', '困难', '撑不住', '不想', '失望'];
     const hasEmotion = emotionKeywords.some(kw => commentText.includes(kw));
     
+    // 获取朋友圈信息——判断是谁的朋友圈
+    const currentMoment = momentsDataRef.current.find(m => m.id === momentId);
+    const momentAuthor = currentMoment?.name || '';
+    
     const reactors = ['老爸', '妈咪', '辛巴🐕', '大鱼🐱', '小十一🐱'];
     const possibleRepliers = reactors.filter(r => r !== commentFrom);
     
     let repliers: string[] = [];
     if (hasEmotion) {
+      // 情绪相关——爸妈一定回，可能宠物也回
       repliers = possibleRepliers.filter(r => r === '老爸' || r === '妈咪');
       if (Math.random() < 0.4) {
         const petReplier = possibleRepliers.find(r => r !== '老爸' && r !== '妈咪');
         if (petReplier) repliers.push(petReplier);
       }
     } else {
-      if (Math.random() < 0.5) return;
-      const replyCount = Math.random() < 0.6 ? 1 : 2;
-      repliers = possibleRepliers.sort(() => Math.random() - 0.5).slice(0, replyCount);
+      // 米米评论爸妈的朋友圈——90%概率回复（爸妈看到女儿评论一般都会回）
+      // 米米评论自己的朋友圈——80%概率回复
+      const isMimiCommenting = commentFrom === '米米';
+      const isMomentsByParents = momentAuthor === '爸爸' || momentAuthor === '妈咪' || momentAuthor === '老爸' || momentAuthor === '妈咪';
+      const replyProb = isMimiCommenting ? (isMomentsByParents ? 0.9 : 0.8) : 0.5;
+      if (Math.random() > replyProb) return;
+      // 优先让朋友圈主人回复
+      let preferReplier: string | null = null;
+      if (momentAuthor === '爸爸' || momentAuthor === '老爸') preferReplier = '老爸';
+      if (momentAuthor === '妈咪') preferReplier = '妈咪';
+      const replyCount = Math.random() < 0.5 ? 1 : 2;
+      if (preferReplier && possibleRepliers.includes(preferReplier)) {
+        repliers = [preferReplier];
+        if (replyCount >= 2) {
+          const other = possibleRepliers.filter(r => r !== preferReplier && (r === '老爸' || r === '妈咪'));
+          if (other.length > 0) repliers.push(other[0]);
+        }
+      } else {
+        repliers = possibleRepliers.filter(r => r === '老爸' || r === '妈咪').sort(() => Math.random() - 0.5).slice(0, replyCount);
+      }
     }
     
     for (const replier of repliers) {
       await new Promise(r => setTimeout(r, 1500 + Math.random() * 3000));
       
       // 获取最新朋友圈数据（包含之前已有的评论）
-      const moment = momentsDataRef.current.find(m => m.id === momentId);
-      const momentAuthor = moment?.name || '';
+      const latestMoment = momentsDataRef.current.find(m => m.id === momentId);
+      const latestAuthor = latestMoment?.name || momentAuthor;
       
       const replyToName = commentFrom || '米米';
       const emotionHint = hasEmotion ? ' 注意：对方的话带有情绪，请温柔关心地回复。' : '';
       
       // 构建完整评论链作为history（AI能看到所有之前的互动）
-      const commentHistory = buildMomentsChatHistory(moment);
+      const commentHistory = buildMomentsChatHistory(latestMoment);
       
       const roleMap: Record<string, string> = { '老爸': '田雷（爸爸）', '妈咪': '梓渝（妈咪）', '辛巴🐕': '辛巴（家里的狗）', '大鱼🐱': '大鱼（家里的猫）', '小十一🐱': '小十一（家里的猫）' };
       const myRole = roleMap[replier] || replier;
-      const task = `你是${myRole}。在${momentAuthor}的朋友圈评论区，${replyToName}说了：「${commentText}」。请你作为${myRole}回复${replyToName}的这条评论。${emotionHint}`;
+      const task = `你是${myRole}。在${latestAuthor}的朋友圈评论区，${replyToName}说了：「${commentText}」。请你作为${myRole}回复${replyToName}的这条评论。${emotionHint}`;
       const aiMessage = buildMomentsMessage(task);
       
       let aiText = '';
