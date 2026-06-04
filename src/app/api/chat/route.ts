@@ -7,7 +7,7 @@ export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, character, history } = await request.json();
+    const { message, character, speaker, history } = await request.json();
 
     if (!message || !character) {
       return new Response(JSON.stringify({ error: '缺少参数' }), {
@@ -20,8 +20,9 @@ export async function POST(request: NextRequest) {
     const config = new Config();
     const client = new LLMClient(config, customHeaders);
 
-    // 构建消息列表
-    const systemPrompt = buildSystemPrompt(character);
+    // 家庭群：指定当前谁在说话
+    const currentSpeaker = character === 'family' ? (speaker || 'dad') : character;
+    const systemPrompt = buildSystemPrompt(character, currentSpeaker as 'dad' | 'mom');
     const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
       { role: 'system', content: systemPrompt },
     ];
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
           for await (const chunk of stream) {
             if (chunk.content) {
               const text = chunk.content.toString();
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: text })}\n\n`));
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: text, speaker: currentSpeaker })}\n\n`));
             }
           }
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));

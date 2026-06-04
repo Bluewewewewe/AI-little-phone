@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 interface Message {
   from: 'me' | 'dad' | 'mom';
   text: string;
+  id: number;
 }
 
 interface ChatHistory {
@@ -17,17 +18,20 @@ interface ChatHistory {
 // ========== Parent Status ==========
 function getParentStatus(hour: number) {
   let dadStatus: string, dadDesc: string, momStatus: string, momDesc: string;
-  if (hour >= 7 && hour < 8) { dadStatus = '🟢 在家'; dadDesc = '起床做早餐'; momStatus = '💤 睡觉'; momDesc = '赖床中'; }
-  else if (hour >= 8 && hour < 9) { dadStatus = '🟡 出门'; dadDesc = '出门上班'; momStatus = '🟢 在家'; momDesc = '化妆'; }
+  if (hour >= 7 && hour < 8) { dadStatus = '🟢 在家'; dadDesc = '做早餐中'; momStatus = '💤 睡觉'; momDesc = '赖床中'; }
+  else if (hour >= 8 && hour < 9) { dadStatus = '🟡 出门'; dadDesc = '上班路上'; momStatus = '🟢 在家'; momDesc = '化妆'; }
   else if (hour >= 9 && hour < 12) { dadStatus = '🔴 忙碌'; dadDesc = '公司开会'; momStatus = '🟡 出门'; momDesc = '工作/逛街'; }
   else if (hour >= 12 && hour < 13) { dadStatus = '🟢 在家'; dadDesc = '午休吃饭'; momStatus = '🟡 出门'; momDesc = '和朋友午饭'; }
   else if (hour >= 13 && hour < 18) { dadStatus = '🔴 忙碌'; dadDesc = '继续工作'; momStatus = '🟢 在家'; momDesc = '回家追剧'; }
   else if (hour >= 18 && hour < 19) { dadStatus = '🟡 出门'; dadDesc = '下班回家'; momStatus = '🟢 在家'; momDesc = '做晚饭'; }
-  else if (hour >= 19 && hour < 21) { dadStatus = '🟢 在家'; dadDesc = '看电视玩手机'; momStatus = '🟢 在家'; momDesc = '靠在爸爸身上'; }
+  else if (hour >= 19 && hour < 21) { dadStatus = '🟢 在家'; dadDesc = '看电视'; momStatus = '🟢 在家'; momDesc = '靠在爸爸身上'; }
   else if (hour >= 21 && hour < 23) { dadStatus = '🟢 在家'; dadDesc = '聊天互动'; momStatus = '🟢 在家'; momDesc = '聊天互动'; }
   else { dadStatus = '💤 睡觉'; dadDesc = '睡眠中'; momStatus = '💤 睡觉'; momDesc = '睡眠中'; }
   return { dadStatus, dadDesc, momStatus, momDesc };
 }
+
+let msgIdCounter = 0;
+function nextId() { return ++msgIdCounter; }
 
 // ========== APP Data ==========
 const PAGE1_APPS = [
@@ -54,7 +58,7 @@ const DOCK_APPS = [
 ];
 
 const APP_TITLES: Record<string, string> = {
-  family: '家庭群', dad: '爸爸', mom: '妈妈',
+  family: '家庭群 (3)', dad: '爸爸', mom: '妈咪',
   moments: '朋友圈', weibo: '微博', home: '家里',
   pet: '宠物', dressup: '换装', me: '我的',
   call: '通话', browser: '浏览器', music: '音乐',
@@ -81,22 +85,18 @@ export default function PhonePage() {
   // Chat
   const [chatHistory, setChatHistory] = useState<ChatHistory>({
     dad: [
-      { from: 'dad', text: '今天想吃什么？' },
-      { from: 'dad', text: '爸爸给你做' },
-      { from: 'me', text: '想吃红烧排骨！' },
-      { from: 'dad', text: '好！爸爸这就去准备' },
+      { from: 'dad', text: '在吗，吃了没', id: nextId() },
     ],
     mom: [
-      { from: 'mom', text: '宝贝早点睡哦' },
-      { from: 'me', text: '知道啦妈~' },
-      { from: 'mom', text: '明天降温，记得穿厚点' },
+      { from: 'mom', text: '宝贝~在干嘛呀', id: nextId() },
     ],
     family: [],
   });
   const [chatInput, setChatInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [typingWho, setTypingWho] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const autoChatTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Clock update
   useEffect(() => {
@@ -117,7 +117,51 @@ export default function PhonePage() {
   // Auto-scroll chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory, currentApp]);
+  }, [chatHistory, typingWho]);
+
+  // ========== 主动聊天 ==========
+  useEffect(() => {
+    // 每60-120秒随机一个爸妈主动发消息
+    function scheduleAutoChat() {
+      const delay = 60000 + Math.random() * 60000; // 60-120秒
+      autoChatTimerRef.current = setTimeout(async () => {
+        const hour = new Date().getHours();
+        // 睡觉时间不发
+        if (hour >= 23 || hour < 7) {
+          scheduleAutoChat();
+          return;
+        }
+        const speaker: 'dad' | 'mom' = Math.random() > 0.5 ? 'dad' : 'mom';
+        try {
+          const recentMsgs = chatHistory.family.slice(-6).map(m => ({
+            from: m.from,
+            text: m.text,
+          }));
+          const res = await fetch('/api/auto-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ speaker, recentMessages: recentMsgs }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.message) {
+              setChatHistory(prev => ({
+                ...prev,
+                [speaker]: [...prev[speaker], { from: speaker, text: data.message, id: nextId() }],
+              }));
+            }
+          }
+        } catch {
+          // 静默失败
+        }
+        scheduleAutoChat();
+      }, delay);
+    }
+    scheduleAutoChat();
+    return () => {
+      if (autoChatTimerRef.current) clearTimeout(autoChatTimerRef.current);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ========== Swipe ==========
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -197,6 +241,38 @@ export default function PhonePage() {
     }, 250);
   }
 
+  // ========== 读取SSE流 ==========
+  async function readSSEStream(
+    res: Response,
+    onChunk: (text: string) => void,
+  ) {
+    const reader = res.body?.getReader();
+    const decoder = new TextDecoder();
+    let aiText = '';
+    if (!reader) return aiText;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.content) {
+              aiText += parsed.content;
+              onChunk(aiText);
+            }
+          } catch { /* skip */ }
+        }
+      }
+    }
+    return aiText;
+  }
+
   // ========== Chat Send ==========
   async function sendChat(character: 'dad' | 'mom' | 'family') {
     if (!chatInput.trim() || isSending) return;
@@ -207,76 +283,103 @@ export default function PhonePage() {
     // Add user message
     setChatHistory(prev => ({
       ...prev,
-      [character]: [...prev[character], { from: 'me', text: userMsg }],
+      [character]: [...prev[character], { from: 'me', text: userMsg, id: nextId() }],
     }));
 
-    // Show typing indicator
-    setIsTyping(true);
-
     try {
-      const history = chatHistory[character].map(m => ({
+      const history = chatHistory[character].slice(-20).map(m => ({
         role: (m.from === 'me' ? 'user' : 'assistant') as 'user' | 'assistant',
-        content: m.text,
+        content: m.from === 'me' ? m.text : `${m.from === 'dad' ? '田雷' : '梓渝'}：${m.text}`,
       }));
 
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg, character, history }),
-      });
+      if (character === 'family') {
+        // 家庭群：先发爸爸的消息，再发妈妈的消息
+        // 1. 爸爸回复
+        setTypingWho('dad');
+        const res1 = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userMsg, character: 'family', speaker: 'dad', history }),
+        });
+        if (!res1.ok) throw new Error('请求失败');
+        setTypingWho(null);
 
-      if (!res.ok) throw new Error('请求失败');
-
-      setIsTyping(false);
-
-      // Read SSE stream
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let aiText = '';
-
-      if (reader) {
-        // Add empty AI message that we'll fill
+        // 添加爸爸空消息
+        const dadMsgId = nextId();
         setChatHistory(prev => ({
           ...prev,
-          [character]: [...prev[character], { from: character === 'family' ? 'dad' : character, text: '' }],
+          family: [...prev.family, { from: 'dad', text: '', id: dadMsgId }],
         }));
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') break;
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.content) {
-                  aiText += parsed.content;
-                  const finalText = aiText;
-                  setChatHistory(prev => {
-                    const msgs = [...prev[character]];
-                    msgs[msgs.length - 1] = { from: character === 'family' ? 'dad' : character, text: finalText };
-                    return { ...prev, [character]: msgs };
-                  });
-                }
-              } catch { /* skip */ }
-            }
-          }
+        const dadText = await readSSEStream(res1, (text) => {
+          setChatHistory(prev => {
+            const msgs = [...prev.family];
+            const idx = msgs.findIndex(m => m.id === dadMsgId);
+            if (idx !== -1) msgs[idx] = { from: 'dad', text, id: dadMsgId };
+            return { ...prev, family: msgs };
+          });
+        });
+
+        // 2. 妈妈回复（基于爸爸已回复的上下文）
+        setTypingWho('mom');
+        const momHistory = [...history, { role: 'assistant' as const, content: `田雷：${dadText}` }];
+        const res2 = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userMsg, character: 'family', speaker: 'mom', history: momHistory }),
+        });
+        setTypingWho(null);
+
+        if (res2.ok) {
+          const momMsgId = nextId();
+          setChatHistory(prev => ({
+            ...prev,
+            family: [...prev.family, { from: 'mom', text: '', id: momMsgId }],
+          }));
+          await readSSEStream(res2, (text) => {
+            setChatHistory(prev => {
+              const msgs = [...prev.family];
+              const idx = msgs.findIndex(m => m.id === momMsgId);
+              if (idx !== -1) msgs[idx] = { from: 'mom', text, id: momMsgId };
+              return { ...prev, family: msgs };
+            });
+          });
         }
+      } else {
+        // 私聊：单人回复
+        setTypingWho(character);
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userMsg, character, history }),
+        });
+        if (!res.ok) throw new Error('请求失败');
+        setTypingWho(null);
+
+        const msgId = nextId();
+        setChatHistory(prev => ({
+          ...prev,
+          [character]: [...prev[character], { from: character, text: '', id: msgId }],
+        }));
+
+        await readSSEStream(res, (text) => {
+          setChatHistory(prev => {
+            const msgs = [...prev[character]];
+            const idx = msgs.findIndex(m => m.id === msgId);
+            if (idx !== -1) msgs[idx] = { from: character, text, id: msgId };
+            return { ...prev, [character]: msgs };
+          });
+        });
       }
     } catch {
-      setIsTyping(false);
-      // Fallback: add a default response
+      setTypingWho(null);
       const fallbacks: Record<string, string> = {
-        dad: '嗯，爸爸在呢。',
+        dad: '嗯，爸在呢。',
         mom: '宝贝，妈咪在呢~',
-        family: '田雷：嗯，在呢。',
       };
       setChatHistory(prev => ({
         ...prev,
-        [character]: [...prev[character], { from: character === 'family' ? 'dad' : character, text: fallbacks[character] }],
+        [character]: [...prev[character], { from: character === 'family' ? 'dad' : character, text: fallbacks[character] || '...', id: nextId() }],
       }));
     } finally {
       setIsSending(false);
@@ -300,18 +403,48 @@ export default function PhonePage() {
     );
   }
 
+  // 微信风格聊天
   function renderChatDetail(character: 'dad' | 'mom' | 'family') {
     const msgs = chatHistory[character];
-    const charName = character === 'dad' ? '爸爸' : character === 'mom' ? '妈妈' : '家庭群';
+    const charName = character === 'dad' ? '爸爸' : character === 'mom' ? '妈咪' : '家庭群';
     return (
       <div className="chat-detail">
         <div className="chat-messages">
-          {msgs.map((m, i) => (
-            <div key={i} className={`msg-row ${m.from === 'me' ? 'me' : ''}`}>
-              <div className="msg-bubble">{m.text}</div>
+          {msgs.map((m) => (
+            <div key={m.id} className={`msg-row ${m.from === 'me' ? 'me' : 'other'}`}>
+              {m.from !== 'me' && (
+                <div className="msg-avatar" style={{ background: m.from === 'dad' ? '#f59e0b' : '#ec4899' }}>
+                  {m.from === 'dad' ? '👨' : '👩'}
+                </div>
+              )}
+              <div className="msg-content">
+                {m.from !== 'me' && character === 'family' && (
+                  <div className="msg-name" style={{ color: m.from === 'dad' ? '#f59e0b' : '#ec4899' }}>
+                    {m.from === 'dad' ? '爸爸' : '妈咪'}
+                  </div>
+                )}
+                <div className="msg-bubble">{m.text}</div>
+              </div>
+              {m.from === 'me' && (
+                <div className="msg-avatar me-avatar">👧</div>
+              )}
             </div>
           ))}
-          {isTyping && <div className="msg-typing">{charName}正在输入...</div>}
+          {typingWho && (
+            <div className="msg-row other">
+              <div className="msg-avatar" style={{ background: typingWho === 'dad' ? '#f59e0b' : '#ec4899' }}>
+                {typingWho === 'dad' ? '👨' : '👩'}
+              </div>
+              <div className="msg-content">
+                {character === 'family' && (
+                  <div className="msg-name" style={{ color: typingWho === 'dad' ? '#f59e0b' : '#ec4899' }}>
+                    {typingWho === 'dad' ? '爸爸' : '妈咪'}
+                  </div>
+                )}
+                <div className="msg-bubble typing">正在输入...</div>
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
         <div className="chat-input-bar">
@@ -334,9 +467,9 @@ export default function PhonePage() {
 
   function renderMoments() {
     const items = [
-      { avatar: '👩', name: '妈妈', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899' },
+      { avatar: '👩', name: '妈咪', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899' },
       { avatar: '👨', name: '爸爸', time: '5小时前', text: '做了宝贝爱吃的红烧排骨，一口就吃光了 😎', color: '#f59e0b' },
-      { avatar: '👩', name: '妈妈', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899' },
+      { avatar: '👩', name: '妈咪', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899' },
     ];
     return (
       <div className="feed-list">
@@ -555,11 +688,14 @@ export default function PhonePage() {
               <span className="intimacy-val">12</span>
             </div>
             <div className="intimacy-item">
-              <span className="intimacy-name" style={{ color: '#ec4899' }}>👩 妈妈</span>
+              <span className="intimacy-name" style={{ color: '#ec4899' }}>👩 妈咪</span>
               <div className="intimacy-bar"><div className="intimacy-fill" style={{ width: '8%', background: '#ec4899' }}></div></div>
               <span className="intimacy-val">8</span>
             </div>
           </div>
+        </div>
+        <div className="info-card">
+          <div className="info-card-title" style={{ fontSize: 13, color: '#999', textAlign: 'center' }}>世界书：src/lib/world-book.ts</div>
         </div>
       </div>
 
@@ -594,7 +730,7 @@ export default function PhonePage() {
                 <div className="parent-widget">
                   <span className="parent-emoji">👩</span>
                   <div className="parent-info">
-                    <span className="parent-name">妈妈</span>
+                    <span className="parent-name">妈咪</span>
                     <span className="parent-status">{parentStatus.momStatus}</span>
                   </div>
                   <span className="parent-desc">{parentStatus.momDesc}</span>
