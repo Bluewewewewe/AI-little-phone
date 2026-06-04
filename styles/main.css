@@ -78,8 +78,8 @@ body {
 /* ========== Phone Frame ========== */
 #phoneFrame {
   position: relative;
-  width: 375px;
-  height: 700px;
+  width: min(375px, 85vw);
+  height: min(812px, 94vh);
   border-radius: 44px;
   border: 3px solid #1a1a1a;
   background: #000;
@@ -120,6 +120,12 @@ body {
 #homeScreen.hidden {
   opacity: 0; transform: scale(0.95);
   pointer-events: none;
+}
+#homeContent {
+  flex: 1;
+  display: flex; flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* ========== Status Bar ========== */
@@ -169,11 +175,14 @@ body {
   overflow: hidden;
   padding: 8px 20px;
   position: relative;
+  display: flex; flex-direction: column;
 }
 #appGridSlider {
+  flex: 1;
   display: flex;
   transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: transform;
+  min-height: 0;
 }
 .app-page {
   min-width: 100%;
@@ -229,6 +238,7 @@ body {
 
 /* ========== Dock ========== */
 #dock {
+  flex-shrink: 0;
   display: flex; justify-content: space-around; align-items: center;
   padding: 10px 20px;
   margin: 0 16px;
@@ -260,6 +270,7 @@ body {
 
 /* ========== Home Indicator ========== */
 #homeIndicator {
+  flex-shrink: 0;
   display: flex; justify-content: center;
   padding: 8px 0 10px 0;
 }
