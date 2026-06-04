@@ -78,14 +78,14 @@ body {
 /* ========== Phone Frame ========== */
 #phoneFrame {
   position: relative;
-  width: min(calc(96vh * 9 / 19.5), 390px);
-  height: min(96vh, 844px);
-  border-radius: 55px;
-  background: linear-gradient(180deg, #f5f0e8 0%, #e8e0d0 100%);
+  width: 375px;
+  height: 700px;
+  border-radius: 44px;
+  border: 3px solid #1a1a1a;
+  background: #000;
   box-shadow:
-    0 0 0 2px #d6cfc2,
-    0 20px 60px rgba(0,0,0,0.18),
-    inset 0 1px 0 rgba(255,255,255,0.7);
+    0 20px 60px rgba(0,0,0,0.25),
+    0 0 0 1px rgba(255,255,255,0.1);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -93,29 +93,17 @@ body {
   #phoneFrame {
     width: 100vw; height: 100vh;
     border-radius: 0;
+    border: none;
     background: none;
     box-shadow: none;
   }
-}
-
-/* ========== Dynamic Island ========== */
-#dynamicIsland {
-  position: absolute; top: 12px;
-  left: 50%; transform: translateX(-50%);
-  width: 120px; height: 34px;
-  background: #1a1a1a;
-  border-radius: 20px;
-  z-index: 10;
-}
-@media (max-width: 767px) {
-  #dynamicIsland { display: none; }
 }
 
 /* ========== Phone Screen ========== */
 #phoneScreen {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  border-radius: 55px;
+  border-radius: 41px;
   overflow: hidden;
   background: linear-gradient(180deg, #fef9ee 0%, #fef3c7 50%, #fde68a 100%);
 }
@@ -137,11 +125,8 @@ body {
 /* ========== Status Bar ========== */
 #statusBar {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 56px 24px 0 24px;
+  padding: 14px 24px 0 24px;
   font-size: 14px; font-weight: 600; color: #78350f;
-}
-@media (max-width: 767px) {
-  #statusBar { padding-top: 14px; }
 }
 .status-right { font-size: 13px; }
 
@@ -313,15 +298,12 @@ body {
 /* ========== App Header ========== */
 #appHeader {
   display: flex; align-items: center;
-  padding: 56px 16px 12px 16px;
+  padding: 14px 16px 12px 16px;
   background: rgba(255,255,255,0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(0,0,0,0.06);
   position: sticky; top: 0; z-index: 5;
-}
-@media (max-width: 767px) {
-  #appHeader { padding-top: 14px; }
 }
 #appBack {
   background: none; border: none;
