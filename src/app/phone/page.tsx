@@ -729,9 +729,18 @@ export default function PhonePage() {
       await new Promise(r => setTimeout(r, 1500 + Math.random() * 3000));
       
       // replyTo 指向发评论的人，而不是评论的原始replyTo
+      // 找到原朋友圈内容
+      const moment = momentsData.find(m => m.id === momentId);
+      const momentAuthor = moment?.name || '';
+      const momentContent = moment?.text || '';
+      
       const replyToName = commentFrom || '米米';
-      const emotionHint = hasEmotion ? '注意：对方的话带有情绪，请温柔关心地回复。' : '';
-      const contextInfo = `这是朋友圈的一条评论：${replyToName}说了"${commentText}"。${emotionHint}`;
+      const emotionHint = hasEmotion ? '\n注意：对方的话带有情绪，请温柔关心地回复。' : '';
+      
+      // 明确告诉AI：你是谁、你在回复谁、原朋友圈内容
+      const roleMap: Record<string, string> = { '老爸': '田雷（爸爸）', '妈咪': '梓渝（妈咪）', '辛巴🐕': '辛巴（家里的狗）', '大鱼🐱': '大鱼（家里的猫）', '小十一🐱': '小十一（家里的猫）' };
+      const myRole = roleMap[replier] || replier;
+      const contextInfo = `你是${myRole}。${momentAuthor}发了朋友圈："${momentContent}"。在评论区，${replyToName}说了："${commentText}"。现在请你作为${myRole}，回复${replyToName}的这条评论。${emotionHint}`;
       
       let aiText = '';
       try {
@@ -740,7 +749,7 @@ export default function PhonePage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: `${contextInfo}，请你用一句话简短回复（20字以内），语气要符合${replier}的角色`,
+            message: `${contextInfo}\n请用一句话简短回复（20字以内），语气要符合你的角色，直接说回复内容不要加引号和前缀`,
             character,
             speaker: character === 'mom' ? 'mom' : 'dad',
             history: [],
@@ -847,7 +856,7 @@ export default function PhonePage() {
       fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `我在朋友圈发了：${newMomentText.trim()}`, character: 'family', speaker: 'dad', history: [], context: '朋友圈互动' }),
+        body: JSON.stringify({ message: `米米在朋友圈发了：「${newMomentText.trim()}」，请你作为爸爸直接评论这条朋友圈（20字以内）`, character: 'dad', speaker: 'dad', history: [] }),
       }).then(res => {
         const reader = res.body?.getReader();
         if (!reader) return;
@@ -863,7 +872,7 @@ export default function PhonePage() {
                   fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: `我在朋友圈发了：${newMomentText.trim()}，爸爸评论了：${comment}`, character: 'family', speaker: 'mom', history: [], context: '朋友圈回复爸爸的评论，简短回应他' }),
+                    body: JSON.stringify({ message: `米米发了朋友圈：「${newMomentText.trim()}」，爸爸评论了：「${comment}」。请你作为妈咪回复爸爸的评论，简短回应他（20字以内）`, character: 'mom', speaker: 'mom', history: [] }),
                   }).then(res2 => {
                     const reader2 = res2.body?.getReader();
                     if (!reader2) return;
@@ -906,7 +915,7 @@ export default function PhonePage() {
         fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: `我在朋友圈发了：${newMomentText.trim()}`, character: 'family', speaker: 'mom', history: [], context: '朋友圈互动' }),
+          body: JSON.stringify({ message: `米米在朋友圈发了：「${newMomentText.trim()}」，请你作为妈咪直接评论这条朋友圈（20字以内）`, character: 'mom', speaker: 'mom', history: [] }),
         }).then(res => {
           const reader = res.body?.getReader();
           if (!reader) return;
@@ -922,7 +931,7 @@ export default function PhonePage() {
                     fetch('/api/chat', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ message: `我在朋友圈发了：${newMomentText.trim()}，妈咪评论了：${comment}`, character: 'family', speaker: 'dad', history: [], context: '朋友圈回复妈咪的评论，简短回应她' }),
+                      body: JSON.stringify({ message: `米米在朋友圈发了：「${newMomentText.trim()}」，妈咪评论了：「${comment}」。请你作为爸爸回复妈咪的评论，简短回应她（20字以内）`, character: 'dad', speaker: 'dad', history: [] }),
                     }).then(res2 => {
                       const reader2 = res2.body?.getReader();
                       if (!reader2) return;
