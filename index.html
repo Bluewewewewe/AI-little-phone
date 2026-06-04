@@ -1,148 +1,142 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>AI 小手机</title>
-  <link rel="stylesheet" href="/styles/main.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>AI小手机</title>
+  <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-
-  <!-- ===== 桌面端整体布局 ===== -->
-  <div class="desktop-layout">
-
-    <!-- 左侧信息面板（桌面端） -->
-    <aside class="info-panel">
-      <!-- 等级卡片 -->
+  <!-- 桌面端外层容器 -->
+  <div id="desktop">
+    <!-- 左侧信息面板 -->
+    <div id="infoPanel">
+      <!-- 卡片1: 等级+章节 -->
       <div class="info-card">
-        <div class="info-card-header">⭐ 等级</div>
-        <div class="info-card-body">
-          <div class="info-level">Lv.1</div>
-          <div class="info-chapter">第一章 · 初遇</div>
-          <div class="info-progress-track">
-            <div class="info-progress-bar" style="width:25%"></div>
+        <div class="info-card-title">⭐ 等级</div>
+        <div class="level-row">
+          <span class="level-badge">Lv.1</span>
+          <span class="chapter-badge">Ch1 · 地下秘密</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:15%"></div>
+        </div>
+        <div class="progress-label">距离 Lv.2 还需 85 经验</div>
+      </div>
+      <!-- 卡片2: 亲密度 -->
+      <div class="info-card">
+        <div class="info-card-title">💖 亲密度</div>
+        <div class="intimacy-row">
+          <div class="intimacy-item">
+            <span class="intimacy-name" style="color:#f59e0b">👨 爸爸</span>
+            <div class="intimacy-bar"><div class="intimacy-fill" style="width:12%;background:#f59e0b"></div></div>
+            <span class="intimacy-val">12</span>
+          </div>
+          <div class="intimacy-item">
+            <span class="intimacy-name" style="color:#ec4899">👩 妈妈</span>
+            <div class="intimacy-bar"><div class="intimacy-fill" style="width:8%;background:#ec4899"></div></div>
+            <span class="intimacy-val">8</span>
           </div>
         </div>
       </div>
-      <!-- 亲密度卡片 -->
-      <div class="info-card">
-        <div class="info-card-header">💖 亲密度</div>
-        <div class="info-card-body">
-          <div class="info-intimacy-row">
-            <span class="info-intimacy-label" style="color:#f59e0b">爸爸</span>
-            <div class="info-progress-track flex-1"><div class="info-progress-bar" style="width:40%;background:#f59e0b"></div></div>
-            <span class="info-intimacy-val">40</span>
-          </div>
-          <div class="info-intimacy-row">
-            <span class="info-intimacy-label" style="color:#ec4899">妈妈</span>
-            <div class="info-progress-track flex-1"><div class="info-progress-bar" style="width:35%;background:#ec4899"></div></div>
-            <span class="info-intimacy-val">35</span>
-          </div>
+      <!-- 卡片3: 宠物健康 (Ch2解锁) -->
+      <div class="info-card" id="petHealthCard" style="display:none">
+        <div class="info-card-title">🐾 宠物健康</div>
+        <div class="pet-row">
+          <div class="pet-item">🐕 辛巴 <span class="pet-hp" style="color:#22c55e">90</span></div>
+          <div class="pet-item">🐱 大鱼 <span class="pet-hp" style="color:#22c55e">85</span></div>
+          <div class="pet-item">🐱 小十一 <span class="pet-hp" style="color:#eab308">70</span></div>
         </div>
       </div>
-      <!-- 宠物卡片 -->
-      <div class="info-card">
-        <div class="info-card-header">🐾 宠物</div>
-        <div class="info-card-body">
-          <div class="info-pet-name">小橘 🐱</div>
-          <div class="info-progress-track"><div class="info-progress-bar" style="width:80%;background:#10b981"></div></div>
-          <div class="info-pet-health">健康值 80/100</div>
-        </div>
-      </div>
-    </aside>
+    </div>
 
     <!-- 手机框 -->
-    <div class="phone-frame">
-      <!-- Dynamic Island -->
-      <div class="dynamic-island"></div>
-
-      <!-- 手机屏幕 -->
-      <div class="phone-screen">
-
-        <!-- ===== 主屏幕 ===== -->
-        <div id="homeScreen" class="screen active">
-
-          <!-- 壁纸 -->
-          <div class="wallpaper"></div>
-
-          <!-- 状态栏 -->
-          <header class="status-bar">
-            <span id="statusTime" class="status-time">--:--</span>
-            <div class="status-right">
-              <span>📶</span>
-              <span class="battery">🔋 100%</span>
+    <div id="phoneFrame">
+      <div id="dynamicIsland"></div>
+      <div id="phoneScreen">
+        <!-- 主屏幕 -->
+        <div id="homeScreen">
+          <div id="statusBar">
+            <span id="clock">--:--</span>
+            <span class="status-right">📶 🔋 100%</span>
+          </div>
+          <div id="homeContent">
+            <!-- 大时钟+日期 -->
+            <div id="bigClock">
+              <div id="bigTime">--:--</div>
+              <div id="bigDate"></div>
             </div>
-          </header>
-
-          <!-- 图标网格滑动区域 -->
-          <div id="gridContainer" class="grid-container">
-            <div id="gridSlider" class="grid-slider">
-              <!-- 页面1 -->
-              <div class="grid-page" data-page="0">
-                <div class="icon-grid">
-                  <button class="app-icon" data-app="family"><span class="icon-emoji" style="background:linear-gradient(145deg,#34d399,#059669)">👨‍👩‍👧</span><span class="icon-label">家庭群</span></button>
-                  <button class="app-icon" data-app="dad"><span class="icon-emoji" style="background:linear-gradient(145deg,#60a5fa,#2563eb)">👨</span><span class="icon-label">爸爸</span></button>
-                  <button class="app-icon" data-app="mom"><span class="icon-emoji" style="background:linear-gradient(145deg,#f472b6,#db2777)">👩</span><span class="icon-label">妈妈</span></button>
-                  <button class="app-icon" data-app="moments"><span class="icon-emoji" style="background:linear-gradient(145deg,#fbbf24,#d97706)">📸</span><span class="icon-label">朋友圈</span></button>
-                  <button class="app-icon" data-app="weibo"><span class="icon-emoji" style="background:linear-gradient(145deg,#fb923c,#ea580c)">🔥</span><span class="icon-label">微博</span></button>
-                  <button class="app-icon" data-app="home"><span class="icon-emoji" style="background:linear-gradient(145deg,#a78bfa,#7c3aed)">🏠</span><span class="icon-label">家里</span></button>
-                  <button class="app-icon" data-app="pet"><span class="icon-emoji" style="background:linear-gradient(145deg,#34d399,#047857)">🐾</span><span class="icon-label">宠物</span></button>
-                  <button class="app-icon" data-app="dressup"><span class="icon-emoji" style="background:linear-gradient(145deg,#f9a8d4,#db2777)">👗</span><span class="icon-label">换装</span></button>
-                  <button class="app-icon" data-app="phone"><span class="icon-emoji" style="background:linear-gradient(145deg,#6ee7b7,#059669)">📞</span><span class="icon-label">电话</span></button>
-                  <button class="app-icon" data-app="stories"><span class="icon-emoji" style="background:linear-gradient(145deg,#93c5fd,#1d4ed8)">📖</span><span class="icon-label">故事</span></button>
-                  <button class="app-icon" data-app="photos"><span class="icon-emoji" style="background:linear-gradient(145deg,#fde68a,#ca8a04)">🖼️</span><span class="icon-label">相册</span></button>
-                  <button class="app-icon" data-app="voicemail"><span class="icon-emoji" style="background:linear-gradient(145deg,#c4b5fd,#6d28d9)">🎙️</span><span class="icon-label">语音信箱</span></button>
-                  <button class="app-icon" data-app="memory"><span class="icon-emoji" style="background:linear-gradient(145deg,#fdba74,#c2410c)">📝</span><span class="icon-label">记忆本</span></button>
-                  <button class="app-icon" data-app="weather"><span class="icon-emoji" style="background:linear-gradient(145deg,#7dd3fc,#0284c7)">🌤️</span><span class="icon-label">天气</span></button>
-                  <button class="app-icon" data-app="music"><span class="icon-emoji" style="background:linear-gradient(145deg,#fda4af,#e11d48)">🎵</span><span class="icon-label">音乐</span></button>
-                  <button class="app-icon" data-app="settings"><span class="icon-emoji" style="background:linear-gradient(145deg,#d1d5db,#6b7280)">⚙️</span><span class="icon-label">设置</span></button>
+            <!-- 爸妈状态小组件 -->
+            <div id="parentWidgets">
+              <div class="parent-widget" id="dadWidget">
+                <span class="parent-emoji">👨</span>
+                <div class="parent-info">
+                  <span class="parent-name">爸爸</span>
+                  <span class="parent-status" id="dadStatus">🟢 在家</span>
+                </div>
+                <span class="parent-desc" id="dadDesc">起床做早餐</span>
+              </div>
+              <div class="parent-widget" id="momWidget">
+                <span class="parent-emoji">👩</span>
+                <div class="parent-info">
+                  <span class="parent-name">妈妈</span>
+                  <span class="parent-status" id="momStatus">💤 睡觉</span>
+                </div>
+                <span class="parent-desc" id="momDesc">赖床中</span>
+              </div>
+            </div>
+            <!-- APP图标网格 -->
+            <div id="appGridWrapper">
+              <div id="appGridSlider">
+                <!-- 第1页：8个APP -->
+                <div class="app-page" data-page="0">
+                  <div class="app-icon" data-app="family" style="--app-color:#22c55e"><span class="app-emoji">💬</span><span class="app-label">家庭群</span></div>
+                  <div class="app-icon" data-app="dad" style="--app-color:#f59e0b"><span class="app-emoji">👨</span><span class="app-label">爸爸</span></div>
+                  <div class="app-icon" data-app="mom" style="--app-color:#ec4899"><span class="app-emoji">👩</span><span class="app-label">妈妈</span></div>
+                  <div class="app-icon" data-app="moments" style="--app-color:#f97316"><span class="app-emoji">🌅</span><span class="app-label">朋友圈</span></div>
+                  <div class="app-icon" data-app="weibo" style="--app-color:#ef4444"><span class="app-emoji">📱</span><span class="app-label">微博</span></div>
+                  <div class="app-icon" data-app="home" style="--app-color:#92400e"><span class="app-emoji">🏠</span><span class="app-label">家里</span></div>
+                  <div class="app-icon" data-app="pet" style="--app-color:#10b981"><span class="app-emoji">🐾</span><span class="app-label">宠物</span></div>
+                  <div class="app-icon" data-app="dressup" style="--app-color:#a855f7"><span class="app-emoji">👗</span><span class="app-label">换装</span></div>
+                </div>
+                <!-- 第2页：4个APP -->
+                <div class="app-page" data-page="1">
+                  <div class="app-icon" data-app="me" style="--app-color:#3b82f6"><span class="app-emoji">👤</span><span class="app-label">我的</span></div>
+                  <div class="app-icon" data-app="call" style="--app-color:#06b6d4"><span class="app-emoji">📞</span><span class="app-label">通话</span></div>
+                  <div class="app-icon" data-app="browser" style="--app-color:#6366f1"><span class="app-emoji">🌐</span><span class="app-label">浏览器</span></div>
+                  <div class="app-icon" data-app="music" style="--app-color:#ec4899"><span class="app-emoji">🎵</span><span class="app-label">音乐</span></div>
                 </div>
               </div>
-              <!-- 页面2 -->
-              <div class="grid-page" data-page="1">
-                <div class="icon-grid">
-                  <button class="app-icon" data-app="browser"><span class="icon-emoji" style="background:linear-gradient(145deg,#93c5fd,#1d4ed8)">🌐</span><span class="icon-label">浏览器</span></button>
-                  <button class="app-icon" data-app="messages"><span class="icon-emoji" style="background:linear-gradient(145deg,#6ee7b7,#059669)">💬</span><span class="icon-label">信息</span></button>
-                  <button class="app-icon" data-app="camera"><span class="icon-emoji" style="background:linear-gradient(145deg,#9ca3af,#374151)">📷</span><span class="icon-label">相机</span></button>
-                  <button class="app-icon" data-app="maps"><span class="icon-emoji" style="background:linear-gradient(145deg,#86efac,#16a34a)">🗺️</span><span class="icon-label">地图</span></button>
-                  <button class="app-icon" data-app="clock"><span class="icon-emoji" style="background:linear-gradient(145deg,#1e1e1e,#000)">⏰</span><span class="icon-label">时钟</span></button>
-                  <button class="app-icon" data-app="calculator"><span class="icon-emoji" style="background:linear-gradient(145deg,#6b7280,#1f2937)">🧮</span><span class="icon-label">计算器</span></button>
-                  <button class="app-icon" data-app="notes"><span class="icon-emoji" style="background:linear-gradient(145deg,#fde68a,#eab308)">📝</span><span class="icon-label">备忘录</span></button>
-                  <button class="app-icon" data-app="calendar"><span class="icon-emoji" style="background:linear-gradient(145deg,#fff,#e5e7eb)">📅</span><span class="icon-label">日历</span></button>
-                </div>
+              <!-- 分页指示点 -->
+              <div id="pageDots">
+                <span class="dot active" data-dot="0"></span>
+                <span class="dot" data-dot="1"></span>
               </div>
             </div>
           </div>
-
-          <!-- 分页指示点 -->
-          <div id="pageDots" class="page-dots">
-            <span class="dot active"></span>
-            <span class="dot"></span>
+          <!-- Dock栏 -->
+          <div id="dock">
+            <div class="dock-icon" data-app="call" style="--app-color:#06b6d4"><span class="app-emoji">📞</span></div>
+            <div class="dock-icon" data-app="browser" style="--app-color:#6366f1"><span class="app-emoji">🌐</span></div>
+            <div class="dock-icon" data-app="music" style="--app-color:#ec4899"><span class="app-emoji">🎵</span></div>
+            <div class="dock-icon" data-app="family" style="--app-color:#22c55e"><span class="app-emoji">💬</span></div>
           </div>
-
-          <!-- Dock 栏 -->
-          <nav class="dock">
-            <button class="dock-icon" data-app="phone"><span class="icon-emoji dock-emoji" style="background:linear-gradient(145deg,#6ee7b7,#059669)">📞</span></button>
-            <button class="dock-icon" data-app="browser"><span class="icon-emoji dock-emoji" style="background:linear-gradient(145deg,#93c5fd,#1d4ed8)">🌐</span></button>
-            <button class="dock-icon" data-app="music"><span class="icon-emoji dock-emoji" style="background:linear-gradient(145deg,#fda4af,#e11d48)">🎵</span></button>
-            <button class="dock-icon" data-app="messages"><span class="icon-emoji dock-emoji" style="background:linear-gradient(145deg,#6ee7b7,#059669)">💬</span></button>
-          </nav>
-
           <!-- Home Indicator -->
-          <div class="home-indicator"><div class="indicator-bar"></div></div>
+          <div id="homeIndicator"></div>
         </div>
 
-        <!-- ===== APP 全屏内容区 ===== -->
-        <div id="appScreen" class="screen">
-          <button id="backBtn" class="back-btn">← 返回</button>
+        <!-- APP全屏层 -->
+        <div id="appLayer" style="display:none">
+          <div id="appHeader">
+            <button id="appBack">← 返回</button>
+            <span id="appTitle"></span>
+          </div>
           <div id="appContent"></div>
         </div>
+      </div>
+    </div>
+  </div>
 
-      </div><!-- .phone-screen -->
-    </div><!-- .phone-frame -->
-  </div><!-- .desktop-layout -->
-
-  <script src="/scripts/main.js"></script>
+  <script src="scripts/main.js"></script>
 </body>
 </html>
