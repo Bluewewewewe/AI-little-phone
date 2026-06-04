@@ -670,27 +670,75 @@ export default function PhonePage() {
     );
   }
 
+  const [momentsLikes, setMomentsLikes] = useState<Record<number, boolean>>({});
+  const [momentsComments, setMomentsComments] = useState<Record<number, string>>({});
+  const [commentInput, setCommentInput] = useState('');
+  const [activeCommentIdx, setActiveCommentIdx] = useState<number|null>(null);
+
   function renderMoments() {
     const items = [
-      { avatar: '👩', name: '妈咪', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899' },
-      { avatar: '👨', name: '爸爸', time: '5小时前', text: '做了宝贝爱吃的红烧排骨，一口就吃光了 😎', color: '#f59e0b' },
-      { avatar: '👩', name: '妈咪', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899' },
+      { avatar: '👩', name: '妈咪', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899', likes: 12, comments: ['爸爸：我拍的更好看 😤'] },
+      { avatar: '👨', name: '爸爸', time: '5小时前', text: '做了宝贝爱吃的红烧排骨，一口就吃光了 😎', color: '#f59e0b', likes: 8, comments: ['妈咪：明明是我做的'] },
+      { avatar: '👩', name: '妈咪', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899', likes: 23, comments: ['爸爸：下次我背你'] },
     ];
     return (
       <div className="feed-list">
-        {items.map((item, i) => (
-          <div key={i} className="feed-card">
-            <div className="feed-header">
-              <div className="feed-avatar" style={{ background: item.color + '20' }}>{item.avatar}</div>
-              <div><div className="feed-name">{item.name}</div><div className="feed-time">{item.time}</div></div>
+        {items.map((item, i) => {
+          const liked = momentsLikes[i] || false;
+          const comments = momentsComments[i] ? [...item.comments, momentsComments[i]!] : item.comments;
+          return (
+            <div key={i} className="feed-card">
+              <div className="feed-header">
+                <div className="feed-avatar" style={{ background: item.color + '20' }}>{item.avatar}</div>
+                <div><div className="feed-name" style={{ color: item.color }}>{item.name}</div><div className="feed-time">{item.time}</div></div>
+              </div>
+              <div className="feed-text">{item.text}</div>
+              {comments.length > 0 && (
+                <div className="feed-comments">
+                  {comments.map((c, ci) => <div key={ci} className="feed-comment">{c}</div>)}
+                </div>
+              )}
+              <div className="feed-actions">
+                <span
+                  className={`feed-action ${liked ? 'feed-action-liked' : ''}`}
+                  onClick={() => setMomentsLikes(prev => ({ ...prev, [i]: !liked }))}
+                >
+                  {liked ? '❤️' : '🤍'} {liked ? '已赞' : '赞'} · {(item.likes + (liked ? 1 : 0))}
+                </span>
+                <span
+                  className="feed-action"
+                  onClick={() => { setActiveCommentIdx(activeCommentIdx === i ? null : i); setCommentInput(''); }}
+                >
+                  💬 评论
+                </span>
+              </div>
+              {activeCommentIdx === i && (
+                <div className="feed-comment-input">
+                  <input
+                    value={commentInput}
+                    onChange={e => setCommentInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && commentInput.trim()) {
+                        setMomentsComments(prev => ({ ...prev, [i]: commentInput.trim() }));
+                        setCommentInput('');
+                        setActiveCommentIdx(null);
+                      }
+                    }}
+                    placeholder="写评论..."
+                    autoFocus
+                  />
+                  <button onClick={() => {
+                    if (commentInput.trim()) {
+                      setMomentsComments(prev => ({ ...prev, [i]: commentInput.trim() }));
+                      setCommentInput('');
+                      setActiveCommentIdx(null);
+                    }
+                  }}>发送</button>
+                </div>
+              )}
             </div>
-            <div className="feed-text">{item.text}</div>
-            <div className="feed-actions">
-              <span className="feed-action">❤️ 赞</span>
-              <span className="feed-action">💬 评论</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   }
