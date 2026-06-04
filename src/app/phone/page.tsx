@@ -687,8 +687,8 @@ export default function PhonePage() {
     comments: MomentComment[];   // 评论列表
   }
   const [momentsData, setMomentsData] = useState<MomentItem[]>([
-    { id: 1, avatar: '👩', name: '妈咪', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899', likes: ['爸爸', '辛巴🐕'], comments: [{from:'爸爸', text:'我拍的更好看 😤'}] },
-    { id: 2, avatar: '👨', name: '爸爸', time: '5小时前', text: '做了宝贝爱吃的红烧排骨，一口就吃光了 😎', color: '#f59e0b', likes: ['妈咪'], comments: [{from:'妈咪', text:'明明是我做的'}] },
+    { id: 1, avatar: '👩', name: '妈咪', time: '2小时前', text: '今天的夕阳好美呀 🌅', color: '#ec4899', likes: ['爸爸', '辛巴🐕', '米米'], comments: [{from:'爸爸', text:'我拍的更好看 😤'}, {from:'妈咪', text:'回复 爸爸：你就嘴硬吧，明明是我找的角度 🙄', replyTo:'爸爸'}, {from:'爸爸', text:'回复 妈咪：好好好你拍的最好看 ❤️', replyTo:'妈咪'}, {from:'辛巴🐕', text:'汪汪！🌅'}] },
+    { id: 2, avatar: '👨', name: '爸爸', time: '5小时前', text: '做了宝贝爱吃的红烧排骨，一口就吃光了 😎', color: '#f59e0b', likes: ['妈咪', '米米', '大鱼🐱'], comments: [{from:'妈咪', text:'明明是我做的'}, {from:'爸爸', text:'回复 妈咪：你就负责了切了个葱好吧 😂', replyTo:'妈咪'}, {from:'妈咪', text:'回复 爸爸：切葱也很重要的好不好！哼！', replyTo:'爸爸'}, {from:'大鱼🐱', text:'喵~我想吃鱼不是排骨🐟'}] },
     { id: 3, avatar: '👩', name: '妈咪', time: '昨天', text: '和某人逛了一下午街，脚都酸了~', color: '#ec4899', likes: ['爸爸', '小十一🐱', '大鱼🐱'], comments: [{from:'爸爸', text:'下次我背你'}] },
   ]);
   const [newMomentText, setNewMomentText] = useState('');
