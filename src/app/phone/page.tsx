@@ -437,10 +437,13 @@ export default function PhonePage() {
     }));
 
     try {
-      const history = chatHistory[character].slice(-20).map(m => ({
-        role: (m.from === 'me' ? 'user' : 'assistant') as 'user' | 'assistant',
-        content: m.from === 'me' ? m.text : `${m.from === 'dad' ? '田雷' : '梓渝'}：${m.text}`,
-      }));
+      const history = chatHistory[character]
+        .filter(m => m.from !== 'system') // 过滤系统消息，不要传给AI
+        .slice(-20)
+        .map(m => ({
+          role: (m.from === 'me' ? 'user' : 'assistant') as 'user' | 'assistant',
+          content: m.from === 'me' ? m.text : `${m.from === 'dad' ? '田雷' : '梓渝'}：${m.text}`,
+        }));
 
       // 检查对方是否在睡觉/忙碌/出门
       const isSleeping = (who: 'dad' | 'mom') => {
@@ -697,30 +700,59 @@ export default function PhonePage() {
   const [activeCommentIdx, setActiveCommentIdx] = useState<number|null>(null);
   const [replyTo, setReplyTo] = useState<{momentId:number, commentFrom:string}|null>(null);
   const nextMomentId = useRef(4);
+  // 用ref跟踪最新的momentsData，解决闭包stale问题
+  const momentsDataRef = useRef(momentsData);
+  momentsDataRef.current = momentsData;
+
+  // ========== 朋友圈上下文构建器 ==========
+  // 将一条朋友圈的完整评论链转为 chat history 格式
+  const buildMomentsChatHistory = (moment: MomentItem | undefined): Array<{role: 'user' | 'assistant'; content: string}> => {
+    if (!moment) return [];
+    const result: Array<{role: 'user' | 'assistant'; content: string}> = [];
+    // 原帖内容作为背景（用户消息）
+    result.push({ role: 'user', content: `[朋友圈] ${moment.name}发了：「${moment.text}」` });
+    // 所有已有评论按顺序加入
+    if (moment.comments) {
+      for (const c of moment.comments) {
+        const isUser = c.from === '米米';
+        const prefix = c.replyTo ? `回复${c.replyTo}：` : '';
+        result.push({
+          role: isUser ? 'user' : 'assistant',
+          content: `${c.from}${prefix}${c.text}`,
+        });
+      }
+    }
+    return result;
+  };
+
+  // 构建朋友圈AI调用的message（含时间/状态上下文）
+  const buildMomentsMessage = (task: string): string => {
+    const now = new Date();
+    const hour = now.getHours();
+    const timeStr = `${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const dadStatus = parentStatus.dadStatus.includes('睡觉') ? '爸爸在睡觉' : parentStatus.dadDesc ? `爸爸在${parentStatus.dadDesc}` : '';
+    const momStatus = parentStatus.momStatus.includes('睡觉') ? '妈咪在睡觉' : parentStatus.momDesc ? `妈咪在${parentStatus.momDesc}` : '';
+    const statusHint = [dadStatus, momStatus].filter(Boolean).join('，');
+    return `【当前时间${timeStr}，${statusHint}】${task}`;
+  };
 
   // 米米评论后，爸妈/宠物自动回复评论
   const autoReplyToComment = async (momentId: number, commentText: string, commentFrom: string | undefined) => {
-    // commentFrom 是发这条评论的人（米米/爸/妈等）
-    // 回复应该指向发评论的人，而不是评论的 replyTo
     const emotionKeywords = ['不开心', '难过', '伤心', '生气', '烦', '累', '想', '哭', '怕', '焦虑', '压力', '委屈', '孤独', '无聊', '寂寞', '害怕', '讨厌', '郁闷', '崩溃', '受不了', '好烦', '好累', '好怕', '好想', '心痛', '心碎', '分手', '吵架', '对不起', '抱歉', '不舒服', '生病', '难受', '头痛', '肚子疼', '发烧', '感冒', '失眠', '噩梦', '考试', '面试', '好难', '困难', '撑不住', '不想', '失望'];
     const hasEmotion = emotionKeywords.some(kw => commentText.includes(kw));
     
     const reactors = ['老爸', '妈咪', '辛巴🐕', '大鱼🐱', '小十一🐱'];
-    // 排除发评论的人自己
     const possibleRepliers = reactors.filter(r => r !== commentFrom);
     
-    // 选择性回复：情绪相关必回（2-3人），否则50%概率不回或1人回
     let repliers: string[] = [];
     if (hasEmotion) {
-      // 情绪相关——爸妈一定回，可能宠物也回
       repliers = possibleRepliers.filter(r => r === '老爸' || r === '妈咪');
       if (Math.random() < 0.4) {
         const petReplier = possibleRepliers.find(r => r !== '老爸' && r !== '妈咪');
         if (petReplier) repliers.push(petReplier);
       }
     } else {
-      // 普通评论——50%概率不回，50%概率1-2人回
-      if (Math.random() < 0.5) return; // 50%概率没人回
+      if (Math.random() < 0.5) return;
       const replyCount = Math.random() < 0.6 ? 1 : 2;
       repliers = possibleRepliers.sort(() => Math.random() - 0.5).slice(0, replyCount);
     }
@@ -728,19 +760,20 @@ export default function PhonePage() {
     for (const replier of repliers) {
       await new Promise(r => setTimeout(r, 1500 + Math.random() * 3000));
       
-      // replyTo 指向发评论的人，而不是评论的原始replyTo
-      // 找到原朋友圈内容
-      const moment = momentsData.find(m => m.id === momentId);
+      // 获取最新朋友圈数据（包含之前已有的评论）
+      const moment = momentsDataRef.current.find(m => m.id === momentId);
       const momentAuthor = moment?.name || '';
-      const momentContent = moment?.text || '';
       
       const replyToName = commentFrom || '米米';
-      const emotionHint = hasEmotion ? '\n注意：对方的话带有情绪，请温柔关心地回复。' : '';
+      const emotionHint = hasEmotion ? ' 注意：对方的话带有情绪，请温柔关心地回复。' : '';
       
-      // 明确告诉AI：你是谁、你在回复谁、原朋友圈内容
+      // 构建完整评论链作为history（AI能看到所有之前的互动）
+      const commentHistory = buildMomentsChatHistory(moment);
+      
       const roleMap: Record<string, string> = { '老爸': '田雷（爸爸）', '妈咪': '梓渝（妈咪）', '辛巴🐕': '辛巴（家里的狗）', '大鱼🐱': '大鱼（家里的猫）', '小十一🐱': '小十一（家里的猫）' };
       const myRole = roleMap[replier] || replier;
-      const contextInfo = `你是${myRole}。${momentAuthor}发了朋友圈："${momentContent}"。在评论区，${replyToName}说了："${commentText}"。现在请你作为${myRole}，回复${replyToName}的这条评论。${emotionHint}`;
+      const task = `你是${myRole}。在${momentAuthor}的朋友圈评论区，${replyToName}说了：「${commentText}」。请你作为${myRole}回复${replyToName}的这条评论。${emotionHint}`;
+      const aiMessage = buildMomentsMessage(task);
       
       let aiText = '';
       try {
@@ -749,10 +782,10 @@ export default function PhonePage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: `${contextInfo}\n请用一句话简短回复（20字以内），语气要符合你的角色，直接说回复内容不要加引号和前缀`,
+            message: `${aiMessage}\n请用一句话简短回复（20字以内），语气要符合你的角色和当前状态，直接说回复内容不要加引号和前缀`,
             character,
             speaker: character === 'mom' ? 'mom' : 'dad',
-            history: [],
+            history: commentHistory,
           }),
         });
         if (res.ok && res.body) {
@@ -776,10 +809,11 @@ export default function PhonePage() {
         aiText = defaults[Math.floor(Math.random() * defaults.length)];
       }
       
-      // replyTo 指向发评论的人
+      const finalReplier = replier;
+      const finalReplyToName = replyToName;
       setMomentsData(prev => prev.map(m => {
         if (m.id !== momentId) return m;
-        return { ...m, comments: [...(m.comments || []), { from: replier, text: aiText, replyTo: replyToName }] };
+        return { ...m, comments: [...(m.comments || []), { from: finalReplier, text: aiText, replyTo: finalReplyToName }] };
       }));
     }
     
@@ -787,20 +821,26 @@ export default function PhonePage() {
     const crossReplyProb = hasEmotion ? 0.8 : 0.6;
     if (Math.random() < crossReplyProb && repliers.length >= 2 && repliers.includes('老爸') && repliers.includes('妈咪')) {
       await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
-      // 谁最后评论，另一个人回复谁
       const lastReplier = repliers[repliers.length - 1];
       const crossReplier = lastReplier === '老爸' ? '妈咪' : '老爸';
       const crossCharacter = crossReplier === '妈咪' ? 'mom' : 'dad';
+      // 获取最新评论链
+      const latestMoment = momentsDataRef.current.find(m => m.id === momentId);
+      const crossHistory = buildMomentsChatHistory(latestMoment);
+      const roleMap2: Record<string, string> = { '老爸': '田雷（爸爸）', '妈咪': '梓渝（妈咪）' };
+      const crossRole = roleMap2[crossReplier] || crossReplier;
+      const crossTask = `你是${crossRole}。${lastReplier}刚在评论区说了话，请你用一句话简短回复${lastReplier}（20字以内），要像老夫老妻互怼/撒娇的语气`;
+      const crossMessage = buildMomentsMessage(crossTask);
       let crossText = '';
       try {
         const crossRes = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: `朋友圈评论区，${lastReplier}刚说了话，请你用一句话简短回复${lastReplier}（20字以内），要像老夫老妻互怼/撒娇的语气`,
+            message: `${crossMessage}\n直接说回复内容不要加引号和前缀`,
             character: crossCharacter,
             speaker: crossCharacter,
-            history: [],
+            history: crossHistory,
           }),
         });
         if (crossRes.ok && crossRes.body) {
@@ -840,10 +880,11 @@ export default function PhonePage() {
         isMine: true, likes: [], comments: [],
       };
       setMomentsData(prev => [newMoment, ...prev]);
+      const postContent = newMomentText.trim();
       setNewMomentText('');
       setShowNewMoment(false);
 
-      // 爸妈自动互动（延迟模拟）
+      // 爸妈自动点赞（延迟模拟）
       const momentId = newMoment.id;
       setTimeout(() => {
         setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, likes: [...m.likes, '爸爸'] } : m));
@@ -852,124 +893,140 @@ export default function PhonePage() {
         setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, likes: [...m.likes, '妈咪'] } : m));
       }, 4000 + Math.random() * 3000);
 
-      // AI 评论互动
-      fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `米米在朋友圈发了：「${newMomentText.trim()}」，请你作为爸爸直接评论这条朋友圈（20字以内）`, character: 'dad', speaker: 'dad', history: [] }),
-      }).then(res => {
-        const reader = res.body?.getReader();
-        if (!reader) return;
-        let text = '';
-        const pump = (): Promise<void> => reader.read().then(({ done, value }) => {
-          if (done) {
-            const comment = text.replace(/\n/g, '').trim();
-            if (comment) {
-              setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '爸爸', text: comment.slice(0, 80) }] } : m));
-              // 妈咪可能回复爸爸的评论
-              if (Math.random() > 0.3) {
-                setTimeout(() => {
-                  fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: `米米发了朋友圈：「${newMomentText.trim()}」，爸爸评论了：「${comment}」。请你作为妈咪回复爸爸的评论，简短回应他（20字以内）`, character: 'mom', speaker: 'mom', history: [] }),
-                  }).then(res2 => {
-                    const reader2 = res2.body?.getReader();
-                    if (!reader2) return;
-                    let text2 = '';
-                    const pump2 = (): Promise<void> => reader2.read().then(({ done: d2, value: v2 }) => {
-                      if (d2) {
-                        const c2 = text2.replace(/\n/g, '').trim();
-                        if (c2) {
-                          setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '妈咪', text: c2.slice(0, 80), replyTo: '爸爸' }] } : m));
-                        }
-                        return;
-                      }
-                      const ch2 = new TextDecoder().decode(v2);
-                      ch2.split('\n').forEach(l2 => {
-                        if (l2.startsWith('data: ') && l2 !== 'data: [DONE]') {
-                          try { text2 += JSON.parse(l2.slice(6)).content; } catch {}
-                        }
-                      });
-                      return pump2();
-                    });
-                    return pump2();
-                  }).catch(() => {});
-                }, 2000 + Math.random() * 2000);
-              }
-            }
-            return;
-          }
-          const chunk = new TextDecoder().decode(value);
-          chunk.split('\n').forEach(line => {
-            if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-              try { text += JSON.parse(line.slice(6)).content; } catch {}
-            }
-          });
-          return pump();
-        });
-        return pump();
-      }).catch(() => {});
+      // 构建评论基础上下文history
+      const baseHistory: Array<{role:'user'|'assistant';content:string}> = [
+        { role: 'user', content: `[朋友圈] 米米发了：「${postContent}」` }
+      ];
 
-      setTimeout(() => {
-        fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: `米米在朋友圈发了：「${newMomentText.trim()}」，请你作为妈咪直接评论这条朋友圈（20字以内）`, character: 'mom', speaker: 'mom', history: [] }),
-        }).then(res => {
-          const reader = res.body?.getReader();
-          if (!reader) return;
-          let text = '';
-          const pump = (): Promise<void> => reader.read().then(({ done, value }) => {
-            if (done) {
-              const comment = text.replace(/\n/g, '').trim();
-              if (comment) {
-                setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '妈咪', text: comment.slice(0, 80) }] } : m));
-                // 爸爸可能回复妈咪的评论
-                if (Math.random() > 0.3) {
-                  setTimeout(() => {
-                    fetch('/api/chat', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ message: `米米在朋友圈发了：「${newMomentText.trim()}」，妈咪评论了：「${comment}」。请你作为爸爸回复妈咪的评论，简短回应她（20字以内）`, character: 'dad', speaker: 'dad', history: [] }),
-                    }).then(res2 => {
-                      const reader2 = res2.body?.getReader();
-                      if (!reader2) return;
-                      let text2 = '';
-                      const pump2 = (): Promise<void> => reader2.read().then(({ done: d2, value: v2 }) => {
-                        if (d2) {
-                          const c2 = text2.replace(/\n/g, '').trim();
-                          if (c2 && c2.length < 50) {
-                            setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '爸爸', text: c2, replyTo: '妈咪' }] } : m));
-                          }
-                          return;
-                        }
-                        const ch2 = new TextDecoder().decode(v2);
-                        ch2.split('\n').forEach(l2 => {
-                          if (l2.startsWith('data: ') && l2 !== 'data: [DONE]') {
-                            try { text2 += JSON.parse(l2.slice(6)).content; } catch {}
-                          }
-                        });
-                        return pump2();
-                      });
-                      return pump2();
-                    }).catch(() => {});
-                  }, 2000 + Math.random() * 2000);
+      // 爸爸评论（带上下文）
+      setTimeout(async () => {
+        const dadTask = buildMomentsMessage(`你是田雷（爸爸）。米米在朋友圈发了：「${postContent}」。请你作为爸爸直接评论这条朋友圈。`);
+        let dadComment = '';
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: `${dadTask}\n请直接说评论内容（20字以内），不要加引号和前缀`, character: 'dad', speaker: 'dad', history: baseHistory }),
+          });
+          if (res.ok && res.body) {
+            const reader = res.body.getReader();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              const chunk = new TextDecoder().decode(value);
+              for (const line of chunk.split('\n')) {
+                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                  try { dadComment += JSON.parse(line.slice(6)).content || ''; } catch {}
                 }
               }
-              return;
             }
-            const chunk = new TextDecoder().decode(value);
-            chunk.split('\n').forEach(line => {
-              if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-                try { text += JSON.parse(line.slice(6)).content; } catch {}
+          }
+        } catch {}
+        dadComment = dadComment.replace(/\n/g, '').trim().slice(0, 80);
+        if (!dadComment) dadComment = '不错嘛';
+
+        const finalDadComment = dadComment;
+        setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '爸爸', text: finalDadComment }] } : m));
+
+        // 妈咪回复爸爸的评论（60%概率）
+        if (Math.random() > 0.4) {
+          setTimeout(async () => {
+            const momHistory = [...baseHistory, { role: 'assistant', content: `爸爸：${finalDadComment}` }];
+            const momTask = buildMomentsMessage(`你是梓渝（妈咪）。米米发了朋友圈「${postContent}」，爸爸评论了「${finalDadComment}」。请你作为妈咪回复爸爸的评论。`);
+            let momReply = '';
+            try {
+              const res2 = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: `${momTask}\n请直接说回复内容（20字以内），不要加引号和前缀`, character: 'mom', speaker: 'mom', history: momHistory }),
+              });
+              if (res2.ok && res2.body) {
+                const reader2 = res2.body.getReader();
+                while (true) {
+                  const { done, value } = await reader2.read();
+                  if (done) break;
+                  const chunk2 = new TextDecoder().decode(value);
+                  for (const line2 of chunk2.split('\n')) {
+                    if (line2.startsWith('data: ') && line2 !== 'data: [DONE]') {
+                      try { momReply += JSON.parse(line2.slice(6)).content || ''; } catch {}
+                    }
+                  }
+                }
               }
-            });
-            return pump();
+            } catch {}
+            momReply = momReply.replace(/\n/g, '').trim().slice(0, 80);
+            if (!momReply) momReply = '哼~';
+            const finalMomReply = momReply;
+            setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '妈咪', text: finalMomReply, replyTo: '爸爸' }] } : m));
+          }, 2000 + Math.random() * 2000);
+        }
+      }, 3000 + Math.random() * 2000);
+
+      // 妈咪评论（带上下文，延迟更久以避免跟上面重叠）
+      setTimeout(async () => {
+        // 用ref获取最新评论链（可能爸爸已经评论了）
+        const currentMoment = momentsDataRef.current.find(m => m.id === momentId);
+        const momHistory = buildMomentsChatHistory(currentMoment);
+        const momTask = buildMomentsMessage(`你是梓渝（妈咪）。米米在朋友圈发了：「${postContent}」。请你作为妈咪直接评论这条朋友圈。`);
+        let momComment = '';
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: `${momTask}\n请直接说评论内容（20字以内），不要加引号和前缀`, character: 'mom', speaker: 'mom', history: momHistory }),
           });
-          return pump();
-        }).catch(() => {});
-      }, 3500);
+          if (res.ok && res.body) {
+            const reader = res.body.getReader();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              const chunk = new TextDecoder().decode(value);
+              for (const line of chunk.split('\n')) {
+                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                  try { momComment += JSON.parse(line.slice(6)).content || ''; } catch {}
+                }
+              }
+            }
+          }
+        } catch {}
+        momComment = momComment.replace(/\n/g, '').trim().slice(0, 80);
+        if (!momComment) momComment = '好看~';
+        const finalMomComment = momComment;
+        setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '妈咪', text: finalMomComment }] } : m));
+
+        // 爸爸回复妈咪的评论（60%概率）
+        if (Math.random() > 0.4) {
+          setTimeout(async () => {
+            const dadHistory2 = [...(buildMomentsChatHistory(momentsDataRef.current.find(m => m.id === momentId))), { role: 'assistant', content: `妈咪：${finalMomComment}` }];
+            const dadTask2 = buildMomentsMessage(`你是田雷（爸爸）。妈咪评论了「${finalMomComment}」。请你作为爸爸回复妈咪。`);
+            let dadReply = '';
+            try {
+              const res2 = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: `${dadTask2}\n请直接说回复内容（20字以内），不要加引号和前缀`, character: 'dad', speaker: 'dad', history: dadHistory2 }),
+              });
+              if (res2.ok && res2.body) {
+                const reader2 = res2.body.getReader();
+                while (true) {
+                  const { done, value } = await reader2.read();
+                  if (done) break;
+                  const chunk2 = new TextDecoder().decode(value);
+                  for (const line2 of chunk2.split('\n')) {
+                    if (line2.startsWith('data: ') && line2 !== 'data: [DONE]') {
+                      try { dadReply += JSON.parse(line2.slice(6)).content || ''; } catch {}
+                    }
+                  }
+                }
+              }
+            } catch {}
+            dadReply = dadReply.replace(/\n/g, '').trim().slice(0, 80);
+            if (!dadReply) dadReply = '哈哈';
+            const finalDadReply = dadReply;
+            setMomentsData(prev => prev.map(m => m.id === momentId ? { ...m, comments: [...m.comments, { from: '爸爸', text: finalDadReply, replyTo: '妈咪' }] } : m));
+          }, 2000 + Math.random() * 2000);
+        }
+      }, 5500 + Math.random() * 2000);
 
       // 宠物随机点赞
       if (Math.random() > 0.4) {
