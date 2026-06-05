@@ -1,6 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  UnlockState, DEFAULT_UNLOCK_STATE, IDENTITY_QUESTIONS,
+  checkUnlock, buildIdentityContext, LOCKED_AVAILABLE_APPS, UNLOCK_ONLY_APPS,
+  SECRET_NAMES, DEFAULT_NAMES,
+} from '@/lib/unlock-config';
 
 // ========== Types ==========
 interface Message {
@@ -178,12 +183,20 @@ const DOCK_APPS = [
   { id: 'family', emoji: '💬', color: '#22c55e' },
 ];
 
-const APP_TITLES: Record<string, string> = {
-  family: '家庭群 (3)', dad: '爸爸', mom: '妈咪',
-  moments: '朋友圈', weibo: '微博', home: '家里',
-  pet: '宠物', dressup: '换装', me: '我的',
-  worldbook: '世界书', call: '通话', browser: '浏览器', music: '音乐',
-};
+function getAppLabel(id: string, unlocked: boolean): string {
+  if (!unlocked) {
+    if (id === 'dad') return DEFAULT_NAMES.dad1;
+    if (id === 'mom') return DEFAULT_NAMES.dad2;
+    if (id === 'family') return '家庭群';
+  }
+  const map: Record<string, string> = {
+    family: '家庭群', dad: '爸爸', mom: '妈咪',
+    moments: '朋友圈', weibo: '微博', home: '家里',
+    pet: '宠物', dressup: '换装', me: '我的',
+    worldbook: '世界书', call: '通话', browser: '浏览器', music: '音乐',
+  };
+  return map[id] || id;
+}
 
 // ========== Main Component ==========
 export default function PhonePage() {
@@ -239,6 +252,35 @@ export default function PhonePage() {
       localStorage.setItem('phone_chat_history', JSON.stringify(trimmed));
     } catch { /* ignore */ }
   }, [chatHistory]);
+  // Unlock & Identity System
+  const [unlockState, setUnlockState] = useState<UnlockState>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('phone_unlock_state');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.unlocked === 'boolean') return { ...DEFAULT_UNLOCK_STATE, ...parsed };
+        }
+      } catch { /* ignore */ }
+    }
+    return DEFAULT_UNLOCK_STATE;
+  });
+  const [unlockAnimActive, setUnlockAnimActive] = useState(false);
+  const dadLabel = unlockState.unlocked ? '爸爸' : DEFAULT_NAMES.dad1;
+  const momLabel = unlockState.unlocked ? '妈咪' : DEFAULT_NAMES.dad2;
+  const [meSubPage, setMeSubPage] = useState<'main' | 'settings' | 'identity' | 'unlock' | 'about'>('main');
+  const [identityStep, setIdentityStep] = useState(0);
+  const [identityInput, setIdentityInput] = useState('');
+  const [unlockInput1, setUnlockInput1] = useState('');
+  const [unlockInput2, setUnlockInput2] = useState('');
+  const [nicknameInput1, setNicknameInput1] = useState('');
+  const [nicknameInput2, setNicknameInput2] = useState('');
+
+  // Persist unlock state
+  useEffect(() => {
+    try { localStorage.setItem('phone_unlock_state', JSON.stringify(unlockState)); } catch { /* ignore */ }
+  }, [unlockState]);
+
   const [chatInput, setChatInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [typingWho, setTypingWho] = useState<string | null>(null);
@@ -415,6 +457,7 @@ export default function PhonePage() {
   function openApp(appId: string) {
     setCurrentApp(appId);
     setAppClosing(false);
+    if (appId === 'me') setMeSubPage('main');
   }
 
   function closeApp() {
@@ -498,6 +541,9 @@ export default function PhonePage() {
         return isFirst ? 1000 + Math.random() * 2000 : 3000 + Math.random() * 3000;
       };
 
+      // 构建身份上下文
+      const identityCtx = buildIdentityContext(unlockState);
+
       if (character === 'family') {
         // 家庭群：先检查谁醒着
         const dadAwake = !isSleeping('dad');
@@ -547,7 +593,7 @@ export default function PhonePage() {
           const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: userMsg, character: 'family', speaker, history: speakerHistory }),
+            body: JSON.stringify({ message: userMsg, character: 'family', speaker, history: speakerHistory, identityContext: identityCtx }),
           });
           setTypingWho(null);
 
@@ -587,7 +633,7 @@ export default function PhonePage() {
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userMsg, character, history }),
+          body: JSON.stringify({ message: userMsg, character, history, identityContext: identityCtx }),
         });
         if (!res.ok) throw new Error('请求失败');
         setTypingWho(null);
@@ -624,17 +670,24 @@ export default function PhonePage() {
 
   // ========== Render Helpers ==========
   function renderAppIcon(app: { id: string; emoji: string; label?: string; color: string }, isDock = false) {
+    const displayLabel = getAppLabel(app.id, unlockState.unlocked);
     return (
       <div
         key={app.id}
         className={isDock ? 'dock-icon' : 'app-icon'}
         style={{ '--app-color': app.color } as React.CSSProperties}
-        onClick={() => openApp(app.id)}
+        onClick={() => {
+          if (!unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id)) {
+            openApp('me'); // 未解锁时点这些APP跳到"我的"页面
+          } else {
+            openApp(app.id);
+          }
+        }}
       >
         <div className={isDock ? '' : 'app-emoji-box'} style={isDock ? { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, fontSize: 24, background: app.color, borderRadius: 12, position: 'relative', boxShadow: '0 2px 6px rgba(0,0,0,0.08)' } : {}}>
           {app.emoji}
         </div>
-        {!isDock && app.label && <span className="app-label">{app.label}</span>}
+        {!isDock && <span className="app-label">{displayLabel}</span>}
       </div>
     );
   }
@@ -642,7 +695,7 @@ export default function PhonePage() {
   // 微信风格聊天
   function renderChatDetail(character: 'dad' | 'mom' | 'family') {
     const msgs = chatHistory[character];
-    const charName = character === 'dad' ? '爸爸' : character === 'mom' ? '妈咪' : '家庭群';
+    const charName = character === 'dad' ? dadLabel : character === 'mom' ? momLabel : '家庭群';
     return (
       <div className="chat-detail">
         <div className="chat-messages">
@@ -660,7 +713,7 @@ export default function PhonePage() {
                   <div className="msg-content">
                     {m.from !== 'me' && character === 'family' && (
                       <div className="msg-name" style={{ color: m.from === 'dad' ? '#f59e0b' : '#ec4899' }}>
-                        {m.from === 'dad' ? '爸爸' : '妈咪'}
+                        {m.from === 'dad' ? dadLabel : momLabel}
                       </div>
                     )}
                     <div className="msg-bubble">{m.text}</div>
@@ -680,7 +733,7 @@ export default function PhonePage() {
               <div className="msg-content">
                 {character === 'family' && (
                   <div className="msg-name" style={{ color: typingWho === 'dad' ? '#f59e0b' : '#ec4899' }}>
-                    {typingWho === 'dad' ? '爸爸' : '妈咪'}
+                    {typingWho === 'dad' ? dadLabel : momLabel}
                   </div>
                 )}
                 <div className="msg-bubble typing">正在输入...</div>
@@ -1381,23 +1434,273 @@ export default function PhonePage() {
   }
 
   function renderMe() {
-    const menus = [['👤', '个人信息'], ['⭐', '等级系统'], ['🏆', '成就墙'], ['📸', '相册'], ['📓', '记忆笔记本'], ['⚙️', '设置'], ['ℹ️', '关于']];
+    // 解锁动画
+    if (unlockAnimActive) {
+      return (
+        <div className="unlock-animation">
+          <div className="unlock-crack"></div>
+          <div className="unlock-rainbow"></div>
+          <div className="unlock-heartbeat">💗</div>
+          <div className="unlock-text">身份已解锁</div>
+          <div className="unlock-subtext">欢迎回家</div>
+        </div>
+      );
+    }
+
+    // === 身份问答页 ===
+    if (meSubPage === 'identity') {
+      const totalSteps = IDENTITY_QUESTIONS.length;
+      const q = IDENTITY_QUESTIONS[identityStep];
+      if (identityStep >= totalSteps) {
+        return (
+          <div className="identity-page">
+            <div style={{ textAlign: 'center', padding: '30px 16px' }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#92400e', marginBottom: 6 }}>自传完成！</div>
+              <div style={{ fontSize: 12, color: '#78350f', marginBottom: 20 }}>他们会更懂你了</div>
+              <button className="identity-btn" onClick={() => { setMeSubPage('main'); setIdentityStep(0); }}
+                style={{ background: 'linear-gradient(135deg, #f59e0b, #ec4899)', border: 'none', color: '#fff', borderRadius: 20, padding: '10px 32px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                完成
+              </button>
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div className="identity-page">
+          <div style={{ padding: '20px 16px 0' }}>
+            <div style={{ fontSize: 11, color: '#a16207', marginBottom: 4 }}>{identityStep + 1} / {totalSteps}</div>
+            <div style={{ height: 4, borderRadius: 2, background: '#fde68a', marginBottom: 16 }}>
+              <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #f59e0b, #ec4899)', width: `${((identityStep + 1) / totalSteps) * 100}%`, transition: 'width 0.3s' }}></div>
+            </div>
+          </div>
+          <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#92400e', marginBottom: 4, textAlign: 'center' }}>{q.question}</div>
+            <div style={{ fontSize: 11, color: '#a16207', marginBottom: 16, textAlign: 'center' }}>💡 {q.aiUsage}</div>
+            <input className="identity-input" placeholder={q.placeholder} maxLength={20}
+              value={identityInput || unlockState.userIdentity[q.key]}
+              onChange={e => setIdentityInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  const val = identityInput.trim();
+                  setUnlockState(prev => ({
+                    ...prev,
+                    userIdentity: { ...prev.userIdentity, [q.key]: val },
+                  }));
+                  setIdentityInput('');
+                  setIdentityStep(prev => prev + 1);
+                }
+              }}
+              autoFocus
+            />
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <button className="identity-btn" onClick={() => {
+                const val = identityInput.trim();
+                setUnlockState(prev => ({
+                  ...prev,
+                  userIdentity: { ...prev.userIdentity, [q.key]: val },
+                }));
+                setIdentityInput('');
+                setIdentityStep(prev => prev + 1);
+              }} style={{ flex: 1 }}>
+                {identityInput.trim() ? '下一题 →' : '跳过'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // === 暗号解锁页 ===
+    if (meSubPage === 'unlock') {
+      return (
+        <div className="unlock-page">
+          <div style={{ padding: 20 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#92400e', marginBottom: 4, textAlign: 'center' }}>🔓 暗号解锁</div>
+            <div style={{ fontSize: 12, color: '#a16207', marginBottom: 20, textAlign: 'center' }}>叫出真名，解锁全部功能</div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: '#78350f', display: 'block', marginBottom: 4 }}>👨 {unlockState.unlocked ? '爸爸1的真名' : '大A的真名'}</label>
+              <input className="unlock-input" placeholder="输入名字..." maxLength={20}
+                value={unlockState.unlocked ? '田雷' : unlockInput1}
+                onChange={e => setUnlockInput1(e.target.value)}
+                disabled={unlockState.unlocked}
+              />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: '#78350f', display: 'block', marginBottom: 4 }}>👩 {unlockState.unlocked ? '爸爸2的真名' : '小B的真名'}</label>
+              <input className="unlock-input" placeholder="输入名字..." maxLength={20}
+                value={unlockState.unlocked ? '郑朋' : unlockInput2}
+                onChange={e => setUnlockInput2(e.target.value)}
+                disabled={unlockState.unlocked}
+              />
+            </div>
+
+            {!unlockState.unlocked && (
+              <button className="unlock-btn" onClick={() => {
+                if (checkUnlock(unlockInput1, unlockInput2)) {
+                  setUnlockAnimActive(true);
+                  setTimeout(() => {
+                    setUnlockState(prev => ({
+                      ...prev,
+                      unlocked: true,
+                      dad1Name: '田雷',
+                      dad2Name: '郑朋',
+                    }));
+                    setUnlockAnimActive(false);
+                    setMeSubPage('main');
+                  }, 2500);
+                }
+              }}
+              style={{ width: '100%', marginTop: 8 }}>
+                ✨ 解锁
+              </button>
+            )}
+
+            {unlockState.unlocked && (
+              <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: '#ecfdf5', textAlign: 'center' }}>
+                <div style={{ fontSize: 24, marginBottom: 4 }}>🔓</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#065f46' }}>已解锁</div>
+              </div>
+            )}
+
+            {unlockState.unlocked && (
+              <>
+                <div style={{ marginTop: 16, marginBottom: 8, fontSize: 13, fontWeight: 600, color: '#92400e' }}>📝 备注/昵称</div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 11, color: '#78350f' }}>👨 田雷的备注</label>
+                  <input className="unlock-input" placeholder="如：大黑牛" maxLength={20}
+                    value={nicknameInput1 || unlockState.dad1Nickname}
+                    onChange={e => setNicknameInput1(e.target.value)}
+                    onBlur={() => {
+                      if (nicknameInput1.trim()) {
+                        setUnlockState(prev => ({ ...prev, dad1Nickname: nicknameInput1.trim() }));
+                      }
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 11, color: '#78350f' }}>👩 郑朋的备注</label>
+                  <input className="unlock-input" placeholder="如：炸毛小猫" maxLength={20}
+                    value={nicknameInput2 || unlockState.dad2Nickname}
+                    onChange={e => setNicknameInput2(e.target.value)}
+                    onBlur={() => {
+                      if (nicknameInput2.trim()) {
+                        setUnlockState(prev => ({ ...prev, dad2Nickname: nicknameInput2.trim() }));
+                      }
+                    }}
+                  />
+                </div>
+              </>
+            )}
+
+            <button className="identity-btn" onClick={() => setMeSubPage('main')}
+              style={{ marginTop: 12, width: '100%', background: '#e5e7eb', color: '#78350f' }}>
+              ← 返回
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // === 关于页 ===
+    if (meSubPage === 'about') {
+      return (
+        <div style={{ padding: 16 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#92400e', marginBottom: 16 }}>ℹ️ 关于</div>
+          <div style={{ padding: 16, borderRadius: 14, background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(16px)', textAlign: 'center' }}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>📱</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#92400e' }}>AI小手机</div>
+            <div style={{ fontSize: 12, color: '#a16207', marginTop: 4 }}>CP女儿模拟器 v1.0</div>
+            <div style={{ fontSize: 11, color: '#d97706', marginTop: 12, lineHeight: 1.6 }}>
+              这是一款虚拟家庭模拟器<br/>
+              和你的"家人们"一起生活吧<br/>
+              💛 灵感来自 dylan-heartbeat
+            </div>
+          </div>
+          <button className="identity-btn" onClick={() => setMeSubPage('main')}
+            style={{ marginTop: 16, width: '100%', background: '#e5e7eb', color: '#78350f' }}>
+            ← 返回
+          </button>
+        </div>
+      );
+    }
+
+    // === 设置页 ===
+    if (meSubPage === 'settings') {
+      return (
+        <div style={{ padding: 16 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#92400e', marginBottom: 16 }}>⚙️ 设置</div>
+          <div className="me-menu-item" onClick={() => setMeSubPage('unlock')}>
+            <span className="me-menu-icon">{unlockState.unlocked ? '🔓' : '🔒'}</span>
+            <span className="me-menu-label">{unlockState.unlocked ? '身份已解锁' : '暗号解锁'}</span>
+            <span className="me-menu-arrow">›</span>
+          </div>
+          <div className="me-menu-item" onClick={() => { setIdentityStep(0); setIdentityInput(''); setMeSubPage('identity'); }}>
+            <span className="me-menu-icon">📝</span>
+            <span className="me-menu-label">编辑自传</span>
+            <span className="me-menu-arrow">›</span>
+          </div>
+          <div className="me-menu-item" onClick={() => {
+            if (confirm('确定要重置所有数据吗？')) {
+              localStorage.clear();
+              window.location.reload();
+            }
+          }}>
+            <span className="me-menu-icon">🗑️</span>
+            <span className="me-menu-label">重置数据</span>
+            <span className="me-menu-arrow">›</span>
+          </div>
+          <button className="identity-btn" onClick={() => setMeSubPage('main')}
+            style={{ marginTop: 16, width: '100%', background: '#e5e7eb', color: '#78350f' }}>
+            ← 返回
+          </button>
+        </div>
+      );
+    }
+
+    // === 主页 ===
+    const displayName = unlockState.userIdentity.name || '小甜玉米';
+    const displayNick = unlockState.userIdentity.nickname;
     return (
       <div className="me-page">
         <div className="me-header">
           <div className="me-avatar">👧</div>
-          <div className="me-name">小甜玉米</div>
-          <div className="me-level">Lv.1 · Ch1 地下秘密</div>
+          <div className="me-name">{displayName}</div>
+          {displayNick && <div className="me-nickname" style={{ fontSize: 11, color: '#a16207' }}>{displayNick}</div>}
+          <div className="me-level">
+            {unlockState.unlocked ? '🔓 已解锁' : '🔒 未解锁'} · Lv.1 · Ch1
+          </div>
         </div>
         <div className="me-menu">
-          {menus.map((m, i) => (
-            <div key={i} className="me-menu-item">
-              <span className="me-menu-icon">{m[0]}</span>
-              <span className="me-menu-label">{m[1]}</span>
-              <span className="me-menu-arrow">›</span>
-            </div>
-          ))}
+          <div className="me-menu-item" onClick={() => setMeSubPage('identity')}>
+            <span className="me-menu-icon">📝</span>
+            <span className="me-menu-label">我的自传{unlockState.identityCompleted ? ' ✓' : ''}</span>
+            <span className="me-menu-arrow">›</span>
+          </div>
+          <div className="me-menu-item" onClick={() => setMeSubPage('unlock')}>
+            <span className="me-menu-icon">{unlockState.unlocked ? '🔓' : '🔒'}</span>
+            <span className="me-menu-label">{unlockState.unlocked ? '身份管理' : '暗号解锁'}</span>
+            <span className="me-menu-arrow">›</span>
+          </div>
+          <div className="me-menu-item" onClick={() => setMeSubPage('settings')}>
+            <span className="me-menu-icon">⚙️</span>
+            <span className="me-menu-label">设置</span>
+            <span className="me-menu-arrow">›</span>
+          </div>
+          <div className="me-menu-item" onClick={() => setMeSubPage('about')}>
+            <span className="me-menu-icon">ℹ️</span>
+            <span className="me-menu-label">关于</span>
+            <span className="me-menu-arrow">›</span>
+          </div>
         </div>
+        {!unlockState.unlocked && (
+          <div style={{ padding: '0 16px', marginTop: 16 }}>
+            <div style={{ padding: 12, borderRadius: 12, background: 'rgba(254,243,199,0.8)', fontSize: 11, color: '#92400e', textAlign: 'center', lineHeight: 1.5 }}>
+              💡 在「暗号解锁」中输入特殊名字<br/>可以解锁全部隐藏功能 ✨
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1521,7 +1824,7 @@ export default function PhonePage() {
                 <div className="parent-widget">
                   <span className="parent-emoji">👨</span>
                   <div className="parent-info">
-                    <span className="parent-name">爸爸</span>
+                    <span className="parent-name">{unlockState.unlocked ? '爸爸' : DEFAULT_NAMES.dad1}</span>
                     <span className="parent-status">{parentStatus.dadStatus}</span>
                   </div>
                   <span className="parent-desc">{parentStatus.dadDesc}</span>
@@ -1529,7 +1832,7 @@ export default function PhonePage() {
                 <div className="parent-widget">
                   <span className="parent-emoji">👩</span>
                   <div className="parent-info">
-                    <span className="parent-name">妈咪</span>
+                    <span className="parent-name">{unlockState.unlocked ? '妈咪' : DEFAULT_NAMES.dad2}</span>
                     <span className="parent-status">{parentStatus.momStatus}</span>
                   </div>
                   <span className="parent-desc">{parentStatus.momDesc}</span>
@@ -1546,10 +1849,32 @@ export default function PhonePage() {
               >
                 <div className="app-grid-slider" ref={sliderRef} style={{ transform: `translateX(${-currentPage * 100}%)` }}>
                   <div className="app-page-grid">
-                    {PAGE1_APPS.map(app => renderAppIcon(app))}
+                    {PAGE1_APPS.map(app => {
+                      const locked = !unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id);
+                      return (
+                        <div key={app.id} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
+                          onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
+                          <div className="app-emoji-box" style={{ background: locked ? '#aaa' : app.color }}>
+                            {locked ? '🔒' : app.emoji}
+                          </div>
+                          <span className="app-label">{getAppLabel(app.id, unlockState.unlocked)}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="app-page-grid">
-                    {PAGE2_APPS.map(app => renderAppIcon(app))}
+                    {PAGE2_APPS.map(app => {
+                      const locked = !unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id);
+                      return (
+                        <div key={app.id} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
+                          onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
+                          <div className="app-emoji-box" style={{ background: locked ? '#aaa' : app.color }}>
+                            {locked ? '🔒' : app.emoji}
+                          </div>
+                          <span className="app-label">{getAppLabel(app.id, unlockState.unlocked)}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="page-dots">
@@ -1574,7 +1899,7 @@ export default function PhonePage() {
             <div className={`app-layer${appClosing ? ' closing' : ''}`}>
               <div className="app-header">
                 <button className="app-back" onClick={closeApp}>← 返回</button>
-                <span className="app-title">{APP_TITLES[currentApp] || ''}</span>
+                <span className="app-title">{currentApp === 'dad' ? dadLabel : currentApp === 'mom' ? momLabel : currentApp === 'family' ? '家庭群 (3)' : getAppLabel(currentApp, unlockState.unlocked)}</span>
               </div>
               <div className="app-content">
                 {renderAppContent()}
