@@ -3,6 +3,37 @@
 // 用户可在后台编辑此文件来修改人设、日程、世界观
 
 // ========== TPES 时间感知系统 ==========
+export interface ParentStatusInfo {
+  status: string;
+  activity: string;
+  emoji: string;
+}
+
+export function getParentStatus(hour: number): ParentStatusInfo {
+  // 田雷日程
+  if (hour >= 7 && hour < 8) return { status: '🟢在家', activity: '起床做早餐，在厨房煎蛋和煮小米粥', emoji: '🟢' };
+  if (hour >= 8 && hour < 9) return { status: '🟡出门', activity: '出门上班路上', emoji: '🟡' };
+  if (hour >= 9 && hour < 12) return { status: '🔴忙碌', activity: '在公司开会/工作', emoji: '🔴' };
+  if (hour >= 12 && hour < 13) return { status: '🟢在家', activity: '午休吃饭', emoji: '🟢' };
+  if (hour >= 13 && hour < 18) return { status: '🔴忙碌', activity: '继续工作，下午可能有客户会议', emoji: '🔴' };
+  if (hour >= 18 && hour < 19) return { status: '🟡出门', activity: '下班回家路上，可能在超市买菜', emoji: '🟡' };
+  if (hour >= 19 && hour < 21) return { status: '🟢在家', activity: '看电视/玩手机，梓渝靠在他身上', emoji: '🟢' };
+  if (hour >= 21 && hour < 23) return { status: '🟢在家', activity: '跟梓渝聊天/互动', emoji: '🟢' };
+  return { status: '💤睡觉', activity: '已经睡了，辛巴守在卧室门口', emoji: '💤' };
+}
+
+export function getMomStatus(hour: number): ParentStatusInfo {
+  if (hour >= 7 && hour < 8) return { status: '💤睡觉', activity: '还在赖床，把被子蒙住头', emoji: '💤' };
+  if (hour >= 8 && hour < 9) return { status: '🟢在家', activity: '起床化妆，挑今天穿什么', emoji: '🟢' };
+  if (hour >= 9 && hour < 12) return { status: '🟡出门', activity: '出门了，可能在工作也可能在逛街', emoji: '🟡' };
+  if (hour >= 12 && hour < 13) return { status: '🟡出门', activity: '和朋友吃午饭，可能在拍照', emoji: '🟡' };
+  if (hour >= 13 && hour < 18) return { status: '🟢在家', activity: '在家追剧，沙发上是她的领地', emoji: '🟢' };
+  if (hour >= 18 && hour < 19) return { status: '🟢在家', activity: '在做晚饭，厨房有点乱', emoji: '🟢' };
+  if (hour >= 19 && hour < 21) return { status: '🟢在家', activity: '靠在田雷身上看电视，小十一在旁边', emoji: '🟢' };
+  if (hour >= 21 && hour < 23) return { status: '🟢在家', activity: '在跟田雷聊天，偶尔偷看手机', emoji: '🟢' };
+  return { status: '💤睡觉', activity: '已经睡了，大鱼睡在她脚边', emoji: '💤' };
+}
+
 function getTPESDescription(): string {
   const now = new Date();
   const hour = now.getHours();
@@ -400,6 +431,62 @@ ${tpes}
 ${historyContext}
 
 现在请以${whoName}的身份，自然地发一条消息给女儿米米。直接输出消息内容，不要任何前缀和说明。`;
+}
+
+// ========== 心跳系统 Prompt（灵感来自 dylan-heartbeat） ==========
+
+export interface ParentStatusInfo {
+  status: string;
+  emoji: string;
+  activity: string;
+}
+
+export function buildHeartbeatPrompt(
+  speaker: string, 
+  status: ParentStatusInfo, 
+  timeStr: string, 
+  historyText: string,
+  currentApp: string
+): string {
+  const whoName = speaker === 'dad' ? '田雷（爸爸）' : '梓渝（妈咪）';
+  const profile = speaker === 'dad' ? DAD_PROFILE : MOM_PROFILE;
+  const partner = speaker === 'dad' ? '梓渝（妈咪）' : '田雷（爸爸）';
+  const partnerStatusInfo = speaker === 'dad' ? getMomStatus(new Date().getHours()) : getParentStatus(new Date().getHours());
+  const partnerStatusText = partnerStatusInfo.emoji === '💤' ? '在睡觉' : partnerStatusInfo.activity;
+
+  return `## 最高优先级规则
+1. 这是一次后台自动唤醒，不是米米发起的对话。你没有收到任何新消息。
+2. 你的唯一任务是决定是否主动联系女儿米米。
+3. 如果想联系，直接写你想说的话（一句话，30字以内）。
+4. 如果不想联系，只输出：[NO_ACTION]
+
+## 当前状态
+- 你是：${whoName}
+- 当前时间：${timeStr}
+- 你的状态：${status.emoji} ${status.status}（正在${status.activity}）
+- ${partner}：${partnerStatusText}
+
+## 最近对话记录（仅供回忆）
+${historyText || '（没有最近对话）'}
+
+## 决策指引
+- 如果正在忙（开会/工作/做饭），简短关心一句即可
+- 如果状态轻松（追剧/休息/闲逛），可以聊天
+- 如果距离上次对话很久了，主动关心一下
+- 如果没什么特别想说的，选择[NO_ACTION]也完全可以
+- 不要重复之前说过的话
+- 语气要自然，像真正的家人之间的微信消息
+- ${currentApp !== 'home' ? `米米现在正在使用${currentApp}APP` : '米米现在在手机主屏幕'}
+
+${CP_STORYLINE}
+
+${profile}
+
+${MIMI_PERSPECTIVE}
+
+${JEALOUSY_RULES}
+
+${PET_PROFILES}`;
 }
 
 // ========== 导出世界书数据（供前端展示用） ==========

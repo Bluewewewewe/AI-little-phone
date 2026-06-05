@@ -205,15 +205,40 @@ export default function PhonePage() {
   const sliderRef = useRef<HTMLDivElement>(null);
 
   // Chat
-  const [chatHistory, setChatHistory] = useState<ChatHistory>({
-    dad: [
-      { from: 'dad', text: '在吗，吃了没', id: nextId() },
-    ],
-    mom: [
-      { from: 'mom', text: '宝贝~在干嘛呀', id: nextId() },
-    ],
-    family: [],
+  // 聊天记录持久化（localStorage）
+  const [chatHistory, setChatHistory] = useState<ChatHistory>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('phone_chat_history');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.dad && parsed.mom && parsed.family) return parsed;
+        }
+      } catch { /* ignore */ }
+    }
+    return {
+      dad: [
+        { from: 'dad', text: '在吗，吃了没', id: nextId() },
+      ],
+      mom: [
+        { from: 'mom', text: '宝贝~在干嘛呀', id: nextId() },
+      ],
+      family: [],
+    };
   });
+
+  // 自动保存聊天记录到 localStorage
+  useEffect(() => {
+    try {
+      // 只保留最近50条消息，防止 localStorage 溢出
+      const trimmed = {
+        dad: chatHistory.dad.slice(-50),
+        mom: chatHistory.mom.slice(-50),
+        family: chatHistory.family.slice(-50),
+      };
+      localStorage.setItem('phone_chat_history', JSON.stringify(trimmed));
+    } catch { /* ignore */ }
+  }, [chatHistory]);
   const [chatInput, setChatInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [typingWho, setTypingWho] = useState<string | null>(null);
@@ -241,59 +266,68 @@ export default function PhonePage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, typingWho]);
 
-  // ========== 主动聊天 ==========
+  // ========== 心跳系统（灵感来自 dylan-heartbeat） ==========
   useEffect(() => {
-    // 每60-120秒随机一个爸妈主动发消息
-    function scheduleAutoChat() {
-      const delay = 60000 + Math.random() * 60000; // 60-120秒
+    // 心跳间隔：白天90-180秒，夜间300-600秒
+    function scheduleHeartbeat() {
+      const hour = new Date().getHours();
+      const isDaytime = hour >= 7 && hour < 23;
+      const delay = isDaytime 
+        ? 90000 + Math.random() * 90000   // 白天: 90-180秒
+        : 300000 + Math.random() * 300000; // 夜间: 5-10分钟
       autoChatTimerRef.current = setTimeout(async () => {
-        const hour = new Date().getHours();
-        // 睡觉时间不发
-        if (hour >= 23 || hour < 7) {
-          scheduleAutoChat();
+        const currentHour = new Date().getHours();
+        // 深夜不唤醒
+        if (currentHour >= 23 || currentHour < 7) {
+          scheduleHeartbeat();
           return;
         }
-        // 随机选一个人，如果在睡觉就换另一个
-        let speaker: 'dad' | 'mom' = Math.random() > 0.5 ? 'dad' : 'mom';
-        const s = speaker === 'dad' ? parentStatus.dadStatus : parentStatus.momStatus;
-        if (s.includes('睡觉') || s.includes('💤')) {
-          speaker = speaker === 'dad' ? 'mom' : 'dad';
-          const s2 = speaker === 'dad' ? parentStatus.dadStatus : parentStatus.momStatus;
-          if (s2.includes('睡觉') || s2.includes('💤')) {
-            scheduleAutoChat();
-            return;
-          }
+        // 只在用户在聊天页面时才主动联系
+        if (currentApp !== 'family' && currentApp !== 'dad' && currentApp !== 'mom') {
+          scheduleHeartbeat();
+          return;
         }
         try {
-          const recentMsgs = chatHistory.family.slice(-6).map(m => ({
+          // 获取当前聊天的最近消息
+          const chatKey = currentApp === 'family' ? 'family' : currentApp;
+          const recentMsgs = chatHistory[chatKey]?.slice(-10).map(m => ({
             from: m.from,
             text: m.text,
-          }));
-          const res = await fetch('/api/auto-chat', {
+          })) || [];
+          const res = await fetch('/api/heartbeat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ speaker, recentMessages: recentMsgs }),
+            body: JSON.stringify({ 
+              recentMessages: recentMsgs, 
+              currentApp,
+            }),
           });
           if (res.ok) {
             const data = await res.json();
-            if (data.message) {
-              setChatHistory(prev => ({
-                ...prev,
-                [speaker]: [...prev[speaker], { from: speaker, text: data.message, id: nextId() }],
-              }));
+            if (data.shouldAct && data.messages?.length > 0) {
+              for (const msg of data.messages) {
+                const delay = msg.speaker === data.messages[0]?.speaker ? 1000 : 2000 + Math.random() * 2000;
+                await new Promise(r => setTimeout(r, delay));
+                const speakerKey: 'dad' | 'mom' = (msg.speaker === 'mom') ? 'mom' : 'dad';
+                setChatHistory(prev => ({
+                  ...prev,
+                  [speakerKey]: [...prev[speakerKey], { from: speakerKey, text: msg.text, id: nextId() }],
+                  family: [...prev.family, { from: speakerKey, text: msg.text, id: nextId() }],
+                }));
+              }
             }
           }
         } catch {
           // 静默失败
         }
-        scheduleAutoChat();
+        scheduleHeartbeat();
       }, delay);
     }
-    scheduleAutoChat();
+    scheduleHeartbeat();
     return () => {
       if (autoChatTimerRef.current) clearTimeout(autoChatTimerRef.current);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentApp, chatHistory]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ========== Swipe ==========
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
