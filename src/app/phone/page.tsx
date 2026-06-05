@@ -704,6 +704,33 @@ export default function PhonePage() {
   const momentsDataRef = useRef(momentsData);
   momentsDataRef.current = momentsData;
 
+  // ========== 微博数据 ==========
+  interface WeiboPost {
+    id: number;
+    avatar: string;
+    name: string;
+    tag?: string;
+    verified?: boolean;
+    time: string;
+    text: string;
+    color: string;
+    likes: number;
+    iLiked: boolean;
+    comments: { from: string; text: string }[];
+    reposts: number;
+  }
+  const [weiboData, setWeiboData] = useState<WeiboPost[]>([
+    { id: 1, avatar: '👨', name: '田栩宁_', tag: '演员', verified: true, time: '3小时前', text: '今天收工早，回家做了顿饭。某人吃了三碗还嫌不够 😏', color: '#f59e0b', likes: 128340, iLiked: false, comments: [{ from: '甜玉米1号', text: '某人是谁我不说🤏' }, { from: '路人大白', text: '田老师做饭也太宠了吧' }], reposts: 8932 },
+    { id: 2, avatar: '👩', name: '我是梓渝_', tag: '歌手', verified: true, time: '5小时前', text: '新歌demo录完啦！这次尝试了不一样的风格，期待吗～ 🎵', color: '#ec4899', likes: 95670, iLiked: false, comments: [{ from: '音粉小圆', text: '期待期待！！' }, { from: '甜玉米2号', text: '月月唱歌太好听了呜呜' }], reposts: 6210 },
+    { id: 3, avatar: '🔥', name: 'CP超话', time: '刚刚', text: '【路透】今天又有人拍到他们一起逛超市了！提着同款购物袋！甜玉米尖叫！！！', color: '#ef4444', likes: 28340, iLiked: false, comments: [{ from: '嗑到了', text: '同款购物袋！这是官宣了吧' }, { from: '清醒路人', text: '可能只是巧合吧' }], reposts: 5932 },
+    { id: 4, avatar: '👨', name: '田栩宁_', tag: '演员', verified: true, time: '昨天', text: '谢谢大家喜欢《逆爱》，每个角色都值得被认真对待。', color: '#f59e0b', likes: 256700, iLiked: false, comments: [{ from: '剧粉', text: '田栩宁演技真的绝了' }, { from: '逆爱铁粉', text: '永远支持逆爱！' }], reposts: 18500 },
+    { id: 5, avatar: '👩', name: '我是梓渝_', tag: '歌手', verified: true, time: '昨天', text: '练习室待了一整天，腿都要断了… 但很充实！💪', color: '#ec4899', likes: 78900, iLiked: false, comments: [{ from: '粉丝团', text: '月月注意休息！' }, { from: '甜玉米3号', text: '某人看到该心疼了' }], reposts: 4320 },
+    { id: 6, avatar: '📢', name: '娱乐热搜', time: '2小时前', text: '#他们是不是在一起了# 阅读量突破3亿，网友：这不是情侣我倒立洗头', color: '#ef4444', likes: 45600, iLiked: false, comments: [{ from: '吃瓜群众', text: '坐等官宣' }, { from: 'CP粉头', text: '3亿阅读量！排面！' }], reposts: 12300 },
+    { id: 7, avatar: '🔥', name: 'CP超话', time: '1小时前', text: '【分析帖】田栩宁今天微博发的"某人"是谁我不说🤏 翻译：梓渝吃了三碗饭', color: '#ef4444', likes: 19800, iLiked: false, comments: [{ from: '侦探粉', text: '某人=梓渝 这是数学题' }, { from: '唯粉抗议', text: '别乱磕好吗' }], reposts: 3670 },
+  ]);
+  const [weiboCommentInput, setWeiboCommentInput] = useState('');
+  const [activeWeiboComment, setActiveWeiboComment] = useState<number|null>(null);
+
   // ========== 朋友圈上下文构建器 ==========
   // 将一条朋友圈的完整评论链转为 chat history 格式
   const buildMomentsChatHistory = (moment: MomentItem | undefined): Array<{role: 'user' | 'assistant'; content: string}> => {
@@ -1183,15 +1210,15 @@ export default function PhonePage() {
   }
 
   function renderWeibo() {
-    const weiboPosts = [
-      { avatar: '👨', name: '田栩宁_', tag: '演员', verified: true, time: '3小时前', text: '今天收工早，回家做了顿饭。某人吃了三碗还嫌不够 😏', color: '#f59e0b', likes: 128340, comments: 5621, reposts: 8932 },
-      { avatar: '👩', name: '我是梓渝_', tag: '歌手', verified: true, time: '5小时前', text: '新歌demo录完啦！这次尝试了不一样的风格，期待吗～ 🎵', color: '#ec4899', likes: 95670, comments: 4280, reposts: 6210 },
-      { avatar: '🔥', name: 'CP超话', time: '刚刚', text: '【路透】今天又有人拍到他们一起逛超市了！提着同款购物袋！甜玉米尖叫！！！', color: '#ef4444', likes: 28340, comments: 3210, reposts: 5932 },
-      { avatar: '👨', name: '田栩宁_', tag: '演员', verified: true, time: '昨天', text: '谢谢大家喜欢《逆爱》，每个角色都值得被认真对待。', color: '#f59e0b', likes: 256700, comments: 12300, reposts: 18500 },
-      { avatar: '👩', name: '我是梓渝_', tag: '歌手', verified: true, time: '昨天', text: '练习室待了一整天，腿都要断了… 但很充实！💪', color: '#ec4899', likes: 78900, comments: 3450, reposts: 4320 },
-      { avatar: '📢', name: '娱乐热搜', time: '2小时前', text: '#他们是不是在一起了# 阅读量突破3亿，网友：这不是情侣我倒立洗头', color: '#ef4444', likes: 45600, comments: 8900, reposts: 12300 },
-      { avatar: '🔥', name: 'CP超话', time: '1小时前', text: '【分析帖】田栩宁今天微博发的"某人"是谁我不说🤏 翻译：梓渝吃了三碗饭', color: '#ef4444', likes: 19800, comments: 2450, reposts: 3670 },
-    ];
+    const formatCount = (n: number) => n >= 10000 ? (n / 10000).toFixed(1) + '万' : String(n);
+    const toggleWeiboLike = (id: number) => {
+      setWeiboData(prev => prev.map(p => p.id === id ? { ...p, iLiked: !p.iLiked, likes: p.iLiked ? p.likes - 1 : p.likes + 1 } : p));
+    };
+    const addWeiboComment = (id: number) => {
+      if (!weiboCommentInput.trim()) return;
+      setWeiboData(prev => prev.map(p => p.id === id ? { ...p, comments: [...p.comments, { from: '米米', text: weiboCommentInput.trim() }] } : p));
+      setWeiboCommentInput('');
+    };
     return (
       <div className="feed-list">
         {/* 顶部推荐关注 */}
@@ -1199,8 +1226,8 @@ export default function PhonePage() {
           <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(245,158,11,0.15)', fontSize: 11, fontWeight: 600, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>👨 田栩宁_ ✓</div>
           <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(236,72,153,0.15)', fontSize: 11, fontWeight: 600, color: '#ec4899', display: 'flex', alignItems: 'center', gap: 4 }}>👩 我是梓渝_ ✓</div>
         </div>
-        {weiboPosts.map((item, i) => (
-          <div key={i} className="feed-card">
+        {weiboData.map((item) => (
+          <div key={item.id} className="feed-card">
             <div className="feed-header">
               <div className="feed-avatar" style={{ background: item.color + '20' }}>{item.avatar}</div>
               <div style={{ flex: 1 }}>
@@ -1215,10 +1242,31 @@ export default function PhonePage() {
               </div>
             </div>
             <div className="feed-text">{item.text}</div>
-            <div className="feed-actions" style={{ color: '#999', fontSize: 11 }}>
-              <span>🔁 {(item.reposts / 10000).toFixed(1)}万</span>
-              <span>💬 {(item.comments / 10000).toFixed(1)}万</span>
-              <span>❤️ {(item.likes / 10000).toFixed(1)}万</span>
+            {/* 评论区 */}
+            {item.comments.length > 0 && (
+              <div style={{ marginTop: 6, paddingLeft: 8, borderLeft: '2px solid ' + item.color + '30' }}>
+                {item.comments.map((c, ci) => (
+                  <div key={ci} style={{ fontSize: 11, color: '#555', lineHeight: 1.6 }}>
+                    <span style={{ color: item.color, fontWeight: 600 }}>{c.from}</span>：{c.text}
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* 评论输入 */}
+            {activeWeiboComment === item.id && (
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                <input value={weiboCommentInput} onChange={e => setWeiboCommentInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addWeiboComment(item.id)}
+                  placeholder="写评论..." style={{ flex: 1, fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '1px solid #e5e7eb', outline: 'none' }} />
+                <button onClick={() => addWeiboComment(item.id)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: item.color, color: '#fff', border: 'none' }}>发送</button>
+              </div>
+            )}
+            <div className="feed-actions" style={{ color: '#999', fontSize: 11, marginTop: 6 }}>
+              <span style={{ cursor: 'pointer' }}>🔁 {formatCount(item.reposts)}</span>
+              <span style={{ cursor: 'pointer' }} onClick={() => setActiveWeiboComment(activeWeiboComment === item.id ? null : item.id)}>💬 {item.comments.length}</span>
+              <span style={{ cursor: 'pointer' }} onClick={() => toggleWeiboLike(item.id)}>
+                {item.iLiked ? '❤️' : '🤍'} {formatCount(item.likes)}
+              </span>
             </div>
           </div>
         ))}
