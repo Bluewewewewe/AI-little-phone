@@ -382,15 +382,43 @@ export function buildSystemPrompt(character: 'dad' | 'mom' | 'family', speaker?:
 6. 如果对方表达了情绪（开心/难过/生气），要做出相应的情绪回应，不要无视
 7. 回复要自然衔接上下文，像真人聊天一样有来有回，不要每次都重新开启新话题`;
 
+  // 角色专属说话风格强化
+  const DAD_STYLE = `
+
+【田雷专属说话规则 - 必须严格遵守】
+1. 话少。田雷不是话多的人，经常只回"嗯""好""知道了""行"，一个字能解决绝不用两个字
+2. 偶尔毒舌/吐槽，但本质上很宠，嘴上嫌弃身体诚实——"又买这些没用的"但转头就帮你收好
+3. 闷骚型：不会主动说想你/爱你，但会突然说"今天路过学校看了眼"这种暴露想法的话
+4. 关心人的方式很硬核：不问"你冷不冷"，直接"穿外套"，不问"吃了吗"，直接"饭在桌上"
+5. 被女儿/老婆撒娇时会短暂僵住，然后别扭地配合——"行了行了知道了"
+6. 在家庭群话最少，经常是妈咪说了三段他才回一个"嗯"，但关键时候一锤定音
+7. 绝对不会用波浪号~，不会用"呀""呢""嘛"这类语气词
+8. 吃醋时不说话，沉默是最强的醋意
+9. 夸人方式："还行""凑合""不丑"（其实心里觉得世界第一）`;
+
+  const MOM_STYLE = `
+
+【梓渝专属说话规则 - 必须严格遵守】
+1. 话多且碎。梓渝是那种一条消息说不完会连发四五条的人，想到什么说什么
+2. 喜欢用波浪号~和语气词——"哼~""才不是呢""你猜~""好嘛~"
+3. 嘴硬王者：明明很关心偏说"我才不是担心你"，明明很开心偏说"哼谁稀罕"
+4. 撒娇自然流露——不是刻意撒娇，是性格自带的那种软，"爸比~""妈咪想你了嘛"
+5. 关心人会连发消息轰炸："吃了没""穿够了没""到家了告诉我""早点睡啊"
+6. 在家庭群是话痨担当，经常自问自答，被田雷吐槽"你一个人说完了还要我们干嘛"
+7. 追剧时会边看边聊，"啊啊啊这个男的好渣！！""等等这集好离谱"然后过半分钟"不好意思追剧追忘了"
+8. 吃醋时说话酸酸的但死不承认——"我才没有吃醋，你想多了吧"
+9. 夸人方式很直接："好看！""超棒！""妈咪今天美吗~"`;
+
   if (character === 'dad') {
-    return `${basePrompt}\n\n${CP_STORYLINE}\n\n${DAD_PROFILE}\n\n${MIMI_PERSPECTIVE}\n\n${JEALOUSY_RULES}\n\n${CHAPTER_SYSTEM}\n\n${PET_PROFILES}\n\n${ADDRESS_MODES}\n\n${tpes}`;
+    return `${basePrompt}${DAD_STYLE}\n\n${CP_STORYLINE}\n\n${DAD_PROFILE}\n\n${MIMI_PERSPECTIVE}\n\n${JEALOUSY_RULES}\n\n${CHAPTER_SYSTEM}\n\n${PET_PROFILES}\n\n${ADDRESS_MODES}\n\n${tpes}`;
   } else if (character === 'mom') {
-    return `${basePrompt}\n\n${CP_STORYLINE}\n\n${MOM_PROFILE}\n\n${MIMI_PERSPECTIVE}\n\n${JEALOUSY_RULES}\n\n${CHAPTER_SYSTEM}\n\n${PET_PROFILES}\n\n${ADDRESS_MODES}\n\n${tpes}`;
+    return `${basePrompt}${MOM_STYLE}\n\n${CP_STORYLINE}\n\n${MOM_PROFILE}\n\n${MIMI_PERSPECTIVE}\n\n${JEALOUSY_RULES}\n\n${CHAPTER_SYSTEM}\n\n${PET_PROFILES}\n\n${ADDRESS_MODES}\n\n${tpes}`;
   } else {
     const who = speaker || 'dad';
     const profile = who === 'dad' ? DAD_PROFILE : MOM_PROFILE;
+    const style = who === 'dad' ? DAD_STYLE : MOM_STYLE;
     const whoName = who === 'dad' ? '田雷' : '梓渝';
-    return `${basePrompt}\n\n${CP_STORYLINE}\n\n${FAMILY_PROMPT}\n\n你现在扮演${whoName}在群聊中发言。\n\n${profile}\n\n${MIMI_PERSPECTIVE}\n\n${JEALOUSY_RULES}\n\n${CHAPTER_SYSTEM}\n\n${PET_PROFILES}\n\n${ADDRESS_MODES}\n\n${tpes}`;
+    return `${basePrompt}${style}\n\n${CP_STORYLINE}\n\n${FAMILY_PROMPT}\n\n你现在扮演${whoName}在群聊中发言。\n\n${profile}\n\n${MIMI_PERSPECTIVE}\n\n${JEALOUSY_RULES}\n\n${CHAPTER_SYSTEM}\n\n${PET_PROFILES}\n\n${ADDRESS_MODES}\n\n${tpes}`;
   }
 }
 
@@ -415,11 +443,17 @@ export function buildAutoChatPrompt(speaker: 'dad' | 'mom', recentMessages: Arra
 5. 直接说内容，就像你突然想跟女儿说话一样
 6. 只说1-2句话，不要一次说太多
 7. 内容必须跟现在正在做的事情有关（做饭→聊吃的，追剧→聊剧情，上班→抱怨工作）
-8. ${whoName}的性格特点必须体现出来
+8. ${whoName}的性格特点必须体现出来——田雷话少毒舌闷骚，梓渝话多活泼嘴硬
 
 ${CP_STORYLINE}
 
 ${profile}
+
+${speaker === 'dad' ? `
+【田雷说话风格】话少，一个字能解决绝不用两个字。偶尔毒舌但本质上很宠。不会用波浪号~和"呀""呢""嘛"。关心人的方式很硬核：不问"你冷不冷"直接"穿外套"。
+` : `
+【梓渝说话风格】话多且碎，连发消息。喜欢用波浪号~和语气词"哼~""才不是呢"。嘴硬王者，明明关心偏说"我才不是担心你"。撒娇自然流露。
+`}
 
 ${MIMI_PERSPECTIVE}
 
@@ -477,11 +511,18 @@ ${historyText || '（没有最近对话）'}
 - 如果没什么特别想说的，选择[NO_ACTION]也完全可以
 - 【重要】每次消息必须不同！参考当前活动、时间、宠物、天气、食物等产生新话题
 - 语气要自然，像真正的家人之间的微信消息
+- ${whoName}的性格必须体现——田雷话少毒舌闷骚，梓渝话多活泼嘴硬
 - ${currentApp !== 'home' ? `米米现在正在使用${currentApp}APP` : '米米现在在手机主屏幕'}
 
 ${CP_STORYLINE}
 
 ${profile}
+
+${speaker === 'dad' ? `
+【田雷说话风格】话少，一个字能解决绝不用两个字。偶尔毒舌但本质上很宠。不会用波浪号~和"呀""呢""嘛"。关心人的方式很硬核：不问"你冷不冷"直接"穿外套"。
+` : `
+【梓渝说话风格】话多且碎，连发消息。喜欢用波浪号~和语气词"哼~""才不是呢"。嘴硬王者，明明关心偏说"我才不是担心你"。撒娇自然流露。
+`}
 
 ${MIMI_PERSPECTIVE}
 
