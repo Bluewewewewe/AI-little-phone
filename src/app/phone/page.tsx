@@ -225,7 +225,27 @@ export default function PhonePage() {
         const saved = localStorage.getItem('phone_chat_history');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed.dad && parsed.mom && parsed.family) return parsed;
+          // 版本检查：旧格式数据(ID为小整数)直接清除
+          if (parsed._v !== 2) {
+            localStorage.removeItem('phone_chat_data');
+          } else if (parsed.dad && parsed.mom && parsed.family) {
+            // 清理旧数据：确保每个频道内 ID 唯一，去除重复
+            const dedup = (msgs: Message[]) => {
+              const seen = new Set<number>();
+              return msgs.filter((m: Message) => {
+                if (seen.has(m.id)) return false;
+                seen.add(m.id);
+                return true;
+              });
+            };
+            // 将旧ID替换为全局唯一ID
+            const reId = (msgs: Message[]) => msgs.map((m: Message) => ({ ...m, id: nextId() }));
+            return {
+              dad: reId(dedup(parsed.dad)),
+              mom: reId(dedup(parsed.mom)),
+              family: reId(dedup(parsed.family)),
+            };
+          }
         }
       } catch { /* ignore */ }
     }
@@ -249,25 +269,37 @@ export default function PhonePage() {
         mom: chatHistory.mom.slice(-50),
         family: chatHistory.family.slice(-50),
       };
-      localStorage.setItem('phone_chat_history', JSON.stringify(trimmed));
+      localStorage.setItem('phone_chat_history', JSON.stringify({ v: 2, data: trimmed }));
     } catch { /* ignore */ }
   }, [chatHistory]);
-  // Unlock & Identity System
-  const [unlockState, setUnlockState] = useState<UnlockState>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('phone_unlock_state');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (typeof parsed.unlocked === 'boolean') return { ...DEFAULT_UNLOCK_STATE, ...parsed };
-        }
-      } catch { /* ignore */ }
-    }
-    return DEFAULT_UNLOCK_STATE;
-  });
+  // Hydration fix: 所有依赖localStorage的state初始用默认值，mount后从localStorage读取
+  const [mounted, setMounted] = useState(false);
+  const [unlockState, setUnlockState] = useState<UnlockState>(DEFAULT_UNLOCK_STATE);
   const [unlockAnimActive, setUnlockAnimActive] = useState(false);
   const dadLabel = unlockState.unlocked ? '爸爸' : DEFAULT_NAMES.dad1;
   const momLabel = unlockState.unlocked ? '妈咪' : DEFAULT_NAMES.dad2;
+
+  // Mount后从localStorage加载真实状态
+  useEffect(() => {
+    try {
+      const savedUnlock = localStorage.getItem('phone_unlock_state');
+      if (savedUnlock) {
+        const parsed = JSON.parse(savedUnlock);
+        if (typeof parsed.unlocked === 'boolean') setUnlockState({ ...DEFAULT_UNLOCK_STATE, ...parsed });
+      }
+      const savedIdentity = localStorage.getItem('phone_identity_answers');
+      if (savedIdentity) setUnlockState(prev => ({ ...prev, identityAnswers: JSON.parse(savedIdentity) }));
+    } catch { /* ignore */ }
+    setMounted(true);
+  }, []);
+
+  // Persist unlock state
+  useEffect(() => {
+    if (mounted) {
+      try { localStorage.setItem('phone_unlock_state', JSON.stringify(unlockState)); } catch { /* ignore */ }
+    }
+  }, [unlockState, mounted]);
+
   const [meSubPage, setMeSubPage] = useState<'main' | 'settings' | 'identity' | 'unlock' | 'about'>('main');
   const [identityStep, setIdentityStep] = useState(0);
   const [identityInput, setIdentityInput] = useState('');
@@ -275,11 +307,6 @@ export default function PhonePage() {
   const [unlockInput2, setUnlockInput2] = useState('');
   const [nicknameInput1, setNicknameInput1] = useState('');
   const [nicknameInput2, setNicknameInput2] = useState('');
-
-  // Persist unlock state
-  useEffect(() => {
-    try { localStorage.setItem('phone_unlock_state', JSON.stringify(unlockState)); } catch { /* ignore */ }
-  }, [unlockState]);
 
   const [chatInput, setChatInput] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -362,17 +389,20 @@ export default function PhonePage() {
                   : (msg.speaker === data.messages[0]?.speaker ? 1000 : 2000 + Math.random() * 2000);
                 await new Promise(r => setTimeout(r, delayMs));
                 const speakerKey: 'dad' | 'mom' = (msg.speaker === 'mom') ? 'mom' : 'dad';
-                const newMsg = { from: speakerKey, text: msg.text, id: nextId() };
                 if (isPartnerChat) {
+                  const newMsg = { from: speakerKey, text: msg.text, id: nextId() };
                   setChatHistory(prev => ({
                     ...prev,
                     family: [...prev.family, newMsg],
                   }));
                 } else {
+                  // 私聊和群聊用不同的 ID，避免 key 冲突
+                  const privateMsg = { from: speakerKey, text: msg.text, id: nextId() };
+                  const familyMsg = { from: speakerKey, text: msg.text, id: nextId() };
                   setChatHistory(prev => ({
                     ...prev,
-                    [speakerKey]: [...prev[speakerKey], newMsg],
-                    family: [...prev.family, newMsg],
+                    [speakerKey]: [...prev[speakerKey], privateMsg],
+                    family: [...prev.family, familyMsg],
                   }));
                 }
               }
@@ -694,8 +724,8 @@ export default function PhonePage() {
     return (
       <div className="chat-detail">
         <div className="chat-messages">
-          {msgs.map((m) => (
-            <div key={m.id} className={`msg-row ${m.from === 'me' ? 'me' : m.from === 'system' ? 'system' : 'other'}`}>
+          {msgs.map((m, idx) => (
+            <div key={`${character}-${m.id}-${idx}`} className={`msg-row ${m.from === 'me' ? 'me' : m.from === 'system' ? 'system' : 'other'}`}>
               {m.from === 'system' ? (
                 <div className="msg-system">{m.text}</div>
               ) : (
