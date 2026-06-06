@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 import { buildHeartbeatPrompt, getParentStatus, getMomStatus, type ParentStatusInfo, DAD_PROFILE, MOM_PROFILE } from '@/lib/world-book';
+import { getModelForScene } from '@/lib/config';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -118,8 +119,9 @@ ${profile}`;
           { role: 'user', content: `你想跟${firstSpeaker === 'dad' ? '梓渝' : '田雷'}说点什么？直接说内容（20字以内），不想说就输出[NO_ACTION]` },
         ];
 
+        const heartbeatModel = getModelForScene('heartbeat');
         let firstText = '';
-        const stream1 = client.stream(firstMessages, { model: 'doubao-seed-2-0-lite-260215', temperature: 0.9 });
+        const stream1 = client.stream(firstMessages, { model: heartbeatModel, temperature: 0.9 });
         for await (const chunk of stream1) { if (chunk.content) firstText += chunk.content.toString(); }
         const cleanFirst = firstText.trim().replace(/^(田雷|田栩宁|梓渝|郑朋|爸爸|妈咪)[：:]\s*/, '').replace(/^["「『]|["」』]$/g, '').trim();
         
@@ -134,7 +136,7 @@ ${profile}`;
               { role: 'user', content: `${firstSpeaker === 'dad' ? '田雷' : '梓渝'}在家庭群里说了：「${cleanFirst}」，你回复一下？直接说内容（20字以内），不想回就输出[NO_ACTION]` },
             ];
             let secondText = '';
-            const stream2 = client.stream(secondMessages, { model: 'doubao-seed-2-0-lite-260215', temperature: 0.9 });
+            const stream2 = client.stream(secondMessages, { model: heartbeatModel, temperature: 0.9 });
             for await (const chunk of stream2) { if (chunk.content) secondText += chunk.content.toString(); }
             const cleanSecond = secondText.trim().replace(/^(田雷|田栩宁|梓渝|郑朋|爸爸|妈咪)[：:]\s*/, '').replace(/^["「『]|["」』]$/g, '').trim();
             if (cleanSecond.length > 0 && !cleanSecond.startsWith('[NO_ACTION]')) {
@@ -180,9 +182,10 @@ ${profile}`;
       ];
 
       try {
+        const hbModel = getModelForScene('heartbeat');
         let fullText = '';
         const stream = client.stream(messages, {
-          model: 'doubao-seed-2-0-lite-260215',
+          model: hbModel,
           temperature: 0.85,
         });
 

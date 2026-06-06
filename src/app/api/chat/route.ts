@@ -1,13 +1,14 @@
 import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 import { buildSystemPrompt } from '@/lib/world-book';
+import { getModelForScene } from '@/lib/config';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, character, speaker, history, identityContext } = await request.json();
+    const { message, character, speaker, history, identityContext, scene } = await request.json();
 
     if (!message || !character) {
       return new Response(JSON.stringify({ error: '缺少参数' }), {
@@ -45,9 +46,10 @@ export async function POST(request: NextRequest) {
     // 加入当前用户消息
     messages.push({ role: 'user', content: message });
 
-    // 使用流式输出
+    // 根据场景选择模型：聊天/朋友圈用pro（活人感强），其他用v3
+    const model = getModelForScene((scene as 'chat' | 'moments' | 'heartbeat' | 'auto') || 'chat');
     const stream = client.stream(messages, {
-      model: 'doubao-seed-2-0-lite-260215',
+      model,
       temperature: 0.8,
     });
 

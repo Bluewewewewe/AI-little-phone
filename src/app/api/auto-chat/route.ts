@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 import { buildAutoChatPrompt } from '@/lib/world-book';
+import { getModelForScene } from '@/lib/config';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
     // 非流式，直接返回完整消息
     let fullText = '';
     const stream = client.stream(messages, {
-      model: 'doubao-seed-2-0-lite-260215',
+      model: getModelForScene('auto'),
       temperature: 0.9,
     });
 

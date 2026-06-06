@@ -613,7 +613,7 @@ export default function PhonePage() {
           const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: userMsg, character: 'family', speaker, history: speakerHistory, identityContext: identityCtx }),
+            body: JSON.stringify({ message: userMsg, character: 'family', speaker, history: speakerHistory, identityContext: identityCtx, scene: 'chat' }),
           });
           setTypingWho(null);
 
@@ -653,7 +653,7 @@ export default function PhonePage() {
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userMsg, character, history, identityContext: identityCtx }),
+          body: JSON.stringify({ message: userMsg, character, history, identityContext: identityCtx, scene: 'chat' }),
         });
         if (!res.ok) throw new Error('请求失败');
         setTypingWho(null);
@@ -942,6 +942,7 @@ export default function PhonePage() {
             character,
             speaker: character === 'mom' ? 'mom' : 'dad',
             history: commentHistory,
+            scene: 'moments',
           }),
         });
         if (res.ok && res.body) {
@@ -997,6 +998,7 @@ export default function PhonePage() {
             character: crossCharacter,
             speaker: crossCharacter,
             history: crossHistory,
+            scene: 'moments',
           }),
         });
         if (crossRes.ok && crossRes.body) {
@@ -1062,7 +1064,7 @@ export default function PhonePage() {
           const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: `${dadTask}\n请直接说评论内容（20字以内），不要加引号和前缀`, character: 'dad', speaker: 'dad', history: baseHistory }),
+            body: JSON.stringify({ message: `${dadTask}\n请直接说评论内容（20字以内），不要加引号和前缀`, character: 'dad', speaker: 'dad', history: baseHistory, scene: 'moments' }),
           });
           if (res.ok && res.body) {
             const reader = res.body.getReader();
@@ -1094,7 +1096,7 @@ export default function PhonePage() {
               const res2 = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: `${momTask}\n请直接说回复内容（20字以内），不要加引号和前缀`, character: 'mom', speaker: 'mom', history: momHistory }),
+                body: JSON.stringify({ message: `${momTask}\n请直接说回复内容（20字以内），不要加引号和前缀`, character: 'mom', speaker: 'mom', history: momHistory, scene: 'moments' }),
               });
               if (res2.ok && res2.body) {
                 const reader2 = res2.body.getReader();
@@ -1129,7 +1131,7 @@ export default function PhonePage() {
           const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: `${momTask}\n请直接说评论内容（20字以内），不要加引号和前缀`, character: 'mom', speaker: 'mom', history: momHistory }),
+            body: JSON.stringify({ message: `${momTask}\n请直接说评论内容（20字以内），不要加引号和前缀`, character: 'mom', speaker: 'mom', history: momHistory, scene: 'moments' }),
           });
           if (res.ok && res.body) {
             const reader = res.body.getReader();
@@ -1160,7 +1162,7 @@ export default function PhonePage() {
               const res2 = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: `${dadTask2}\n请直接说回复内容（20字以内），不要加引号和前缀`, character: 'dad', speaker: 'dad', history: dadHistory2 }),
+                body: JSON.stringify({ message: `${dadTask2}\n请直接说回复内容（20字以内），不要加引号和前缀`, character: 'dad', speaker: 'dad', history: dadHistory2, scene: 'moments' }),
               });
               if (res2.ok && res2.body) {
                 const reader2 = res2.body.getReader();
