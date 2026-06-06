@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
-import { buildHeartbeatPrompt, getParentStatus, getMomStatus, type ParentStatusInfo } from '@/lib/world-book';
+import { buildHeartbeatPrompt, getParentStatus, getMomStatus, type ParentStatusInfo, DAD_PROFILE, MOM_PROFILE } from '@/lib/world-book';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 随机决定谁主动联系
-    const results: Array<{ speaker: string; text: string }> = [];
+    const results: Array<{ speaker: string; text: string; toPartner?: boolean }> = [];
     
     // 决定谁可能主动联系
     const possibleActors: Array<{ speaker: string; status: ParentStatusInfo }> = [];
@@ -76,17 +76,75 @@ export async function POST(request: NextRequest) {
       possibleActors.push({ speaker: 'mom', status: momStatus });
     }
 
-    // 30%概率爸爸主动，30%概率妈妈主动，10%两人都主动，30%没人主动
     const rand = Math.random();
     let actorsToAct: Array<{ speaker: string; status: ParentStatusInfo }> = [];
+    // 是否让爸妈互聊（不联系米米，两人自己在家庭群聊天）
+    let partnerChat = false;
     
     if (possibleActors.length >= 2) {
-      if (rand < 0.3) actorsToAct = [possibleActors[0]];
-      else if (rand < 0.6) actorsToAct = [possibleActors[1]];
-      else if (rand < 0.7) actorsToAct = possibleActors;
-      // 0.7-1.0: 无人主动
+      if (rand < 0.12) actorsToAct = [possibleActors[0]];      // 12% 爸爸主动找米米
+      else if (rand < 0.24) actorsToAct = [possibleActors[1]];  // 12% 妈咪主动找米米
+      else if (rand < 0.28) actorsToAct = possibleActors;       // 4% 两人都找米米
+      else if (rand < 0.55) partnerChat = true;                 // 27% 爸妈互聊（不找米米）
+      // 0.55-1.0: 45% 什么都不做
     } else if (possibleActors.length === 1) {
-      if (rand < 0.4) actorsToAct = [possibleActors[0]];
+      if (rand < 0.15) actorsToAct = [possibleActors[0]];       // 15% 主动找米米
+    }
+
+    // 爸妈互聊模式：两人在家庭群聊天，不找米米
+    if (partnerChat && possibleActors.length >= 2) {
+      try {
+        const customHeaders = HeaderUtils.extractForwardHeaders(request.headers);
+        const config = new Config();
+        const client = new LLMClient(config, customHeaders);
+        
+        // 随机决定谁先开口
+        const firstSpeaker = Math.random() < 0.5 ? 'dad' : 'mom';
+        const secondSpeaker = firstSpeaker === 'dad' ? 'mom' : 'dad';
+        const firstStatus = firstSpeaker === 'dad' ? dadStatus : momStatus;
+        const secondStatus = secondSpeaker === 'dad' ? dadStatus : momStatus;
+        
+        const partnerChatPrompt = (speaker: string, status: ParentStatusInfo, partnerName: string, partnerActivity: string, timeStr: string) => {
+          const whoName = speaker === 'dad' ? '田雷（爸爸）' : '梓渝（妈咪）';
+          const profile = speaker === 'dad' ? DAD_PROFILE : MOM_PROFILE;
+          return `你正在家庭群里和${partnerName}聊天（不是跟米米，米米不在）。你现在是${whoName}，${status.emoji} ${status.status}（正在${status.activity}）。${partnerName}正在${partnerActivity}。当前时间${timeStr}。
+请用一句话（20字以内）跟${partnerName}说点什么，可以是吐槽、撒娇、日常关心。直接输出内容，不要加前缀和引号。
+${profile}`;
+        };
+
+        const firstPrompt = partnerChatPrompt(firstSpeaker, firstStatus, firstSpeaker === 'dad' ? '梓渝' : '田雷', secondStatus.activity, timeStr);
+        const firstMessages: Array<{ role: 'system' | 'user'; content: string }> = [
+          { role: 'system', content: firstPrompt },
+          { role: 'user', content: `你想跟${firstSpeaker === 'dad' ? '梓渝' : '田雷'}说点什么？直接说内容（20字以内），不想说就输出[NO_ACTION]` },
+        ];
+
+        let firstText = '';
+        const stream1 = client.stream(firstMessages, { model: 'doubao-seed-2-0-lite-260215', temperature: 0.9 });
+        for await (const chunk of stream1) { if (chunk.content) firstText += chunk.content.toString(); }
+        const cleanFirst = firstText.trim().replace(/^(田雷|田栩宁|梓渝|郑朋|爸爸|妈咪)[：:]\s*/, '').replace(/^["「『]|["」』]$/g, '').trim();
+        
+        if (cleanFirst.length > 0 && !cleanFirst.startsWith('[NO_ACTION]')) {
+          results.push({ speaker: firstSpeaker, text: cleanFirst, toPartner: true });
+          
+          // 第二个人70%概率回复
+          if (Math.random() < 0.7) {
+            const secondPrompt = partnerChatPrompt(secondSpeaker, secondStatus, secondSpeaker === 'dad' ? '梓渝' : '田雷', firstStatus.activity, timeStr);
+            const secondMessages: Array<{ role: 'system' | 'user'; content: string }> = [
+              { role: 'system', content: secondPrompt },
+              { role: 'user', content: `${firstSpeaker === 'dad' ? '田雷' : '梓渝'}在家庭群里说了：「${cleanFirst}」，你回复一下？直接说内容（20字以内），不想回就输出[NO_ACTION]` },
+            ];
+            let secondText = '';
+            const stream2 = client.stream(secondMessages, { model: 'doubao-seed-2-0-lite-260215', temperature: 0.9 });
+            for await (const chunk of stream2) { if (chunk.content) secondText += chunk.content.toString(); }
+            const cleanSecond = secondText.trim().replace(/^(田雷|田栩宁|梓渝|郑朋|爸爸|妈咪)[：:]\s*/, '').replace(/^["「『]|["」』]$/g, '').trim();
+            if (cleanSecond.length > 0 && !cleanSecond.startsWith('[NO_ACTION]')) {
+              results.push({ speaker: secondSpeaker, text: cleanSecond, toPartner: true });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Partner chat error:', err);
+      }
     }
 
     if (actorsToAct.length === 0) {

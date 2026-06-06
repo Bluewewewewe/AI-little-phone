@@ -310,13 +310,13 @@ export default function PhonePage() {
 
   // ========== 心跳系统（灵感来自 dylan-heartbeat） ==========
   useEffect(() => {
-    // 心跳间隔：白天90-180秒，夜间300-600秒
+    // 心跳间隔：白天3-6分钟，夜间8-15分钟
     function scheduleHeartbeat() {
       const hour = new Date().getHours();
       const isDaytime = hour >= 7 && hour < 23;
       const delay = isDaytime 
-        ? 90000 + Math.random() * 90000   // 白天: 90-180秒
-        : 300000 + Math.random() * 300000; // 夜间: 5-10分钟
+        ? 180000 + Math.random() * 180000   // 白天: 3-6分钟
+        : 480000 + Math.random() * 420000;  // 夜间: 8-15分钟
       autoChatTimerRef.current = setTimeout(async () => {
         const currentHour = new Date().getHours();
         // 深夜不唤醒
@@ -324,15 +324,9 @@ export default function PhonePage() {
           scheduleHeartbeat();
           return;
         }
-        // 只在用户在聊天页面时才主动联系
-        if (currentApp !== 'family' && currentApp !== 'dad' && currentApp !== 'mom') {
-          scheduleHeartbeat();
-          return;
-        }
         try {
-          // 获取当前聊天的最近消息
-          const chatKey = currentApp === 'family' ? 'family' : currentApp;
-          const recentMsgs = chatHistory[chatKey]?.slice(-10).map(m => ({
+          // 获取家庭群的最近消息
+          const recentMsgs = chatHistory.family?.slice(-10).map(m => ({
             from: m.from,
             text: m.text,
           })) || [];
@@ -348,14 +342,27 @@ export default function PhonePage() {
             const data = await res.json();
             if (data.shouldAct && data.messages?.length > 0) {
               for (const msg of data.messages) {
-                const delay = msg.speaker === data.messages[0]?.speaker ? 1000 : 2000 + Math.random() * 2000;
-                await new Promise(r => setTimeout(r, delay));
+                const isPartnerChat = msg.toPartner === true;
+                const delayMs = isPartnerChat 
+                  ? (msg === data.messages[0] ? 500 : 1500 + Math.random() * 2000)
+                  : (msg.speaker === data.messages[0]?.speaker ? 1000 : 2000 + Math.random() * 2000);
+                await new Promise(r => setTimeout(r, delayMs));
                 const speakerKey: 'dad' | 'mom' = (msg.speaker === 'mom') ? 'mom' : 'dad';
-                setChatHistory(prev => ({
-                  ...prev,
-                  [speakerKey]: [...prev[speakerKey], { from: speakerKey, text: msg.text, id: nextId() }],
-                  family: [...prev.family, { from: speakerKey, text: msg.text, id: nextId() }],
-                }));
+                const newMsg = { from: speakerKey, text: msg.text, id: nextId() };
+                // 爸妈互聊只加到家庭群
+                if (isPartnerChat) {
+                  setChatHistory(prev => ({
+                    ...prev,
+                    family: [...prev.family, newMsg],
+                  }));
+                } else {
+                  // 对米米说的，加到私聊和家庭群
+                  setChatHistory(prev => ({
+                    ...prev,
+                    [speakerKey]: [...prev[speakerKey], newMsg],
+                    family: [...prev.family, newMsg],
+                  }));
+                }
               }
             }
           }
@@ -536,9 +543,9 @@ export default function PhonePage() {
         return s.includes('出门') || s.includes('🟡');
       };
       const getDelay = (who: 'dad' | 'mom', isFirst: boolean) => {
-        if (isBusy(who)) return 5000 + Math.random() * 5000;
-        if (isOut(who)) return 3000 + Math.random() * 5000;
-        return isFirst ? 1000 + Math.random() * 2000 : 3000 + Math.random() * 3000;
+        if (isBusy(who)) return 6000 + Math.random() * 6000;
+        if (isOut(who)) return 5000 + Math.random() * 6000;
+        return isFirst ? 2000 + Math.random() * 3000 : 4000 + Math.random() * 4000;
       };
 
       // 构建身份上下文

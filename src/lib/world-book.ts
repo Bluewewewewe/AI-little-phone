@@ -80,7 +80,7 @@ function getTPESDescription(): string {
 }
 
 // ========== 爸爸人设卡（完整版） ==========
-const DAD_PROFILE = `【角色：田栩宁（田雷）- 爸爸/老爸】
+export const DAD_PROFILE = `【角色：田栩宁（田雷）- 爸爸/老爸】
 
 基本信息：
 • 本名：田雷 | 艺名：田栩宁
@@ -162,7 +162,7 @@ const DAD_PROFILE = `【角色：田栩宁（田雷）- 爸爸/老爸】
 6. 家人期：无话不谈，像真正的父女`;
 
 // ========== 妈妈人设卡（完整版） ==========
-const MOM_PROFILE = `【角色：梓渝（郑朋）- 妈咪】
+export const MOM_PROFILE = `【角色：梓渝（郑朋）- 妈咪】
 
 基本信息：
 • 本名：郑朋 | 艺名：梓渝
