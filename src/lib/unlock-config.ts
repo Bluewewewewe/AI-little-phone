@@ -95,11 +95,19 @@ export function buildIdentityContext(state: UnlockState): string {
   return lines.join('\n');
 }
 
+// 管理员密码 — 输入此密码直接解锁全部功能
+export const ADMIN_PASSWORD = 'admin888';
+
 // 检查是否匹配暗号
 export function checkUnlock(input1: string, input2: string): boolean {
   const match1 = SECRET_NAMES.dad1.some(n => input1.trim().includes(n));
   const match2 = SECRET_NAMES.dad2.some(n => input2.trim().includes(n));
   return match1 && match2;
+}
+
+// 检查是否管理员密码
+export function isAdminPassword(input: string): boolean {
+  return input.trim() === ADMIN_PASSWORD;
 }
 
 // 解锁前可用的APP

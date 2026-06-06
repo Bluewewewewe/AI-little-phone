@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   UnlockState, DEFAULT_UNLOCK_STATE, IDENTITY_QUESTIONS,
   checkUnlock, buildIdentityContext, LOCKED_AVAILABLE_APPS, UNLOCK_ONLY_APPS,
+  isAdminPassword,
   SECRET_NAMES, DEFAULT_NAMES,
 } from '@/lib/unlock-config';
 
@@ -307,6 +308,7 @@ export default function PhonePage() {
   const [unlockInput2, setUnlockInput2] = useState('');
   const [nicknameInput1, setNicknameInput1] = useState('');
   const [nicknameInput2, setNicknameInput2] = useState('');
+  const [adminInput, setAdminInput] = useState('');
 
   const [chatInput, setChatInput] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -1582,6 +1584,49 @@ export default function PhonePage() {
               style={{ width: '100%', marginTop: 8 }}>
                 ✨ 解锁
               </button>
+            )}
+
+            {/* 管理员快捷解锁 */}
+            {!unlockState.unlocked && (
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px dashed #d6d3d1' }}>
+                <div style={{ fontSize: 11, color: '#a8a29e', textAlign: 'center', marginBottom: 8 }}>管理员入口</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input className="unlock-input" placeholder="管理员密码" maxLength={20}
+                    value={adminInput} onChange={e => setAdminInput(e.target.value)}
+                    style={{ flex: 1 }} type="password"
+                  />
+                  <button className="unlock-btn" onClick={() => {
+                    if (isAdminPassword(adminInput)) {
+                      setUnlockAnimActive(true);
+                      setTimeout(() => {
+                        setUnlockState(prev => ({
+                          ...prev,
+                          unlocked: true,
+                          dad1Name: '田雷',
+                          dad2Name: '郑朋',
+                          identityAnswers: {
+                            name: '米米',
+                            age: '15',
+                            school: '高中',
+                            personality: '活泼开朗',
+                            hobbies: '画画、追星',
+                            relationship: '被宠爱的小公主',
+                            secret: '偷偷嗑爸妈CP',
+                            callMe: '宝贝',
+                          },
+                        }));
+                        setUnlockAnimActive(false);
+                        setMeSubPage('main');
+                      }, 2500);
+                    } else {
+                      alert('密码错误');
+                      setAdminInput('');
+                    }
+                  }} style={{ width: 'auto', padding: '8px 16px', fontSize: 12 }}>
+                    🔑
+                  </button>
+                </div>
+              </div>
             )}
 
             {unlockState.unlocked && (
