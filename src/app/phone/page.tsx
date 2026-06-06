@@ -156,7 +156,7 @@ function getParentStatus(hour: number) {
   return { dadStatus, dadDesc, momStatus, momDesc };
 }
 
-let msgIdCounter = 0;
+let msgIdCounter = Date.now();
 function nextId() { return ++msgIdCounter; }
 
 // ========== APP Data ==========
