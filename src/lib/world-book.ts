@@ -459,6 +459,7 @@ export function buildHeartbeatPrompt(
 2. 你的唯一任务是决定是否主动联系女儿米米。
 3. 如果想联系，直接写你想说的话（一句话，30字以内）。
 4. 如果不想联系，只输出：[NO_ACTION]
+5. 【消息去重】绝对不要重复最近对话记录里出现过的任何内容！每次必须有新话题
 
 ## 当前状态
 - 你是：${whoName}
@@ -466,7 +467,7 @@ export function buildHeartbeatPrompt(
 - 你的状态：${status.emoji} ${status.status}（正在${status.activity}）
 - ${partner}：${partnerStatusText}
 
-## 最近对话记录（仅供回忆）
+## 最近对话记录（禁止重复其中的内容）
 ${historyText || '（没有最近对话）'}
 
 ## 决策指引
@@ -474,7 +475,7 @@ ${historyText || '（没有最近对话）'}
 - 如果状态轻松（追剧/休息/闲逛），可以聊天
 - 如果距离上次对话很久了，主动关心一下
 - 如果没什么特别想说的，选择[NO_ACTION]也完全可以
-- 不要重复之前说过的话
+- 【重要】每次消息必须不同！参考当前活动、时间、宠物、天气、食物等产生新话题
 - 语气要自然，像真正的家人之间的微信消息
 - ${currentApp !== 'home' ? `米米现在正在使用${currentApp}APP` : '米米现在在手机主屏幕'}
 

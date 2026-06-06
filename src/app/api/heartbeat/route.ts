@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
           const whoName = speaker === 'dad' ? '田雷（爸爸）' : '梓渝（妈咪）';
           const profile = speaker === 'dad' ? DAD_PROFILE : MOM_PROFILE;
           return `你正在家庭群里和${partnerName}聊天（不是跟米米，米米不在）。你现在是${whoName}，${status.emoji} ${status.status}（正在${status.activity}）。${partnerName}正在${partnerActivity}。当前时间${timeStr}。
-请用一句话（20字以内）跟${partnerName}说点什么，可以是吐槽、撒娇、日常关心。直接输出内容，不要加前缀和引号。
+请用一句话（20字以内）跟${partnerName}说点什么，可以是吐槽、撒娇、日常关心。内容要和当前活动/时间相关，不要重复之前说过的话。直接输出内容，不要加前缀和引号。
 ${profile}`;
         };
 
@@ -176,7 +176,7 @@ ${profile}`;
       
       const messages: Array<{ role: 'system' | 'user'; content: string }> = [
         { role: 'system', content: prompt },
-        { role: 'user', content: `现在是${timeStr}，你正在${actor.status.activity}。决定一下要不要主动联系米米？如果想联系，直接写你想说的话（一句话，30字以内）。如果不想，只输出[NO_ACTION]。` },
+        { role: 'user', content: `现在是${timeStr}，你正在${actor.status.activity}。决定一下要不要主动联系米米？如果想联系，直接写你想说的话（一句话，30字以内），注意不能重复上面的对话记录。如果不想，只输出[NO_ACTION]。` },
       ];
 
       try {
