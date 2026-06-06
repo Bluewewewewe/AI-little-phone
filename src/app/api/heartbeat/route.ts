@@ -31,16 +31,8 @@ export async function POST(request: NextRequest) {
     const dadStatus = getParentStatus(hour);
     const momStatus = getMomStatus(hour);
 
-    // 检查是否在睡觉时间 - 睡觉时不主动联系
-    if (hour >= 23 || hour < 7) {
-      return new Response(JSON.stringify({ 
-        shouldAct: false, 
-        reason: '睡觉时间不主动联系',
-        messages: [] 
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    // 深夜降低主动联系概率但不完全禁止
+    const isLateNight = hour >= 23 || hour < 7;
 
     // 计算距离最后一条用户消息的时间
     const lastUserMsg = [...recentMessages].reverse().find((m: { from: string }) => m.from === 'me');
@@ -70,26 +62,30 @@ export async function POST(request: NextRequest) {
     // 决定谁可能主动联系
     const possibleActors: Array<{ speaker: string; status: ParentStatusInfo }> = [];
     
-    if (!dadStatus.status.includes('睡觉')) {
+    if (!dadStatus.status.includes('睡觉') || isLateNight) {
       possibleActors.push({ speaker: 'dad', status: dadStatus });
     }
-    if (!momStatus.status.includes('睡觉')) {
+    if (!momStatus.status.includes('睡觉') || isLateNight) {
       possibleActors.push({ speaker: 'mom', status: momStatus });
     }
 
     const rand = Math.random();
+    // 深夜大幅降低主动概率
+    const actThreshold = isLateNight ? 0.05 : 0.12;  // 深夜5%/白天12%
+    const bothThreshold = isLateNight ? 0.07 : 0.28;  // 深夜7%/白天28%
+    const partnerThreshold = isLateNight ? 0.10 : 0.55; // 深夜10%/白天55%
     let actorsToAct: Array<{ speaker: string; status: ParentStatusInfo }> = [];
     // 是否让爸妈互聊（不联系米米，两人自己在家庭群聊天）
     let partnerChat = false;
     
     if (possibleActors.length >= 2) {
-      if (rand < 0.12) actorsToAct = [possibleActors[0]];      // 12% 爸爸主动找米米
-      else if (rand < 0.24) actorsToAct = [possibleActors[1]];  // 12% 妈咪主动找米米
-      else if (rand < 0.28) actorsToAct = possibleActors;       // 4% 两人都找米米
-      else if (rand < 0.55) partnerChat = true;                 // 27% 爸妈互聊（不找米米）
-      // 0.55-1.0: 45% 什么都不做
+      if (rand < actThreshold) actorsToAct = [possibleActors[0]];       // 白天12%/深夜5% 爸爸主动找米米
+      else if (rand < actThreshold * 2) actorsToAct = [possibleActors[1]]; // 白天12%/深夜5% 妈咪主动找米米
+      else if (rand < bothThreshold) actorsToAct = possibleActors;      // 白天4%/深夜2% 两人都找米米
+      else if (rand < partnerThreshold) partnerChat = true;             // 白天27%/深夜3% 爸妈互聊
+      // 白天45%/深夜90% 什么都不做
     } else if (possibleActors.length === 1) {
-      if (rand < 0.15) actorsToAct = [possibleActors[0]];       // 15% 主动找米米
+      if (rand < (isLateNight ? 0.05 : 0.15)) actorsToAct = [possibleActors[0]];
     }
 
     // 爸妈互聊模式：两人在家庭群聊天，不找米米

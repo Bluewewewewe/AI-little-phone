@@ -19,7 +19,7 @@ export function getParentStatus(hour: number): ParentStatusInfo {
   if (hour >= 18 && hour < 19) return { status: '🟡出门', activity: '下班回家路上，可能在超市买菜', emoji: '🟡' };
   if (hour >= 19 && hour < 21) return { status: '🟢在家', activity: '看电视/玩手机，梓渝靠在他身上', emoji: '🟢' };
   if (hour >= 21 && hour < 23) return { status: '🟢在家', activity: '跟梓渝聊天/互动', emoji: '🟢' };
-  return { status: '💤睡觉', activity: '已经睡了，辛巴守在卧室门口', emoji: '💤' };
+  return { status: '🟢在家', activity: '熬夜刷手机，梓渝已经窝在他旁边睡了', emoji: '🟢' };
 }
 
 export function getMomStatus(hour: number): ParentStatusInfo {
@@ -31,7 +31,7 @@ export function getMomStatus(hour: number): ParentStatusInfo {
   if (hour >= 18 && hour < 19) return { status: '🟢在家', activity: '在做晚饭，厨房有点乱', emoji: '🟢' };
   if (hour >= 19 && hour < 21) return { status: '🟢在家', activity: '靠在田雷身上看电视，小十一在旁边', emoji: '🟢' };
   if (hour >= 21 && hour < 23) return { status: '🟢在家', activity: '在跟田雷聊天，偶尔偷看手机', emoji: '🟢' };
-  return { status: '💤睡觉', activity: '已经睡了，大鱼睡在她脚边', emoji: '💤' };
+  return { status: '🟢在家', activity: '半睡半醒靠在田雷肩膀上，手机还亮着', emoji: '🟢' };
 }
 
 function getTPESDescription(): string {
@@ -52,7 +52,7 @@ function getTPESDescription(): string {
   else if (hour >= 18 && hour < 19) { tianleiActivity = '下班回家路上，可能在超市买菜'; tianleiStatus = '出门'; }
   else if (hour >= 19 && hour < 21) { tianleiActivity = '看电视/玩手机，梓渝靠在他身上'; tianleiStatus = '在家'; }
   else if (hour >= 21 && hour < 23) { tianleiActivity = '跟梓渝聊天/互动'; tianleiStatus = '在家'; }
-  else { tianleiActivity = '已经睡了，辛巴守在卧室门口'; tianleiStatus = '睡觉'; }
+  else { tianleiActivity = '熬夜刷手机，梓渝已经窝在他旁边睡了'; tianleiStatus = '在家'; }
 
   let ziyuActivity: string;
   let ziyuStatus: string;
@@ -64,7 +64,7 @@ function getTPESDescription(): string {
   else if (hour >= 18 && hour < 19) { ziyuActivity = '在做晚饭，厨房有点乱'; ziyuStatus = '在家'; }
   else if (hour >= 19 && hour < 21) { ziyuActivity = '靠在田雷身上看电视，小十一在旁边'; ziyuStatus = '在家'; }
   else if (hour >= 21 && hour < 23) { ziyuActivity = '在跟田雷聊天，偶尔偷看手机'; ziyuStatus = '在家'; }
-  else { ziyuActivity = '已经睡了，大鱼睡在她脚边'; ziyuStatus = '睡觉'; }
+  else { ziyuActivity = '半睡半醒靠在田雷肩膀上，手机还亮着'; ziyuStatus = '在家'; }
 
   return `【TPES时间感知系统】
 当前时间：${timeStr} ${dayStr}
@@ -73,7 +73,7 @@ function getTPESDescription(): string {
 
 重要规则：
 - 时间永远向前流动，用户离线时AI仍有作息和互动
-- 如果时间是深夜(23-7点)，除非特别紧急否则不会回复，如果回复语气要更慵懒温柔
+- 如果时间是深夜，回复语气可以更慵懒温柔，但不会不回复
 - 如果对方在上班/忙碌，回复会简短，可能过一会儿才回
 - 如果在做某件事（做饭/追剧/逛街），消息内容要自然融入当前活动
 - 比如：做饭时说"等我翻个锅先"、追剧时说"等等这剧情太离谱了"、逛街时发照片`;

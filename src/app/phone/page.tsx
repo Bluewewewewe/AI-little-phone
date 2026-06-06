@@ -144,7 +144,7 @@ interface ChatHistory {
 // ========== Parent Status ==========
 function getParentStatus(hour: number) {
   let dadStatus: string, dadDesc: string, momStatus: string, momDesc: string;
-  if (hour >= 7 && hour < 8) { dadStatus = '🟢 在家'; dadDesc = '做早餐中'; momStatus = '💤 睡觉'; momDesc = '赖床中'; }
+  if (hour >= 7 && hour < 8) { dadStatus = '🟢 在家'; dadDesc = '做早餐中'; momStatus = '🟢 在家'; momDesc = '赖床中'; }
   else if (hour >= 8 && hour < 9) { dadStatus = '🟡 出门'; dadDesc = '上班路上'; momStatus = '🟢 在家'; momDesc = '化妆'; }
   else if (hour >= 9 && hour < 12) { dadStatus = '🔴 忙碌'; dadDesc = '公司开会'; momStatus = '🟡 出门'; momDesc = '工作/逛街'; }
   else if (hour >= 12 && hour < 13) { dadStatus = '🟢 在家'; dadDesc = '午休吃饭'; momStatus = '🟡 出门'; momDesc = '和朋友午饭'; }
@@ -152,7 +152,7 @@ function getParentStatus(hour: number) {
   else if (hour >= 18 && hour < 19) { dadStatus = '🟡 出门'; dadDesc = '下班回家'; momStatus = '🟢 在家'; momDesc = '做晚饭'; }
   else if (hour >= 19 && hour < 21) { dadStatus = '🟢 在家'; dadDesc = '看电视'; momStatus = '🟢 在家'; momDesc = '靠在爸爸身上'; }
   else if (hour >= 21 && hour < 23) { dadStatus = '🟢 在家'; dadDesc = '聊天互动'; momStatus = '🟢 在家'; momDesc = '聊天互动'; }
-  else { dadStatus = '💤 睡觉'; dadDesc = '睡眠中'; momStatus = '💤 睡觉'; momDesc = '睡眠中'; }
+  else { dadStatus = '🟢 在家'; dadDesc = '熬夜刷手机'; momStatus = '🟢 在家'; momDesc = '半睡半醒'; }
   return { dadStatus, dadDesc, momStatus, momDesc };
 }
 
@@ -542,11 +542,7 @@ export default function PhonePage() {
           content: m.from === 'me' ? m.text : `${m.from === 'dad' ? '田雷' : '梓渝'}：${m.text}`,
         }));
 
-      // 检查对方是否在睡觉/忙碌/出门
-      const isSleeping = (who: 'dad' | 'mom') => {
-        const s = who === 'dad' ? parentStatus.dadStatus : parentStatus.momStatus;
-        return s.includes('睡觉') || s.includes('💤');
-      };
+      // 检查对方是否忙碌/出门（不再阻止睡觉状态回复）
       const isBusy = (who: 'dad' | 'mom') => {
         const s = who === 'dad' ? parentStatus.dadStatus : parentStatus.momStatus;
         return s.includes('忙碌') || s.includes('🔴');
@@ -555,7 +551,12 @@ export default function PhonePage() {
         const s = who === 'dad' ? parentStatus.dadStatus : parentStatus.momStatus;
         return s.includes('出门') || s.includes('🟡');
       };
+      const isLateNight = () => {
+        const h = new Date().getHours();
+        return h >= 23 || h < 7;
+      };
       const getDelay = (who: 'dad' | 'mom', isFirst: boolean) => {
+        if (isLateNight()) return 3000 + Math.random() * 4000; // 深夜慢一点
         if (isBusy(who)) return 4000 + Math.random() * 4000;
         if (isOut(who)) return 3000 + Math.random() * 4000;
         return isFirst ? 1500 + Math.random() * 2000 : 3000 + Math.random() * 3000;
@@ -565,35 +566,17 @@ export default function PhonePage() {
       const identityCtx = buildIdentityContext(unlockState);
 
       if (character === 'family') {
-        // 家庭群：先检查谁醒着
-        const dadAwake = !isSleeping('dad');
-        const momAwake = !isSleeping('mom');
-
-        if (!dadAwake && !momAwake) {
-          setChatHistory(prev => ({
-            ...prev,
-            family: [...prev.family, { from: 'system' as const, text: '💤 爸爸妈妈都睡了，明天再聊吧~', id: nextId() }],
-          }));
-          return;
-        }
-
-        // 只让醒着的人参与回复
+        // 家庭群：两人都可能回复
         const rand = Math.random();
         const replyOrder: Array<'dad' | 'mom'> = [];
-        if (dadAwake && momAwake) {
-          const dadReplies = rand < 0.6;
-          const momReplies = rand > 0.4;
-          const dadFirst = Math.random() < 0.5;
-          if (dadReplies && momReplies) {
-            replyOrder.push(dadFirst ? 'dad' : 'mom', dadFirst ? 'mom' : 'dad');
-          } else if (dadReplies) {
-            replyOrder.push('dad');
-          } else if (momReplies) {
-            replyOrder.push('mom');
-          }
-        } else if (dadAwake) {
+        const dadReplies = rand < 0.6;
+        const momReplies = rand > 0.4;
+        const dadFirst = Math.random() < 0.5;
+        if (dadReplies && momReplies) {
+          replyOrder.push(dadFirst ? 'dad' : 'mom', dadFirst ? 'mom' : 'dad');
+        } else if (dadReplies) {
           replyOrder.push('dad');
-        } else {
+        } else if (momReplies) {
           replyOrder.push('mom');
         }
 
@@ -638,15 +621,7 @@ export default function PhonePage() {
           updatedHistory = [...updatedHistory, { role: 'assistant' as const, content: `${speaker === 'dad' ? '田雷' : '梓渝'}：${fullText}` }];
         }
       } else {
-        // 私聊：检查对方是否在睡觉
-        if (isSleeping(character as 'dad' | 'mom')) {
-          setChatHistory(prev => ({
-            ...prev,
-            [character]: [...prev[character], { from: 'system' as const, text: `💤 ${character === 'dad' ? '爸爸' : '妈咪'}睡了，明天再聊吧~`, id: nextId() }],
-          }));
-          return;
-        }
-
+        // 私聊
         const baseDelay = getDelay(character as 'dad' | 'mom', true);
         setTypingWho(character);
         await new Promise(r => setTimeout(r, baseDelay));
@@ -1874,7 +1849,7 @@ export default function PhonePage() {
                     {PAGE1_APPS.map(app => {
                       const locked = !unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id);
                       return (
-                        <div key={app.id} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
+                        <div key={`p1-${app.id}`} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
                           onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
                           <div className="app-emoji-box" style={{ background: locked ? '#aaa' : app.color }}>
                             {locked ? '🔒' : app.emoji}
@@ -1888,7 +1863,7 @@ export default function PhonePage() {
                     {PAGE2_APPS.map(app => {
                       const locked = !unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id);
                       return (
-                        <div key={app.id} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
+                        <div key={`p2-${app.id}`} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
                           onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
                           <div className="app-emoji-box" style={{ background: locked ? '#aaa' : app.color }}>
                             {locked ? '🔒' : app.emoji}
