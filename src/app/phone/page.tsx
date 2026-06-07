@@ -2507,46 +2507,81 @@ export default function PhonePage() {
   // ========== 验证通登录界面 ==========
   function renderLoginScreen() {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #fef9ee 0%, #fef3c7 40%, #fde68a 100%)', padding: 20 }}>
-        <div style={{ width: '100%', maxWidth: 380 }}>
-          {/* Logo */}
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{ fontSize: 56, marginBottom: 8 }}>📱</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#92400e', letterSpacing: 1 }}>AI小手机</div>
-            <div style={{ fontSize: 13, color: '#d97706', marginTop: 4 }}>CP社交平台</div>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #fffbeb 0%, #fef3c7 30%, #fde68a 70%, #fbbf24 100%)', position: 'relative', overflow: 'hidden', padding: 20 }}>
+        {/* 装饰光晕 */}
+        <div style={{ position: 'absolute', top: -80, right: -60, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.35) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
+        <div style={{ position: 'absolute', bottom: -40, left: -80, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.18) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
+        <div style={{ position: 'absolute', top: '30%', left: '8%', width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
+
+        <div style={{ width: '100%', maxWidth: 360, position: 'relative', zIndex: 1 }}>
+          {/* 品牌区域 */}
+          <div style={{ textAlign: 'center', marginBottom: 40, marginTop: -20 }}>
+            {/* Logo圆形底座 */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 88, height: 88, borderRadius: 28, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(146,64,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8)', marginBottom: 16 }}>
+              <span style={{ fontSize: 44 }}>📱</span>
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: '#78350f', letterSpacing: 2, lineHeight: 1.3 }}>
+              AI小手机
+            </div>
+            <div style={{ fontSize: 13, color: '#b45309', marginTop: 6, fontWeight: 500, letterSpacing: 3 }}>
+              CP社交平台
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
+              <span style={{ display: 'inline-block', width: 20, height: 1, background: 'linear-gradient(90deg, transparent, #d97706)' }} />
+              <span style={{ fontSize: 10, color: '#d97706', letterSpacing: 2 }}>验证通</span>
+              <span style={{ display: 'inline-block', width: 20, height: 1, background: 'linear-gradient(90deg, #d97706, transparent)' }} />
+            </div>
           </div>
+
           {/* 登录卡片 */}
-          <div style={{ background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(24px)', borderRadius: 20, padding: 28, boxShadow: '0 8px 32px rgba(146,64,0,0.08)', borderTop: '1px solid rgba(255,255,255,0.6)' }}>
-            <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#92400e' }}>验证通登录</div>
-              <div style={{ fontSize: 11, color: '#b45309', marginTop: 4 }}>输入账号密码即可登录</div>
+          <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(28px)', borderRadius: 24, padding: '28px 24px', boxShadow: '0 12px 40px rgba(146,64,0,0.08), 0 2px 8px rgba(146,64,0,0.04)', borderTop: '1px solid rgba(255,255,255,0.7)', borderLeft: '1px solid rgba(255,255,255,0.4)' }}>
+            {/* 输入区 */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 6, letterSpacing: 1 }}>账 号</div>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.85)', borderRadius: 14, border: '1.5px solid rgba(253,230,138,0.6)', overflow: 'hidden', transition: 'border-color 0.2s' }}>
+                <span style={{ padding: '0 0 0 14', fontSize: 18, color: '#d97706' }}>👤</span>
+                <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                  placeholder="输入你的账号" maxLength={20}
+                  style={{ flex: 1, padding: '13px 14px 13px 8px', border: 'none', fontSize: 14, outline: 'none', background: 'transparent', color: '#78350f' }} />
+              </div>
             </div>
-            <div style={{ marginBottom: 14 }}>
-              <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                placeholder="请输入账号" maxLength={20}
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid #fde68a', fontSize: 14, outline: 'none', background: 'rgba(255,255,255,0.8)', boxSizing: 'border-box' }} />
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 6, letterSpacing: 1 }}>密 码</div>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.85)', borderRadius: 14, border: '1.5px solid rgba(253,230,138,0.6)', overflow: 'hidden' }}>
+                <span style={{ padding: '0 0 0 14', fontSize: 18, color: '#d97706' }}>🔒</span>
+                <input value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                  placeholder="输入你的密码" type="password" maxLength={30}
+                  style={{ flex: 1, padding: '13px 14px 13px 8px', border: 'none', fontSize: 14, outline: 'none', background: 'transparent', color: '#78350f' }} />
+              </div>
             </div>
-            <div style={{ marginBottom: 18 }}>
-              <input value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                placeholder="请输入密码" type="password" maxLength={30}
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid #fde68a', fontSize: 14, outline: 'none', background: 'rgba(255,255,255,0.8)', boxSizing: 'border-box' }} />
-            </div>
+
+            {/* 登录按钮 */}
             <button onClick={handleLogin}
-              style={{ width: '100%', padding: '12px 0', borderRadius: 12, background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(245,158,11,0.3)', transition: 'transform 0.15s', letterSpacing: 2 }}
-              onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.97)')}
-              onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
+              style={{ width: '100%', padding: '14px 0', borderRadius: 14, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 6px 20px rgba(245,158,11,0.35)', transition: 'all 0.2s', letterSpacing: 4, position: 'relative', overflow: 'hidden' }}
+              onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.97)', e.currentTarget.style.boxShadow = '0 2px 8px rgba(245,158,11,0.25)')}
+              onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 6px 20px rgba(245,158,11,0.35)')}
+              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 6px 20px rgba(245,158,11,0.35)')}>
               登 录
             </button>
-            <div style={{ textAlign: 'center', marginTop: 12, fontSize: 10, color: '#a16207' }}>
-              登录即同意《用户协议》和《隐私政策》
+
+            {/* 协议 */}
+            <div style={{ textAlign: 'center', marginTop: 14, fontSize: 10, color: '#a16207', lineHeight: 1.6 }}>
+              登录即代表同意 <span style={{ color: '#d97706', textDecoration: 'underline', cursor: 'pointer' }}>用户协议</span> 和 <span style={{ color: '#d97706', textDecoration: 'underline', cursor: 'pointer' }}>隐私政策</span>
             </div>
           </div>
-          {/* 底部提示 */}
-          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 10, color: '#d97706' }}>
-            💡 管理员账号：admin / manager_lin / cp_official
+
+          {/* 底部信息 */}
+          <div style={{ textAlign: 'center', marginTop: 24 }}>
+            <div style={{ fontSize: 10, color: '#b45309', opacity: 0.7, marginBottom: 8 }}>
+              💡 管理员账号：admin / manager_lin / cp_official
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 }}>
+              <span style={{ fontSize: 10, color: '#d97706', opacity: 0.5 }}>v1.0.0</span>
+              <span style={{ width: 1, height: 10, background: '#d97706', opacity: 0.3 }} />
+              <span style={{ fontSize: 10, color: '#d97706', opacity: 0.5 }}>AI小手机团队</span>
+            </div>
           </div>
         </div>
       </div>
