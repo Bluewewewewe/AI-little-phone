@@ -818,7 +818,17 @@ export default function PhonePage() {
   const momentsDataRef = useRef(momentsData);
   momentsDataRef.current = momentsData;
 
-  // ========== 微博数据 ==========
+  // ========== 微博完整系统 ==========
+  interface WeiboComment {
+    id: number;
+    from: string;
+    avatar: string;
+    text: string;
+    time: string;
+    likes: number;
+    iLiked: boolean;
+    replyTo?: string;
+  }
   interface WeiboPost {
     id: number;
     avatar: string;
@@ -830,20 +840,162 @@ export default function PhonePage() {
     color: string;
     likes: number;
     iLiked: boolean;
-    comments: { from: string; text: string }[];
+    comments: WeiboComment[];
     reposts: number;
+    images?: string[];
+    topic?: string;
+    expandedComments: boolean;
+    commentsLoaded: boolean;
   }
+  interface HotSearchItem {
+    id: number;
+    title: string;
+    heat: number;
+    tag?: string;
+    tagColor?: string;
+  }
+  interface WeiboAccount {
+    nickname: string;
+    avatar: string;
+    bio: string;
+    isSet: boolean;
+  }
+
+  // 初始热搜榜
+  const INITIAL_HOT_SEARCH: HotSearchItem[] = [
+    { id: 1, title: '他们是不是在一起了', heat: 5842367, tag: '爆', tagColor: '#ef4444' },
+    { id: 2, title: '田栩宁做饭', heat: 3210891, tag: '热', tagColor: '#f97316' },
+    { id: 3, title: '我是梓渝新歌', heat: 2890456, tag: '热', tagColor: '#f97316' },
+    { id: 4, title: '甜玉米CP超话', heat: 2456789 },
+    { id: 5, title: '逆爱大结局', heat: 1987234, tag: '新', tagColor: '#22c55e' },
+    { id: 6, title: '娱乐圈隐婚夫妻', heat: 1654321 },
+    { id: 7, title: '某人是谁', heat: 1432198, tag: '热', tagColor: '#f97316' },
+    { id: 8, title: '同款购物袋', heat: 1210876 },
+    { id: 9, title: '明星私生活该不该被曝光', heat: 987654 },
+    { id: 10, title: 'CP粉的快乐', heat: 876543 },
+  ];
+
   const [weiboData, setWeiboData] = useState<WeiboPost[]>([
-    { id: 1, avatar: '👨', name: '田栩宁_', tag: '演员', verified: true, time: '3小时前', text: '今天收工早，回家做了顿饭。某人吃了三碗还嫌不够 😏', color: '#f59e0b', likes: 128340, iLiked: false, comments: [{ from: '甜玉米1号', text: '某人是谁我不说🤏' }, { from: '路人大白', text: '田老师做饭也太宠了吧' }], reposts: 8932 },
-    { id: 2, avatar: '👩', name: '我是梓渝_', tag: '歌手', verified: true, time: '5小时前', text: '新歌demo录完啦！这次尝试了不一样的风格，期待吗～ 🎵', color: '#ec4899', likes: 95670, iLiked: false, comments: [{ from: '音粉小圆', text: '期待期待！！' }, { from: '甜玉米2号', text: '月月唱歌太好听了呜呜' }], reposts: 6210 },
-    { id: 3, avatar: '🔥', name: 'CP超话', time: '刚刚', text: '【路透】今天又有人拍到他们一起逛超市了！提着同款购物袋！甜玉米尖叫！！！', color: '#ef4444', likes: 28340, iLiked: false, comments: [{ from: '嗑到了', text: '同款购物袋！这是官宣了吧' }, { from: '清醒路人', text: '可能只是巧合吧' }], reposts: 5932 },
-    { id: 4, avatar: '👨', name: '田栩宁_', tag: '演员', verified: true, time: '昨天', text: '谢谢大家喜欢《逆爱》，每个角色都值得被认真对待。', color: '#f59e0b', likes: 256700, iLiked: false, comments: [{ from: '剧粉', text: '田栩宁演技真的绝了' }, { from: '逆爱铁粉', text: '永远支持逆爱！' }], reposts: 18500 },
-    { id: 5, avatar: '👩', name: '我是梓渝_', tag: '歌手', verified: true, time: '昨天', text: '练习室待了一整天，腿都要断了… 但很充实！💪', color: '#ec4899', likes: 78900, iLiked: false, comments: [{ from: '粉丝团', text: '月月注意休息！' }, { from: '甜玉米3号', text: '某人看到该心疼了' }], reposts: 4320 },
-    { id: 6, avatar: '📢', name: '娱乐热搜', time: '2小时前', text: '#他们是不是在一起了# 阅读量突破3亿，网友：这不是情侣我倒立洗头', color: '#ef4444', likes: 45600, iLiked: false, comments: [{ from: '吃瓜群众', text: '坐等官宣' }, { from: 'CP粉头', text: '3亿阅读量！排面！' }], reposts: 12300 },
-    { id: 7, avatar: '🔥', name: 'CP超话', time: '1小时前', text: '【分析帖】田栩宁今天微博发的"某人"是谁我不说🤏 翻译：梓渝吃了三碗饭', color: '#ef4444', likes: 19800, iLiked: false, comments: [{ from: '侦探粉', text: '某人=梓渝 这是数学题' }, { from: '唯粉抗议', text: '别乱磕好吗' }], reposts: 3670 },
+    { id: 1, avatar: '👨', name: '田栩宁_', tag: '演员', verified: true, time: '3小时前', text: '今天收工早，回家做了顿饭。某人吃了三碗还嫌不够 😏', color: '#f59e0b', likes: 128340, iLiked: false, comments: [], reposts: 8932, expandedComments: false, commentsLoaded: false },
+    { id: 2, avatar: '👩', name: '我是梓渝_', tag: '歌手', verified: true, time: '5小时前', text: '新歌demo录完啦！这次尝试了不一样的风格，期待吗～ 🎵', color: '#ec4899', likes: 95670, iLiked: false, comments: [], reposts: 6210, expandedComments: false, commentsLoaded: false },
+    { id: 3, avatar: '🔥', name: 'CP超话', time: '刚刚', text: '【路透】今天又有人拍到他们一起逛超市了！提着同款购物袋！甜玉米尖叫！！！', color: '#ef4444', likes: 28340, iLiked: false, comments: [], reposts: 5932, expandedComments: false, commentsLoaded: false },
+    { id: 4, avatar: '👨', name: '田栩宁_', tag: '演员', verified: true, time: '昨天', text: '谢谢大家喜欢《逆爱》，每个角色都值得被认真对待。', color: '#f59e0b', likes: 256700, iLiked: false, comments: [], reposts: 18500, expandedComments: false, commentsLoaded: false },
+    { id: 5, avatar: '👩', name: '我是梓渝_', tag: '歌手', verified: true, time: '昨天', text: '练习室待了一整天，腿都要断了… 但很充实！💪', color: '#ec4899', likes: 78900, iLiked: false, comments: [], reposts: 4320, expandedComments: false, commentsLoaded: false },
+    { id: 6, avatar: '📢', name: '娱乐热搜', time: '2小时前', text: '#他们是不是在一起了# 阅读量突破3亿，网友：这不是情侣我倒立洗头', color: '#ef4444', likes: 45600, iLiked: false, comments: [], reposts: 12300, topic: '他们是不是在一起了', expandedComments: false, commentsLoaded: false },
+    { id: 7, avatar: '🔥', name: 'CP超话', time: '1小时前', text: '【分析帖】田栩宁今天微博发的"某人"是谁我不说🤏 翻译：梓渝吃了三碗饭', color: '#ef4444', likes: 19800, iLiked: false, comments: [], reposts: 3670, topic: '某人是谁', expandedComments: false, commentsLoaded: false },
   ]);
+  const [weiboHotSearch, setWeiboHotSearch] = useState<HotSearchItem[]>(INITIAL_HOT_SEARCH);
+  const [weiboAccount, setWeiboAccount] = useState<WeiboAccount>({ nickname: '游客用户', avatar: '😎', bio: '', isSet: false });
+  const [weiboTab, setWeiboTab] = useState<'home' | 'discover' | 'messages' | 'me'>('home');
   const [weiboCommentInput, setWeiboCommentInput] = useState('');
   const [activeWeiboComment, setActiveWeiboComment] = useState<number|null>(null);
+  const [showWeiboPost, setShowWeiboPost] = useState(false);
+  const [weiboPostText, setWeiboPostText] = useState('');
+  const [weiboPostImages, setWeiboPostImages] = useState<string[]>([]);
+  const [weiboPostTopic, setWeiboPostTopic] = useState('');
+  const [showWeiboProfileEdit, setShowWeiboProfileEdit] = useState(false);
+  const [weiboProfileNick, setWeiboProfileNick] = useState('');
+  const [weiboProfileBio, setWeiboProfileBio] = useState('');
+  const [weiboProfileAvatar, setWeiboProfileAvatar] = useState('😎');
+  const weiboNextId = useRef(100);
+
+  // 热搜热度变化：用户操作时触发
+  const bumpHotSearch = (topicKeyword: string) => {
+    setWeiboHotSearch(prev => {
+      const updated = prev.map(item => {
+        if (item.title.includes(topicKeyword) || topicKeyword.includes(item.title)) {
+          return { ...item, heat: item.heat + Math.floor(Math.random() * 500000 + 100000) };
+        }
+        return item;
+      });
+      // 重新按热度排序
+      updated.sort((a, b) => b.heat - a.heat);
+      // 重新编号
+      return updated.map((item, i) => ({ ...item, id: i + 1 }));
+    });
+  };
+
+  // 生成微博评论（AI生成15-20条）
+  const generateWeiboComments = async (post: WeiboPost) => {
+    if (post.commentsLoaded) return;
+    const commentPool = [
+      { from: '甜玉米1号', avatar: '🌽', text: '某人是谁我不说🤏' },
+      { from: '路人大白', avatar: '🤍', text: '这也太甜了吧' },
+      { from: '音粉小圆', avatar: '🎵', text: '期待期待！！' },
+      { from: '嗑到了', avatar: '💕', text: '嗑死我了呜呜' },
+      { from: '清醒路人', avatar: '🧐', text: '可能只是巧合吧' },
+      { from: '剧粉', avatar: '🎬', text: '演技真的绝了' },
+      { from: '逆爱铁粉', avatar: '❤️', text: '永远支持！' },
+      { from: '粉丝团', avatar: '🪭', text: '注意休息呀！' },
+      { from: 'CP粉头', avatar: '🔥', text: '3亿阅读量！排面！' },
+      { from: '侦探粉', avatar: '🔍', text: '某人=梓渝 这是数学题' },
+      { from: '唯粉抗议', avatar: '🙄', text: '别乱磕好吗' },
+      { from: '吃瓜群众', avatar: '🍉', text: '坐等官宣' },
+      { from: '甜玉米2号', avatar: '🌽', text: '月月太可爱了' },
+      { from: '甜玉米3号', avatar: '🌽', text: '某人看到该心疼了' },
+      { from: '真爱粉', avatar: '💗', text: '永远相信你们！' },
+      { from: '理性分析', avatar: '📊', text: '从数据来看这对CP是真的' },
+      { from: '路人转粉', avatar: '✨', text: '被安利了，入坑了' },
+      { from: '老粉', avatar: '👑', text: '从出道就追了，越来越甜' },
+      { from: '微糖女孩', avatar: '🍬', text: '今天的糖分超标啦' },
+      { from: '圈内人', avatar: '🎪', text: '只能说你们看到的只是冰山一角' },
+    ];
+    // 根据微博内容选择合适的评论
+    const isDad = post.name === '田栩宁_';
+    const isMom = post.name === '我是梓渝_';
+    const isCP = post.name === 'CP超话' || post.name === '娱乐热搜';
+    const count = 15 + Math.floor(Math.random() * 6); // 15-20条
+    const selected: WeiboComment[] = [];
+    const usedIndices = new Set<number>();
+    // 爸爸微博优先选CP相关评论
+    if (isDad) {
+      const dadIndices = [0, 1, 3, 5, 9, 10, 14, 16, 17, 18, 19, 6, 7, 8, 12, 2, 4, 11, 13, 15];
+      for (let i = 0; i < count && i < dadIndices.length; i++) {
+        const idx = dadIndices[i];
+        if (!usedIndices.has(idx)) {
+          usedIndices.add(idx);
+          selected.push({
+            id: weiboNextId.current++,
+            ...commentPool[idx],
+            time: `${Math.floor(Math.random() * 23) + 1}小时前`,
+            likes: Math.floor(Math.random() * 5000 + 100),
+            iLiked: false,
+          });
+        }
+      }
+    } else if (isMom) {
+      const momIndices = [2, 12, 13, 6, 7, 8, 14, 17, 18, 3, 0, 1, 5, 9, 10, 4, 11, 15, 16, 19];
+      for (let i = 0; i < count && i < momIndices.length; i++) {
+        const idx = momIndices[i];
+        if (!usedIndices.has(idx)) {
+          usedIndices.add(idx);
+          selected.push({
+            id: weiboNextId.current++,
+            ...commentPool[idx],
+            time: `${Math.floor(Math.random() * 23) + 1}小时前`,
+            likes: Math.floor(Math.random() * 5000 + 100),
+            iLiked: false,
+          });
+        }
+      }
+    } else {
+      const cpIndices = [3, 4, 8, 9, 10, 11, 14, 15, 16, 19, 0, 1, 2, 5, 6, 7, 12, 13, 17, 18];
+      for (let i = 0; i < count && i < cpIndices.length; i++) {
+        const idx = cpIndices[i];
+        if (!usedIndices.has(idx)) {
+          usedIndices.add(idx);
+          selected.push({
+            id: weiboNextId.current++,
+            ...commentPool[idx],
+            time: `${Math.floor(Math.random() * 23) + 1}小时前`,
+            likes: Math.floor(Math.random() * 5000 + 100),
+            iLiked: false,
+          });
+        }
+      }
+    }
+    setWeiboData(prev => prev.map(p => p.id === post.id ? { ...p, comments: selected, commentsLoaded: true } : p));
+  };
 
   // ========== 朋友圈上下文构建器 ==========
   // 将一条朋友圈的完整评论链转为 chat history 格式
@@ -1326,66 +1478,388 @@ export default function PhonePage() {
   }
 
   function renderWeibo() {
-    const formatCount = (n: number) => n >= 10000 ? (n / 10000).toFixed(1) + '万' : String(n);
+    const formatCount = (n: number) => n >= 10000 ? (n / 10000).toFixed(1) + '万' : n >= 1000 ? (n / 1000).toFixed(1) + '千' : String(n);
+    const formatHeat = (n: number) => n >= 100000000 ? (n / 100000000).toFixed(1) + '亿' : n >= 10000 ? (n / 10000).toFixed(0) + '万' : String(n);
+
     const toggleWeiboLike = (id: number) => {
       setWeiboData(prev => prev.map(p => p.id === id ? { ...p, iLiked: !p.iLiked, likes: p.iLiked ? p.likes - 1 : p.likes + 1 } : p));
+      const post = weiboData.find(p => p.id === id);
+      if (post?.topic) bumpHotSearch(post.topic);
     };
+
     const addWeiboComment = (id: number) => {
       if (!weiboCommentInput.trim()) return;
-      setWeiboData(prev => prev.map(p => p.id === id ? { ...p, comments: [...p.comments, { from: '米米', text: weiboCommentInput.trim() }] } : p));
+      const newComment: WeiboComment = {
+        id: weiboNextId.current++,
+        from: weiboAccount.nickname,
+        avatar: weiboAccount.avatar,
+        text: weiboCommentInput.trim(),
+        time: '刚刚',
+        likes: 0,
+        iLiked: false,
+      };
+      setWeiboData(prev => prev.map(p => p.id === id ? { ...p, comments: [...p.comments, newComment] } : p));
       setWeiboCommentInput('');
+      // 评论影响热搜
+      const post = weiboData.find(p => p.id === id);
+      if (post?.topic) bumpHotSearch(post.topic);
     };
-    return (
-      <div className="feed-list">
-        {/* 顶部推荐关注 */}
-        <div style={{ padding: '8px 16px', display: 'flex', gap: 8, overflowX: 'auto' }}>
-          <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(245,158,11,0.15)', fontSize: 11, fontWeight: 600, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>👨 田栩宁_ ✓</div>
-          <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(236,72,153,0.15)', fontSize: 11, fontWeight: 600, color: '#ec4899', display: 'flex', alignItems: 'center', gap: 4 }}>👩 我是梓渝_ ✓</div>
+
+    const handlePostWeibo = () => {
+      if (!weiboPostText.trim()) return;
+      const newPost: WeiboPost = {
+        id: weiboNextId.current++,
+        avatar: weiboAccount.avatar,
+        name: weiboAccount.nickname,
+        time: '刚刚',
+        text: weiboPostText.trim() + (weiboPostTopic ? ` #${weiboPostTopic}#` : ''),
+        color: '#06b6d4',
+        likes: 0,
+        iLiked: false,
+        comments: [],
+        reposts: 0,
+        images: weiboPostImages.length > 0 ? [...weiboPostImages] : undefined,
+        topic: weiboPostTopic || undefined,
+        expandedComments: false,
+        commentsLoaded: true,
+      };
+      setWeiboData(prev => [newPost, ...prev]);
+      setWeiboPostText('');
+      setWeiboPostImages([]);
+      setWeiboPostTopic('');
+      setShowWeiboPost(false);
+      if (weiboPostTopic) bumpHotSearch(weiboPostTopic);
+    };
+
+    const toggleCommentLike = (postId: number, commentId: number) => {
+      setWeiboData(prev => prev.map(p => p.id === postId ? {
+        ...p,
+        comments: p.comments.map(c => c.id === commentId ? { ...c, iLiked: !c.iLiked, likes: c.iLiked ? c.likes - 1 : c.likes + 1 } : c)
+      } : p));
+    };
+
+    const expandComments = (post: WeiboPost) => {
+      if (!post.expandedComments) {
+        setWeiboData(prev => prev.map(p => p.id === post.id ? { ...p, expandedComments: true } : p));
+        if (!post.commentsLoaded) generateWeiboComments(post);
+      } else {
+        setWeiboData(prev => prev.map(p => p.id === post.id ? { ...p, expandedComments: false } : p));
+      }
+    };
+
+    const saveWeiboProfile = () => {
+      if (!weiboProfileNick.trim()) return;
+      setWeiboAccount({ nickname: weiboProfileNick.trim(), avatar: weiboProfileAvatar, bio: weiboProfileBio.trim(), isSet: true });
+      setShowWeiboProfileEdit(false);
+    };
+
+    const availableAvatars = ['😎', '🦊', '🐱', '🐶', '🐰', '🦋', '🌸', '⭐', '🎨', '🎭', '🦄', '🐧'];
+
+    // 微博导航栏
+    const weiboNavBar = (
+      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px' }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#333' }}>微博</span>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <span style={{ cursor: 'pointer', fontSize: 18 }} onClick={() => setShowWeiboPost(true)}>✏️</span>
+            <span style={{ cursor: 'pointer', fontSize: 18 }}>🔍</span>
+          </div>
         </div>
-        {weiboData.map((item) => (
-          <div key={item.id} className="feed-card">
-            <div className="feed-header">
-              <div className="feed-avatar" style={{ background: item.color + '20' }}>{item.avatar}</div>
-              <div style={{ flex: 1 }}>
-                <div className="feed-name" style={{ color: item.color }}>
-                  {item.name}
-                  {item.verified && <span style={{ marginLeft: 4, fontSize: 10, background: item.color, color: '#fff', padding: '1px 4px', borderRadius: 4, verticalAlign: 'middle' }}>V</span>}
-                </div>
-                <div className="feed-time" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <span>{item.time}</span>
-                  {item.tag && <span style={{ fontSize: 9, color: '#999', background: '#f3f4f6', padding: '0 4px', borderRadius: 3 }}>{item.tag}</span>}
-                </div>
+        <div style={{ display: 'flex', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+          {(['home', 'discover', 'messages', 'me'] as const).map(tab => {
+            const labels = { home: '首页', discover: '发现', messages: '消息', me: '我的' };
+            const icons = { home: '🏠', discover: '🔍', messages: '💬', me: '👤' };
+            return (
+              <div key={tab} onClick={() => setWeiboTab(tab)}
+                style={{ flex: 1, textAlign: 'center', padding: '6px 0', cursor: 'pointer', fontSize: 12, fontWeight: weiboTab === tab ? 600 : 400, color: weiboTab === tab ? '#f59e0b' : '#999', borderBottom: weiboTab === tab ? '2px solid #f59e0b' : '2px solid transparent', transition: 'all 0.2s' }}>
+                <div style={{ fontSize: 16 }}>{icons[tab]}</div>
+                <div>{labels[tab]}</div>
               </div>
-            </div>
-            <div className="feed-text">{item.text}</div>
-            {/* 评论区 */}
-            {item.comments.length > 0 && (
-              <div style={{ marginTop: 6, paddingLeft: 8, borderLeft: '2px solid ' + item.color + '30' }}>
-                {item.comments.map((c, ci) => (
-                  <div key={ci} style={{ fontSize: 11, color: '#555', lineHeight: 1.6 }}>
-                    <span style={{ color: item.color, fontWeight: 600 }}>{c.from}</span>：{c.text}
-                  </div>
-                ))}
+            );
+          })}
+        </div>
+      </div>
+    );
+
+    // 热搜榜组件
+    const renderHotSearch = () => (
+      <div style={{ padding: '0 12px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>🔥 微博热搜</span>
+          <span style={{ fontSize: 10, color: '#999' }}>实时更新</span>
+        </div>
+        {weiboHotSearch.map((item, idx) => (
+          <div key={item.id} style={{ display: 'flex', alignItems: 'center', padding: '8px 4px', borderBottom: '1px solid rgba(0,0,0,0.04)', cursor: 'pointer' }}
+            onClick={() => {
+              bumpHotSearch(item.title);
+              setWeiboPostTopic(item.title);
+              setShowWeiboPost(true);
+            }}>
+            <span style={{ width: 20, fontSize: 13, fontWeight: 700, color: idx < 3 ? '#ef4444' : '#999', flexShrink: 0 }}>{idx + 1}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {item.title}
+                {item.tag && <span style={{ marginLeft: 4, fontSize: 9, background: item.tagColor || '#f97316', color: '#fff', padding: '0 4px', borderRadius: 3, verticalAlign: 'middle' }}>{item.tag}</span>}
               </div>
-            )}
-            {/* 评论输入 */}
-            {activeWeiboComment === item.id && (
-              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                <input value={weiboCommentInput} onChange={e => setWeiboCommentInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addWeiboComment(item.id)}
-                  placeholder="写评论..." style={{ flex: 1, fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '1px solid #e5e7eb', outline: 'none' }} />
-                <button onClick={() => addWeiboComment(item.id)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: item.color, color: '#fff', border: 'none' }}>发送</button>
-              </div>
-            )}
-            <div className="feed-actions" style={{ color: '#999', fontSize: 11, marginTop: 6 }}>
-              <span style={{ cursor: 'pointer' }}>🔁 {formatCount(item.reposts)}</span>
-              <span style={{ cursor: 'pointer' }} onClick={() => setActiveWeiboComment(activeWeiboComment === item.id ? null : item.id)}>💬 {item.comments.length}</span>
-              <span style={{ cursor: 'pointer' }} onClick={() => toggleWeiboLike(item.id)}>
-                {item.iLiked ? '❤️' : '🤍'} {formatCount(item.likes)}
-              </span>
+              <div style={{ fontSize: 10, color: '#999', marginTop: 1 }}>{formatHeat(item.heat)}</div>
             </div>
           </div>
         ))}
+      </div>
+    );
+
+    // 微博卡片
+    const renderWeiboCard = (item: WeiboPost) => (
+      <div key={item.id} style={{ padding: '12px 16px', borderBottom: '4px solid #f5f5f5', background: '#fff' }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: item.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.avatar}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: item.color }}>{item.name}</span>
+              {item.verified && <span style={{ fontSize: 9, background: item.color, color: '#fff', padding: '0 4px', borderRadius: 3 }}>V</span>}
+              {item.tag && <span style={{ fontSize: 9, color: '#999', background: '#f3f4f6', padding: '0 4px', borderRadius: 3 }}>{item.tag}</span>}
+            </div>
+            <div style={{ fontSize: 10, color: '#999', marginTop: 1 }}>{item.time}</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 13, lineHeight: 1.6, color: '#333', marginTop: 8, wordBreak: 'break-word' }}>{item.text}</div>
+        {/* 图片区 */}
+        {item.images && item.images.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: item.images.length === 1 ? '1fr' : 'repeat(3, 1fr)', gap: 4, marginTop: 8 }}>
+            {item.images.map((img, i) => (
+              <div key={i} style={{ aspectRatio: '1', borderRadius: 8, background: 'linear-gradient(135deg, #fef3c7, #fde68a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>🖼️</div>
+            ))}
+          </div>
+        )}
+        {/* 评论区 - 展开时显示 */}
+        {item.expandedComments && item.comments.length > 0 && (
+          <div style={{ marginTop: 10, background: '#f8f8f8', borderRadius: 8, padding: '8px 10px' }}>
+            {item.comments.slice(0, 20).map((c) => (
+              <div key={c.id} style={{ fontSize: 11, lineHeight: 1.7, padding: '3px 0', display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+                <span style={{ fontSize: 13, flexShrink: 0 }}>{c.avatar}</span>
+                <div style={{ flex: 1 }}>
+                  <span style={{ color: item.color, fontWeight: 600, fontSize: 11 }}>{c.from}</span>
+                  {c.replyTo && <span style={{ color: '#999', fontSize: 10 }}> 回复 @{c.replyTo}</span>}
+                  <span style={{ color: '#333' }}>：{c.text}</span>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                    <span style={{ fontSize: 9, color: '#999' }}>{c.time}</span>
+                    <span style={{ fontSize: 9, color: '#999', cursor: 'pointer' }} onClick={() => toggleCommentLike(item.id, c.id)}>
+                      {c.iLiked ? '❤️' : '🤍'} {c.likes > 0 ? c.likes : ''}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {item.comments.length > 20 && <div style={{ fontSize: 10, color: '#999', textAlign: 'center', padding: 4 }}>还有更多评论...</div>}
+          </div>
+        )}
+        {/* 评论输入框 */}
+        {activeWeiboComment === item.id && (
+          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+            <input value={weiboCommentInput} onChange={e => setWeiboCommentInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addWeiboComment(item.id)}
+              placeholder="写评论..." style={{ flex: 1, fontSize: 11, padding: '6px 10px', borderRadius: 16, border: '1px solid #e5e7eb', outline: 'none', background: '#f8f8f8' }} />
+            <button onClick={() => addWeiboComment(item.id)} style={{ fontSize: 11, padding: '6px 12px', borderRadius: 16, background: '#f59e0b', color: '#fff', border: 'none', fontWeight: 600 }}>发送</button>
+          </div>
+        )}
+        {/* 操作栏 */}
+        <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 10, paddingTop: 8, borderTop: '1px solid #f0f0f0' }}>
+          <span style={{ cursor: 'pointer', fontSize: 12, color: '#999', display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px', borderRadius: 20, transition: 'background 0.2s' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+            🔁 {formatCount(item.reposts)}
+          </span>
+          <span style={{ cursor: 'pointer', fontSize: 12, color: '#999', display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px', borderRadius: 20, transition: 'background 0.2s' }}
+            onClick={() => {
+              expandComments(item);
+              setActiveWeiboComment(activeWeiboComment === item.id ? null : item.id);
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+            💬 {item.comments.length > 0 ? formatCount(item.comments.length) : '评论'}
+          </span>
+          <span style={{ cursor: 'pointer', fontSize: 12, color: item.iLiked ? '#ef4444' : '#999', display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px', borderRadius: 20, transition: 'background 0.2s' }}
+            onClick={() => toggleWeiboLike(item.id)}
+            onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+            {item.iLiked ? '❤️' : '🤍'} {formatCount(item.likes)}
+          </span>
+        </div>
+      </div>
+    );
+
+    // 发微博弹窗
+    const renderPostModal = () => showWeiboPost && (
+      <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+        onClick={() => setShowWeiboPost(false)}>
+        <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', padding: 16, maxHeight: '70%', overflow: 'auto' }}
+          onClick={e => e.stopPropagation()}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>发微博</span>
+            <button onClick={handlePostWeibo} style={{ fontSize: 12, padding: '6px 16px', borderRadius: 16, background: '#f59e0b', color: '#fff', border: 'none', fontWeight: 600 }}>发布</button>
+          </div>
+          <textarea value={weiboPostText} onChange={e => setWeiboPostText(e.target.value)}
+            placeholder="分享新鲜事..." rows={4}
+            style={{ width: '100%', fontSize: 14, border: 'none', outline: 'none', resize: 'none', lineHeight: 1.6, background: '#f8f8f8', borderRadius: 12, padding: 12 }} />
+          {/* 话题选择 */}
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>关联热搜话题：</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {weiboHotSearch.slice(0, 5).map(h => (
+                <span key={h.id} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 12, background: weiboPostTopic === h.title ? '#fef3c7' : '#f3f4f6', color: weiboPostTopic === h.title ? '#f59e0b' : '#666', cursor: 'pointer', fontWeight: weiboPostTopic === h.title ? 600 : 400, border: weiboPostTopic === h.title ? '1px solid #f59e0b' : '1px solid transparent' }}
+                  onClick={() => setWeiboPostTopic(weiboPostTopic === h.title ? '' : h.title)}>
+                  #{h.title}
+                </span>
+              ))}
+            </div>
+          </div>
+          {/* 图片区 */}
+          <div style={{ marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {weiboPostImages.map((img, i) => (
+                <div key={i} style={{ width: 56, height: 56, borderRadius: 8, background: 'linear-gradient(135deg, #fef3c7, #fde68a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, position: 'relative' }}>
+                  🖼️
+                  <span style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: '50%', background: '#ef4444', color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    onClick={() => setWeiboPostImages(prev => prev.filter((_, idx) => idx !== i))}>×</span>
+                </div>
+              ))}
+              {weiboPostImages.length < 9 && (
+                <div style={{ width: 56, height: 56, borderRadius: 8, border: '2px dashed #d1d5db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: '#999', cursor: 'pointer' }}
+                  onClick={() => setWeiboPostImages(prev => [...prev, `img-${Date.now()}`])}>+</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    // 账号编辑弹窗
+    const renderProfileEdit = () => showWeiboProfileEdit && (
+      <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+        onClick={() => setShowWeiboProfileEdit(false)}>
+        <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', padding: 16, maxHeight: '70%' }}
+          onClick={e => e.stopPropagation()}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>编辑资料</span>
+            <button onClick={saveWeiboProfile} style={{ fontSize: 12, padding: '6px 16px', borderRadius: 16, background: '#f59e0b', color: '#fff', border: 'none', fontWeight: 600 }}>保存</button>
+          </div>
+          {/* 头像选择 */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: '#999', marginBottom: 6 }}>选择头像</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {availableAvatars.map(a => (
+                <span key={a} style={{ width: 36, height: 36, borderRadius: '50%', background: weiboProfileAvatar === a ? '#fef3c7' : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer', border: weiboProfileAvatar === a ? '2px solid #f59e0b' : '2px solid transparent', transition: 'all 0.2s' }}
+                  onClick={() => setWeiboProfileAvatar(a)}>{a}</span>
+              ))}
+            </div>
+          </div>
+          {/* 昵称 */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>昵称</div>
+            <input value={weiboProfileNick} onChange={e => setWeiboProfileNick(e.target.value)}
+              placeholder="给自己取个名字吧" maxLength={12}
+              style={{ width: '100%', fontSize: 13, padding: '8px 12px', borderRadius: 10, border: '1px solid #e5e7eb', outline: 'none', background: '#f8f8f8' }} />
+          </div>
+          {/* 简介 */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>简介</div>
+            <input value={weiboProfileBio} onChange={e => setWeiboProfileBio(e.target.value)}
+              placeholder="一句话介绍自己" maxLength={30}
+              style={{ width: '100%', fontSize: 13, padding: '8px 12px', borderRadius: 10, border: '1px solid #e5e7eb', outline: 'none', background: '#f8f8f8' }} />
+          </div>
+        </div>
+      </div>
+    );
+
+    // 首页Tab内容
+    const renderWeiboHome = () => (
+      <div>
+        {/* 推荐关注横条 */}
+        <div style={{ padding: '8px 16px', display: 'flex', gap: 8, overflowX: 'auto', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+          <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(245,158,11,0.12)', fontSize: 11, fontWeight: 600, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>👨 田栩宁_ <span style={{ fontSize: 9, background: '#f59e0b', color: '#fff', padding: '0 3px', borderRadius: 3 }}>V</span></div>
+          <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(236,72,153,0.12)', fontSize: 11, fontWeight: 600, color: '#ec4899', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>👩 我是梓渝_ <span style={{ fontSize: 9, background: '#ec4899', color: '#fff', padding: '0 3px', borderRadius: 3 }}>V</span></div>
+          <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(239,68,68,0.12)', fontSize: 11, fontWeight: 600, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>🔥 CP超话</div>
+        </div>
+        {/* 微博时间线 */}
+        {weiboData.map(item => renderWeiboCard(item))}
+      </div>
+    );
+
+    // 发现Tab内容
+    const renderWeiboDiscover = () => (
+      <div>
+        {renderHotSearch()}
+        {/* 推荐用户 */}
+        <div style={{ padding: '12px 16px', borderTop: '4px solid #f5f5f5' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#333', marginBottom: 10 }}>推荐关注</div>
+          {[
+            { avatar: '👨', name: '田栩宁_', tag: '演员', color: '#f59e0b', fans: '386万' },
+            { avatar: '👩', name: '我是梓渝_', tag: '歌手', color: '#ec4899', fans: '295万' },
+            { avatar: '🔥', name: 'CP超话', tag: '超话', color: '#ef4444', fans: '128万' },
+            { avatar: '📢', name: '娱乐热搜', tag: '媒体', color: '#f97316', fans: '89万' },
+          ].map(u => (
+            <div key={u.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: u.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{u.avatar}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: u.color }}>{u.name} <span style={{ fontSize: 9, background: u.color, color: '#fff', padding: '0 3px', borderRadius: 3 }}>V</span></div>
+                <div style={{ fontSize: 10, color: '#999' }}>{u.tag} · {u.fans}粉丝</div>
+              </div>
+              <button style={{ fontSize: 10, padding: '4px 12px', borderRadius: 14, background: '#fef3c7', color: '#f59e0b', border: '1px solid #f59e0b', fontWeight: 600, cursor: 'pointer' }}>+ 关注</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    // 消息Tab
+    const renderWeiboMessages = () => (
+      <div style={{ padding: '16px', textAlign: 'center', color: '#999', marginTop: 60 }}>
+        <div style={{ fontSize: 40, marginBottom: 8 }}>💬</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>暂无新消息</div>
+        <div style={{ fontSize: 11, marginTop: 4 }}>有人@你或私信你时会显示在这里</div>
+      </div>
+    );
+
+    // 我的Tab
+    const renderWeiboMe = () => (
+      <div>
+        <div style={{ padding: '20px 16px', background: 'linear-gradient(180deg, #fef3c7 0%, #fff 100%)', textAlign: 'center' }}>
+          <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, margin: '0 auto', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>{weiboAccount.avatar}</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#333', marginTop: 8 }}>{weiboAccount.nickname}</div>
+          {weiboAccount.bio && <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>{weiboAccount.bio}</div>}
+          {!weiboAccount.isSet && <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 4 }}>✨ 点击编辑资料设置昵称</div>}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 12 }}>
+            <div><div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>{weiboData.filter(p => p.name === weiboAccount.nickname).length}</div><div style={{ fontSize: 10, color: '#999' }}>微博</div></div>
+            <div><div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>0</div><div style={{ fontSize: 10, color: '#999' }}>关注</div></div>
+            <div><div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>0</div><div style={{ fontSize: 10, color: '#999' }}>粉丝</div></div>
+          </div>
+          <button onClick={() => { setWeiboProfileNick(weiboAccount.nickname === '游客用户' ? '' : weiboAccount.nickname); setWeiboProfileAvatar(weiboAccount.avatar); setWeiboProfileBio(weiboAccount.bio); setShowWeiboProfileEdit(true); }}
+            style={{ marginTop: 10, fontSize: 11, padding: '5px 20px', borderRadius: 16, background: '#fff', color: '#f59e0b', border: '1px solid #f59e0b', fontWeight: 600, cursor: 'pointer' }}>
+            编辑资料
+          </button>
+        </div>
+        {/* 我的微博列表 */}
+        <div>
+          {weiboData.filter(p => p.name === weiboAccount.nickname).length === 0 ? (
+            <div style={{ padding: 30, textAlign: 'center', color: '#999', fontSize: 12 }}>还没有发过微博，去首页发一条吧！</div>
+          ) : (
+            weiboData.filter(p => p.name === weiboAccount.nickname).map(item => renderWeiboCard(item))
+          )}
+        </div>
+      </div>
+    );
+
+    return (
+      <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+        {weiboNavBar}
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+          {weiboTab === 'home' && renderWeiboHome()}
+          {weiboTab === 'discover' && renderWeiboDiscover()}
+          {weiboTab === 'messages' && renderWeiboMessages()}
+          {weiboTab === 'me' && renderWeiboMe()}
+        </div>
+        {renderPostModal()}
+        {renderProfileEdit()}
       </div>
     );
   }
