@@ -1135,6 +1135,7 @@ export default function PhonePage() {
   const [weiboPostText, setWeiboPostText] = useState('');
   const [weiboPostImages, setWeiboPostImages] = useState<string[]>([]);
   const [weiboPostTopic, setWeiboPostTopic] = useState('');
+  const [weiboFollowing, setWeiboFollowing] = useState<string[]>([]);
   const [showWeiboProfileEdit, setShowWeiboProfileEdit] = useState(false);
   const [weiboProfileNick, setWeiboProfileNick] = useState('');
   const [weiboProfileBio, setWeiboProfileBio] = useState('');
@@ -1791,6 +1792,12 @@ export default function PhonePage() {
       setShowWeiboPost(false);
     };
 
+    const toggleFollow = (name: string) => {
+      setWeiboFollowing(prev =>
+        prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+      );
+    };
+
     const toggleCommentLike = (postId: number, commentId: number) => {
       setWeiboData(prev => prev.map(p => p.id === postId ? {
         ...p,
@@ -1869,7 +1876,10 @@ export default function PhonePage() {
     );
 
     // 微博卡片
-    const renderWeiboCard = (item: WeiboPost) => (
+    const renderWeiboCard = (item: WeiboPost) => {
+      const isOwn = item.name === weiboAccount.nickname;
+      const isFollowed = weiboFollowing.includes(item.name);
+      return (
       <div key={item.id} style={{ padding: '12px 16px', borderBottom: '4px solid #f5f5f5', background: '#fff' }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ width: 36, height: 36, borderRadius: '50%', background: item.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.avatar}</div>
@@ -1881,6 +1891,14 @@ export default function PhonePage() {
             </div>
             <div style={{ fontSize: 10, color: '#999', marginTop: 1 }}>{item.time}</div>
           </div>
+          {!isOwn && (
+            <button onClick={() => toggleFollow(item.name)}
+              style={{ fontSize: 10, padding: '4px 10px', borderRadius: 14, fontWeight: 600, cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s',
+                ...(isFollowed
+                  ? { background: '#f3f4f6', color: '#999', border: '1px solid #e5e7eb' }
+                  : { background: '#fef3c7', color: '#f59e0b', border: '1px solid #f59e0b' })
+              }}>{isFollowed ? '已关注' : '+ 关注'}</button>
+          )}
         </div>
         <div style={{ fontSize: 13, lineHeight: 1.6, color: '#333', marginTop: 8, wordBreak: 'break-word' }}>{item.text}</div>
         {/* 图片区 */}
@@ -1946,7 +1964,8 @@ export default function PhonePage() {
           </span>
         </div>
       </div>
-    );
+      );
+    };
 
     // 发微博弹窗
     const renderPostModal = () => showWeiboPost && (
@@ -2039,9 +2058,20 @@ export default function PhonePage() {
       <div>
         {/* 推荐关注横条 */}
         <div style={{ padding: '8px 16px', display: 'flex', gap: 8, overflowX: 'auto', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
-          <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(245,158,11,0.12)', fontSize: 11, fontWeight: 600, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>👨 田栩宁_ <span style={{ fontSize: 9, background: '#f59e0b', color: '#fff', padding: '0 3px', borderRadius: 3 }}>V</span></div>
-          <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(236,72,153,0.12)', fontSize: 11, fontWeight: 600, color: '#ec4899', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>👩 我是梓渝_ <span style={{ fontSize: 9, background: '#ec4899', color: '#fff', padding: '0 3px', borderRadius: 3 }}>V</span></div>
-          <div style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: 'rgba(239,68,68,0.12)', fontSize: 11, fontWeight: 600, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>🔥 CP超话</div>
+          {[
+            { emoji: '👨', name: '田栩宁_', color: '#f59e0b' },
+            { emoji: '👩', name: '我是梓渝_', color: '#ec4899' },
+            { emoji: '🔥', name: 'CP超话', color: '#ef4444' },
+          ].map(u => {
+            const followed = weiboFollowing.includes(u.name);
+            return (
+              <div key={u.name} onClick={() => toggleFollow(u.name)}
+                style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 20, background: followed ? 'rgba(34,197,94,0.12)' : `${u.color}18`, fontSize: 11, fontWeight: 600, color: followed ? '#22c55e' : u.color, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', transition: 'all 0.2s' }}>
+                {u.emoji} {u.name} {u.name !== 'CP超话' && <span style={{ fontSize: 9, background: u.color, color: '#fff', padding: '0 3px', borderRadius: 3 }}>V</span>}
+                {followed && <span style={{ fontSize: 9 }}>✓</span>}
+              </div>
+            );
+          })}
         </div>
         {/* 微博时间线 */}
         {weiboData.map(item => renderWeiboCard(item))}
@@ -2060,16 +2090,24 @@ export default function PhonePage() {
             { avatar: '👩', name: '我是梓渝_', tag: '歌手', color: '#ec4899', fans: '295万' },
             { avatar: '🔥', name: 'CP超话', tag: '超话', color: '#ef4444', fans: '128万' },
             { avatar: '📢', name: '娱乐热搜', tag: '媒体', color: '#f97316', fans: '89万' },
-          ].map(u => (
-            <div key={u.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: u.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{u.avatar}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: u.color }}>{u.name} <span style={{ fontSize: 9, background: u.color, color: '#fff', padding: '0 3px', borderRadius: 3 }}>V</span></div>
-                <div style={{ fontSize: 10, color: '#999' }}>{u.tag} · {u.fans}粉丝</div>
+          ].map(u => {
+            const isFollowed = weiboFollowing.includes(u.name);
+            return (
+              <div key={u.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: u.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{u.avatar}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: u.color }}>{u.name} <span style={{ fontSize: 9, background: u.color, color: '#fff', padding: '0 3px', borderRadius: 3 }}>V</span></div>
+                  <div style={{ fontSize: 10, color: '#999' }}>{u.tag} · {u.fans}粉丝</div>
+                </div>
+                <button onClick={() => toggleFollow(u.name)}
+                  style={{ fontSize: 10, padding: '4px 12px', borderRadius: 14, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                    ...(isFollowed
+                      ? { background: '#f3f4f6', color: '#999', border: '1px solid #e5e7eb' }
+                      : { background: '#fef3c7', color: '#f59e0b', border: '1px solid #f59e0b' })
+                  }}>{isFollowed ? '已关注' : '+ 关注'}</button>
               </div>
-              <button style={{ fontSize: 10, padding: '4px 12px', borderRadius: 14, background: '#fef3c7', color: '#f59e0b', border: '1px solid #f59e0b', fontWeight: 600, cursor: 'pointer' }}>+ 关注</button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -2149,7 +2187,7 @@ export default function PhonePage() {
           {!weiboAccount.isSet && <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 4 }}>✨ 点击编辑资料设置昵称</div>}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 12 }}>
             <div><div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>{weiboData.filter(p => p.name === weiboAccount.nickname).length}</div><div style={{ fontSize: 10, color: '#999' }}>微博</div></div>
-            <div><div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>0</div><div style={{ fontSize: 10, color: '#999' }}>关注</div></div>
+            <div><div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>{weiboFollowing.length}</div><div style={{ fontSize: 10, color: '#999' }}>关注</div></div>
             <div><div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>0</div><div style={{ fontSize: 10, color: '#999' }}>粉丝</div></div>
           </div>
           <button onClick={() => { setWeiboProfileNick(weiboAccount.nickname === '游客用户' ? '' : weiboAccount.nickname); setWeiboProfileAvatar(weiboAccount.avatar); setWeiboProfileBio(weiboAccount.bio); setShowWeiboProfileEdit(true); }}
