@@ -211,6 +211,42 @@ export default function PhonePage() {
   const [currentApp, setCurrentApp] = useState<string | null>(null);
   const [appClosing, setAppClosing] = useState(false);
 
+  // ========== 验证通登录系统 ==========
+  const ADMIN_ACCOUNTS = ['admin', 'manager_lin', 'cp_official'];
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminViewMode, setAdminViewMode] = useState<'admin' | 'user'>('admin');
+  const [adminTab, setAdminTab] = useState<'dashboard' | 'cpchat' | 'content' | 'token' | 'god'>('dashboard');
+
+  // Token系统
+  const [tokenBalance, setTokenBalance] = useState(100);
+  const [tokenPricing, setTokenPricing] = useState({ postImage: 5, viewPrivateChat: 10, aiChat: 3 });
+  const [tokenCostPer, setTokenCostPer] = useState(1); // 元/万Token
+  const [tokenTotalConsumed, setTokenTotalConsumed] = useState(12345);
+  const [tokenUserRecords, setTokenUserRecords] = useState([
+    { name: '小糖', level: 3, consumed: 5680, lastActive: '2分钟前' },
+    { name: '甜度满分', level: 5, consumed: 6665, lastActive: '15分钟前' },
+  ]);
+
+  // CP私聊系统
+  const [cpChatMessages, setCpChatMessages] = useState([
+    { id: 1, from: 'A', text: '今天想你了', time: '10:23' },
+    { id: 2, from: 'B', text: '我也是，等下给你发糖', time: '10:25' },
+  ]);
+  const [cpChatInput, setCpChatInput] = useState('');
+  const [cpChatTarget, setCpChatTarget] = useState<'A' | 'B'>('A');
+  const [cpChatRevealed, setCpChatRevealed] = useState(false);
+  const [showCpChatPaywall, setShowCpChatPaywall] = useState(false);
+
+  // 用户等级
+  const [userLevel, setUserLevel] = useState(1);
+
+  // 管理员内容管理
+  const [adminAnnouncement, setAdminAnnouncement] = useState('');
+  const [adminHotSearchLocked, setAdminHotSearchLocked] = useState<number[]>([]);
+
   // Swipe
   const touchStartX = useRef(0);
   const touchDeltaX = useRef(0);
@@ -421,6 +457,73 @@ export default function PhonePage() {
       if (autoChatTimerRef.current) clearTimeout(autoChatTimerRef.current);
     };
   }, [currentApp]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ========== 验证通登录 ==========
+  const handleLogin = () => {
+    if (!loginUsername.trim()) return;
+    const isAdminUser = ADMIN_ACCOUNTS.includes(loginUsername.trim().toLowerCase());
+    setIsAdmin(isAdminUser);
+    setIsLoggedIn(true);
+    setAdminViewMode(isAdminUser ? 'admin' : 'user');
+    // 更新微博账号昵称
+    setWeiboAccount(prev => ({ ...prev, nickname: loginUsername.trim(), isSet: true }));
+    setLoginPassword('');
+  };
+
+  // Token 消耗
+  const consumeToken = (amount: number, reason: string): boolean => {
+    if (tokenBalance < amount) {
+      alert(`Token 不足！${reason}需要 ${amount} Token，当前余额 ${tokenBalance}。请充值。`);
+      return false;
+    }
+    setTokenBalance(prev => prev - amount);
+    setTokenTotalConsumed(prev => prev + amount);
+    return true;
+  };
+
+  // 管理员设置CP私聊
+  const handleAdminSetCpChat = () => {
+    if (!cpChatInput.trim()) return;
+    const newMsg = { id: Date.now(), from: cpChatTarget, text: cpChatInput.trim(), time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) };
+    setCpChatMessages(prev => [...prev, newMsg]);
+    setCpChatInput('');
+  };
+
+  // ========== CP自动发糖系统 ==========
+  const cpSugarSentences = useRef([
+    { from: 'A' as const, text: '今天也辛苦了，回来给你揉肩' },
+    { from: 'B' as const, text: '你做的早餐好好吃~谢谢' },
+    { from: 'A' as const, text: '想吃什么？下班顺路买' },
+    { from: 'B' as const, text: '你昨天是不是又偷偷看我手机了' },
+    { from: 'A' as const, text: '没有，我光明正大看的' },
+    { from: 'B' as const, text: '哼，讨厌，但是也喜欢你' },
+    { from: 'A' as const, text: '明天下雨，我送你上班' },
+    { from: 'B' as const, text: '好呀好呀，那你早点起~' },
+    { from: 'A' as const, text: '你靠我身上看电影的样子好可爱' },
+    { from: 'B' as const, text: '才不是故意的呢...' },
+    { from: 'A' as const, text: '周末带你去吃那家新开的火锅' },
+    { from: 'B' as const, text: '真的吗！我爱死你了！' },
+  ]);
+  const cpSugarIdx = useRef(0);
+
+  useEffect(() => {
+    if (!isLoggedIn || isAdmin) return;
+    const timer = setInterval(() => {
+      const sentences = cpSugarSentences.current;
+      const idx = cpSugarIdx.current % sentences.length;
+      const sentence = sentences[idx];
+      cpSugarIdx.current++;
+      const newMsg = {
+        id: Date.now() + Math.random(),
+        from: sentence.from,
+        text: sentence.text,
+        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      };
+      setCpChatMessages(prev => [...prev, newMsg]);
+      setTokenTotalConsumed(prev => prev + 0); // auto sugar doesn't cost token
+    }, 120000 + Math.random() * 180000); // every 2-5 min
+    return () => clearInterval(timer);
+  }, [isLoggedIn, isAdmin]);
 
   // ========== Swipe ==========
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -863,16 +966,16 @@ export default function PhonePage() {
 
   // 初始热搜榜
   const INITIAL_HOT_SEARCH: HotSearchItem[] = [
-    { id: 1, title: '他们是不是在一起了', heat: 5842367, tag: '爆', tagColor: '#ef4444' },
-    { id: 2, title: '田栩宁做饭', heat: 3210891, tag: '热', tagColor: '#f97316' },
-    { id: 3, title: '我是梓渝新歌', heat: 2890456, tag: '热', tagColor: '#f97316' },
-    { id: 4, title: '甜玉米CP超话', heat: 2456789 },
-    { id: 5, title: '逆爱大结局', heat: 1987234, tag: '新', tagColor: '#22c55e' },
-    { id: 6, title: '娱乐圈隐婚夫妻', heat: 1654321 },
-    { id: 7, title: '某人是谁', heat: 1432198, tag: '热', tagColor: '#f97316' },
-    { id: 8, title: '同款购物袋', heat: 1210876 },
-    { id: 9, title: '明星私生活该不该被曝光', heat: 987654 },
-    { id: 10, title: 'CP粉的快乐', heat: 876543 },
+    { id: 1, title: '8岁男孩走失全城寻人', heat: 8762000, tag: '沸', tagColor: '#ef4444' },
+    { id: 2, title: '你CP今晚官宣了', heat: 5431000, tag: '热', tagColor: '#f97316' },
+    { id: 3, title: '每日一善助学行动', heat: 2035000, tag: '新', tagColor: '#22c55e' },
+    { id: 4, title: 'AI小手机发布会', heat: 1873000 },
+    { id: 5, title: '老旧小区加装电梯新政', heat: 1568000 },
+    { id: 6, title: '某明星新歌上线', heat: 1452000 },
+    { id: 7, title: '周末暴雨预警', heat: 987000 },
+    { id: 8, title: '考研国家线预测', heat: 873000 },
+    { id: 9, title: '新开火锅店排队5小时', heat: 654000 },
+    { id: 10, title: '流浪猫救助站急需物资', heat: 542000 },
   ];
 
   const [weiboData, setWeiboData] = useState<WeiboPost[]>([
@@ -904,7 +1007,7 @@ export default function PhonePage() {
     setWeiboHotSearch(prev => {
       const updated = prev.map(item => {
         if (item.title.includes(topicKeyword) || topicKeyword.includes(item.title)) {
-          return { ...item, heat: item.heat + Math.floor(Math.random() * 500000 + 100000) };
+          return { ...item, heat: item.heat + Math.floor(Math.random() * 30000 + 10000) };
         }
         return item;
       });
@@ -1507,6 +1610,25 @@ export default function PhonePage() {
 
     const handlePostWeibo = () => {
       if (!weiboPostText.trim()) return;
+      // 发图消耗Token
+      if (weiboPostImages.length > 0) {
+        const cost = weiboPostImages.length * tokenPricing.postImage;
+        if (!consumeToken(cost, `发${weiboPostImages.length}张图片`)) return;
+      }
+      // 话题关联热搜热度增加3-8万
+      if (weiboPostTopic) {
+        const boost = Math.floor(Math.random() * 50000 + 30000);
+        setWeiboHotSearch(prev => {
+          const updated = prev.map(item => {
+            if (item.title.includes(weiboPostTopic) || weiboPostTopic.includes(item.title)) {
+              return { ...item, heat: item.heat + boost };
+            }
+            return item;
+          });
+          updated.sort((a, b) => b.heat - a.heat);
+          return updated.map((item, i) => ({ ...item, id: i + 1 }));
+        });
+      }
       const newPost: WeiboPost = {
         id: weiboNextId.current++,
         avatar: weiboAccount.avatar,
@@ -1528,7 +1650,6 @@ export default function PhonePage() {
       setWeiboPostImages([]);
       setWeiboPostTopic('');
       setShowWeiboPost(false);
-      if (weiboPostTopic) bumpHotSearch(weiboPostTopic);
     };
 
     const toggleCommentLike = (postId: number, commentId: number) => {
@@ -1696,7 +1817,10 @@ export default function PhonePage() {
           onClick={e => e.stopPropagation()}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <span style={{ fontSize: 14, fontWeight: 700 }}>发微博</span>
-            <button onClick={handlePostWeibo} style={{ fontSize: 12, padding: '6px 16px', borderRadius: 16, background: '#f59e0b', color: '#fff', border: 'none', fontWeight: 600 }}>发布</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {weiboPostImages.length > 0 && <span style={{ fontSize: 10, color: '#8b5cf6' }}>💎 -{weiboPostImages.length * tokenPricing.postImage}</span>}
+              <button onClick={handlePostWeibo} style={{ fontSize: 12, padding: '6px 16px', borderRadius: 16, background: '#f59e0b', color: '#fff', border: 'none', fontWeight: 600 }}>发布</button>
+            </div>
           </div>
           <textarea value={weiboPostText} onChange={e => setWeiboPostText(e.target.value)}
             placeholder="分享新鲜事..." rows={4}
@@ -1811,12 +1935,65 @@ export default function PhonePage() {
       </div>
     );
 
-    // 消息Tab
+    // 消息Tab（含CP私聊系统）
     const renderWeiboMessages = () => (
-      <div style={{ padding: '16px', textAlign: 'center', color: '#999', marginTop: 60 }}>
-        <div style={{ fontSize: 40, marginBottom: 8 }}>💬</div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>暂无新消息</div>
-        <div style={{ fontSize: 11, marginTop: 4 }}>有人@你或私信你时会显示在这里</div>
+      <div style={{ padding: 16 }}>
+        {/* CP私聊入口 */}
+        <div style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(236,72,153,0.1))', borderRadius: 14, padding: 16, marginBottom: 12, cursor: 'pointer' }}
+          onClick={() => {
+            if (cpChatRevealed) return;
+            if (consumeToken(tokenPricing.viewPrivateChat, '查看CP私聊')) {
+              setCpChatRevealed(true);
+            } else {
+              setShowCpChatPaywall(true);
+            }
+          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex' }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, marginRight: -8, zIndex: 1 }}>👨</div>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(236,72,153,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>👩</div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>💖 CP私聊</div>
+              <div style={{ fontSize: 10, color: '#999' }}>田栩宁 & 梓渝的甜蜜对话</div>
+            </div>
+            <div style={{ fontSize: 10, color: '#f59e0b', fontWeight: 600 }}>
+              {cpChatRevealed ? '🔓 已解锁' : `🔒 ${tokenPricing.viewPrivateChat} Token`}
+            </div>
+          </div>
+        </div>
+        {/* CP私聊内容 */}
+        {cpChatRevealed && (
+          <div style={{ background: '#fff', borderRadius: 14, padding: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: '#999', marginBottom: 8, textAlign: 'center' }}>💕 今日CP私聊记录 💕</div>
+            {cpChatMessages.map(msg => (
+              <div key={msg.id} style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: msg.from === 'A' ? 'rgba(245,158,11,0.15)' : 'rgba(236,72,153,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
+                  {msg.from === 'A' ? '👨' : '👩'}
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: msg.from === 'A' ? '#f59e0b' : '#ec4899', fontWeight: 600 }}>{msg.from === 'A' ? '田栩宁' : '梓渝'} <span style={{ color: '#ccc', fontWeight: 400 }}>{msg.time}</span></div>
+                  <div style={{ fontSize: 13, color: '#333', lineHeight: 1.5, background: msg.from === 'A' ? 'rgba(245,158,11,0.06)' : 'rgba(236,72,153,0.06)', padding: '6px 10px', borderRadius: 10, marginTop: 2 }}>{msg.text}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {/* Token充值提示 */}
+        {showCpChatPaywall && (
+          <div style={{ background: '#fff', borderRadius: 14, padding: 16, textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: 12 }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>💎</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>Token 不足</div>
+            <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>查看CP私聊需要 {tokenPricing.viewPrivateChat} Token</div>
+            <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>当前余额：{tokenBalance} Token</div>
+            <button onClick={() => setShowCpChatPaywall(false)}
+              style={{ marginTop: 10, padding: '6px 20px', borderRadius: 10, background: '#8b5cf6', color: '#fff', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>知道了</button>
+          </div>
+        )}
+        {/* 普通消息 */}
+        <div style={{ textAlign: 'center', color: '#ccc', fontSize: 11, marginTop: 20 }}>
+          暂无其他消息
+        </div>
       </div>
     );
 
@@ -1827,6 +2004,9 @@ export default function PhonePage() {
           <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, margin: '0 auto', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>{weiboAccount.avatar}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#333', marginTop: 8 }}>{weiboAccount.nickname}</div>
           {weiboAccount.bio && <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>{weiboAccount.bio}</div>}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, padding: '2px 10px', borderRadius: 10, background: 'rgba(139,92,246,0.1)', fontSize: 10, color: '#8b5cf6', fontWeight: 600 }}>
+            Lv.{userLevel} · 💎 {tokenBalance} Token
+          </div>
           {!weiboAccount.isSet && <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 4 }}>✨ 点击编辑资料设置昵称</div>}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 12 }}>
             <div><div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>{weiboData.filter(p => p.name === weiboAccount.nickname).length}</div><div style={{ fontSize: 10, color: '#999' }}>微博</div></div>
@@ -1837,6 +2017,16 @@ export default function PhonePage() {
             style={{ marginTop: 10, fontSize: 11, padding: '5px 20px', borderRadius: 16, background: '#fff', color: '#f59e0b', border: '1px solid #f59e0b', fontWeight: 600, cursor: 'pointer' }}>
             编辑资料
           </button>
+        </div>
+        {/* Token消耗记录 */}
+        <div style={{ margin: '0 16px', padding: 12, borderRadius: 12, background: 'rgba(139,92,246,0.06)', marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#8b5cf6', marginBottom: 4 }}>💎 Token 明细</div>
+          <div style={{ fontSize: 10, color: '#999', lineHeight: 1.6 }}>
+            余额：{tokenBalance} Token<br/>
+            发图消耗：{tokenPricing.postImage} Token/张<br/>
+            查看私聊：{tokenPricing.viewPrivateChat} Token/次<br/>
+            AI对话：{tokenPricing.aiChat} Token/次
+          </div>
         </div>
         {/* 我的微博列表 */}
         <div>
@@ -2314,10 +2504,358 @@ export default function PhonePage() {
     }
   }
 
+  // ========== 验证通登录界面 ==========
+  function renderLoginScreen() {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #fef9ee 0%, #fef3c7 40%, #fde68a 100%)', padding: 20 }}>
+        <div style={{ width: '100%', maxWidth: 380 }}>
+          {/* Logo */}
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <div style={{ fontSize: 56, marginBottom: 8 }}>📱</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#92400e', letterSpacing: 1 }}>AI小手机</div>
+            <div style={{ fontSize: 13, color: '#d97706', marginTop: 4 }}>CP社交平台</div>
+          </div>
+          {/* 登录卡片 */}
+          <div style={{ background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(24px)', borderRadius: 20, padding: 28, boxShadow: '0 8px 32px rgba(146,64,0,0.08)', borderTop: '1px solid rgba(255,255,255,0.6)' }}>
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#92400e' }}>验证通登录</div>
+              <div style={{ fontSize: 11, color: '#b45309', marginTop: 4 }}>输入账号密码即可登录</div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="请输入账号" maxLength={20}
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid #fde68a', fontSize: 14, outline: 'none', background: 'rgba(255,255,255,0.8)', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <input value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="请输入密码" type="password" maxLength={30}
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid #fde68a', fontSize: 14, outline: 'none', background: 'rgba(255,255,255,0.8)', boxSizing: 'border-box' }} />
+            </div>
+            <button onClick={handleLogin}
+              style={{ width: '100%', padding: '12px 0', borderRadius: 12, background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(245,158,11,0.3)', transition: 'transform 0.15s', letterSpacing: 2 }}
+              onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.97)')}
+              onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
+              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
+              登 录
+            </button>
+            <div style={{ textAlign: 'center', marginTop: 12, fontSize: 10, color: '#a16207' }}>
+              登录即同意《用户协议》和《隐私政策》
+            </div>
+          </div>
+          {/* 底部提示 */}
+          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 10, color: '#d97706' }}>
+            💡 管理员账号：admin / manager_lin / cp_official
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ========== 管理员总控后台 ==========
+  function renderAdminDashboard() {
+    const totalUsers = 2;
+    const todayActive = 2;
+    const totalCost = (tokenTotalConsumed / 10000 * tokenCostPer).toFixed(2);
+    const avgCost = (tokenTotalConsumed / Math.max(totalUsers, 1)).toFixed(0);
+
+    return (
+      <div style={{ minHeight: '100vh', background: '#f8f7f4', padding: '0 0 24px' }}>
+        {/* 顶部栏 */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #e5e7eb', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontSize: 16, fontWeight: 800, color: '#92400e' }}>🔧 管理员总控</span>
+            <span style={{ fontSize: 11, color: '#999', marginLeft: 8 }}>@{loginUsername}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setLoginUsername(''); }}
+              style={{ fontSize: 11, padding: '6px 12px', borderRadius: 16, background: '#f3f4f6', color: '#666', border: 'none', fontWeight: 500, cursor: 'pointer' }}>
+              退出登录
+            </button>
+            <button onClick={() => setAdminViewMode('user')}
+              style={{ fontSize: 12, padding: '6px 14px', borderRadius: 16, background: 'linear-gradient(135deg, #f59e0b, #ec4899)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(245,158,11,0.2)' }}>
+              🎮 切换普通用户模式
+            </button>
+          </div>
+        </div>
+        {/* Tab 导航 */}
+        <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e5e7eb', background: '#fff', padding: '0 12px' }}>
+          {[
+            { key: 'dashboard' as const, icon: '📊', label: '数据看板' },
+            { key: 'cpchat' as const, icon: '💬', label: 'CP私聊控制' },
+            { key: 'content' as const, icon: '🔧', label: '内容管理' },
+            { key: 'token' as const, icon: '💰', label: 'Token定价' },
+            { key: 'god' as const, icon: '👁️', label: '上帝视角' },
+          ].map(tab => (
+            <div key={tab.key} onClick={() => setAdminTab(tab.key)}
+              style={{ padding: '10px 12px', cursor: 'pointer', fontSize: 11, fontWeight: adminTab === tab.key ? 700 : 400, color: adminTab === tab.key ? '#f59e0b' : '#999', borderBottom: adminTab === tab.key ? '2px solid #f59e0b' : '2px solid transparent', transition: 'all 0.2s', textAlign: 'center', flex: 1 }}>
+              <div style={{ fontSize: 16 }}>{tab.icon}</div>
+              <div style={{ marginTop: 2 }}>{tab.label}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: '16px 20px' }}>
+          {/* 数据看板 */}
+          {adminTab === 'dashboard' && (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 16 }}>
+                {[
+                  { label: '总用户数', value: totalUsers, icon: '👥', color: '#3b82f6' },
+                  { label: '今日活跃', value: todayActive, icon: '🔥', color: '#ef4444' },
+                  { label: '累计消耗Token', value: tokenTotalConsumed.toLocaleString(), icon: '💎', color: '#8b5cf6' },
+                  { label: 'API总成本', value: `${totalCost}元`, icon: '💰', color: '#f59e0b' },
+                ].map(card => (
+                  <div key={card.label} style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>{card.icon}</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: card.color }}>{card.value}</div>
+                    <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>{card.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>📈 成本分析</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', padding: '4px 0' }}>
+                  <span>人均消耗</span><span style={{ fontWeight: 600 }}>{avgCost} Token</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', padding: '4px 0' }}>
+                  <span>单位成本</span><span style={{ fontWeight: 600 }}>{tokenCostPer}元/万Token</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', padding: '4px 0' }}>
+                  <span>建议定价</span><span style={{ fontWeight: 600, color: '#f59e0b' }}>{(tokenCostPer * 1.5).toFixed(1)}元/万Token (50%利润)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CP私聊控制室 */}
+          {adminTab === 'cpchat' && (
+            <div>
+              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>💬 A和B的私聊记录</div>
+                <div style={{ maxHeight: 300, overflowY: 'auto', background: '#f8f8f8', borderRadius: 10, padding: 10 }}>
+                  {cpChatMessages.map(msg => (
+                    <div key={msg.id} style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: msg.from === 'A' ? 'rgba(245,158,11,0.2)' : 'rgba(236,72,153,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
+                        {msg.from === 'A' ? '👨' : '👩'}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, color: '#999' }}>{msg.from === 'A' ? '田栩宁' : '梓渝'} · {msg.time}</div>
+                        <div style={{ fontSize: 13, color: '#333', lineHeight: 1.5 }}>{msg.text}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>✍️ 设置私聊</div>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <select value={cpChatTarget} onChange={e => setCpChatTarget(e.target.value as 'A' | 'B')}
+                    style={{ padding: '8px 12px', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, background: '#fff' }}>
+                    <option value="A">A(田栩宁)对B说</option>
+                    <option value="B">B(梓渝)对A说</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input value={cpChatInput} onChange={e => setCpChatInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAdminSetCpChat()}
+                    placeholder="输入私聊内容..." style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 13, outline: 'none' }} />
+                  <button onClick={handleAdminSetCpChat}
+                    style={{ padding: '10px 16px', borderRadius: 10, background: '#f59e0b', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 12 }}>插入</button>
+                </div>
+              </div>
+              <button onClick={() => {
+                if (cpChatMessages.length > 0) {
+                  alert('已将最新私聊推送给所有用户！');
+                }
+              }} style={{ width: '100%', padding: '10px', borderRadius: 10, background: 'linear-gradient(135deg, #ec4899, #f59e0b)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 12 }}>
+                📢 推送最新私聊给所有用户
+              </button>
+            </div>
+          )}
+
+          {/* 内容管理 */}
+          {adminTab === 'content' && (
+            <div>
+              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>🔥 热搜榜管理</div>
+                {weiboHotSearch.map((item, idx) => (
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <span style={{ width: 20, fontSize: 13, fontWeight: 700, color: idx < 3 ? '#ef4444' : '#999', flexShrink: 0 }}>{idx + 1}</span>
+                    <span style={{ flex: 1, fontSize: 12, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.title}
+                      {item.tag && <span style={{ marginLeft: 4, fontSize: 9, background: item.tagColor || '#f97316', color: '#fff', padding: '0 3px', borderRadius: 3 }}>{item.tag}</span>}
+                    </span>
+                    <button onClick={() => {
+                      setWeiboHotSearch(prev => {
+                        const updated = [item, ...prev.filter(p => p.id !== item.id)];
+                        return updated.map((h, i) => ({ ...h, id: i + 1 }));
+                      });
+                    }} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 8, background: adminHotSearchLocked.includes(item.id) ? '#fef3c7' : '#f3f4f6', color: adminHotSearchLocked.includes(item.id) ? '#f59e0b' : '#666', border: 'none', cursor: 'pointer' }}>
+                      {adminHotSearchLocked.includes(item.id) ? '📌已置顶' : '置顶'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>📢 发送官方公告</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input value={adminAnnouncement} onChange={e => setAdminAnnouncement(e.target.value)}
+                    placeholder="输入公告内容..." style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 13, outline: 'none' }} />
+                  <button onClick={() => {
+                    if (adminAnnouncement.trim()) {
+                      const newPost: WeiboPost = {
+                        id: weiboNextId.current++,
+                        avatar: '📢',
+                        name: '官方公告',
+                        tag: '官方',
+                        verified: true,
+                        time: '刚刚',
+                        text: adminAnnouncement.trim(),
+                        color: '#ef4444',
+                        likes: 0,
+                        iLiked: false,
+                        comments: [],
+                        reposts: 0,
+                        expandedComments: false,
+                        commentsLoaded: true,
+                      };
+                      setWeiboData(prev => [newPost, ...prev]);
+                      setAdminAnnouncement('');
+                      alert('公告已发布！');
+                    }
+                  }} style={{ padding: '10px 16px', borderRadius: 10, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 12 }}>发布</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Token与定价设置 */}
+          {adminTab === 'token' && (
+            <div>
+              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>💰 消耗单价设置</div>
+                {[
+                  { key: 'postImage' as const, label: '发图消耗', icon: '📷' },
+                  { key: 'viewPrivateChat' as const, label: '看私聊消耗', icon: '🔒' },
+                  { key: 'aiChat' as const, label: 'AI对话消耗', icon: '🤖' },
+                ].map(item => (
+                  <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <span style={{ fontSize: 12, color: '#666' }}>{item.icon} {item.label}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <input type="number" value={tokenPricing[item.key]}
+                        onChange={e => setTokenPricing(prev => ({ ...prev, [item.key]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                        style={{ width: 50, padding: '4px 8px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12, textAlign: 'center', outline: 'none' }} />
+                      <span style={{ fontSize: 10, color: '#999' }}>Token</span>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0' }}>
+                  <span style={{ fontSize: 12, color: '#666' }}>💵 单位Token成本</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <input type="number" value={tokenCostPer} step="0.1"
+                      onChange={e => setTokenCostPer(Math.max(0, parseFloat(e.target.value) || 0))}
+                      style={{ width: 60, padding: '4px 8px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12, textAlign: 'center', outline: 'none' }} />
+                    <span style={{ fontSize: 10, color: '#999' }}>元/万Token</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>👥 用户消耗明细</div>
+                {tokenUserRecords.map((user, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#333' }}>{user.name} <span style={{ fontSize: 9, background: '#fef3c7', color: '#f59e0b', padding: '0 4px', borderRadius: 4 }}>Lv.{user.level}</span></div>
+                      <div style={{ fontSize: 10, color: '#999' }}>最近活跃：{user.lastActive}</div>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#8b5cf6', fontWeight: 600 }}>{user.consumed.toLocaleString()} Token</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 上帝视角 */}
+          {adminTab === 'god' && (
+            <div>
+              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>👁️ 全平台数据概览</div>
+                <div style={{ fontSize: 12, color: '#666', lineHeight: 2 }}>
+                  <div>📱 总用户数：<b>{totalUsers}</b></div>
+                  <div>🔥 今日活跃：<b>{todayActive}</b></div>
+                  <div>📝 总微博数：<b>{weiboData.length}</b></div>
+                  <div>💬 总评论数：<b>{weiboData.reduce((sum, p) => sum + p.comments.length, 0)}</b></div>
+                  <div>💎 累计消耗：<b>{tokenTotalConsumed.toLocaleString()} Token</b></div>
+                  <div>💰 总成本：<b>{totalCost}元</b></div>
+                </div>
+              </div>
+              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>💬 A和B完整私聊历史</div>
+                <div style={{ maxHeight: 300, overflowY: 'auto', background: '#f8f8f8', borderRadius: 10, padding: 10 }}>
+                  {cpChatMessages.map(msg => (
+                    <div key={msg.id} style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: msg.from === 'A' ? 'rgba(245,158,11,0.2)' : 'rgba(236,72,153,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0 }}>
+                        {msg.from === 'A' ? '👨' : '👩'}
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 10, color: '#999' }}>{msg.from === 'A' ? '田栩宁' : '梓渝'}</span>
+                        <div style={{ fontSize: 12, color: '#333' }}>{msg.text}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>👥 用户主页查看</div>
+                {tokenUserRecords.map((user, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#333' }}>{user.name}</div>
+                      <div style={{ fontSize: 10, color: '#999' }}>Lv.{user.level} · 消耗 {user.consumed.toLocaleString()} Token</div>
+                    </div>
+                    <button style={{ fontSize: 10, padding: '3px 10px', borderRadius: 8, background: '#f3f4f6', color: '#666', border: 'none', cursor: 'pointer' }}>查看</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ========== 未登录 → 显示登录界面 ==========
+  if (!isLoggedIn) {
+    return renderLoginScreen();
+  }
+
+  // ========== 管理员模式 → 显示后台 ==========
+  if (isAdmin && adminViewMode === 'admin') {
+    return renderAdminDashboard();
+  }
+
   return (
     <div className="phone-page">
       {/* Left Info Panel */}
       <div className="info-panel">
+        {isAdmin && (
+          <div className="info-card" style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', border: '1px solid #f59e0b' }}>
+            <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 4 }}>🔧 管理员模式</div>
+            <button onClick={() => setAdminViewMode('admin')}
+              style={{ width: '100%', padding: '6px', borderRadius: 10, background: '#f59e0b', color: '#fff', border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+              返回管理后台
+            </button>
+          </div>
+        )}
+        <div className="info-card">
+          <div className="info-card-title">💎 Token</div>
+          <div className="level-row">
+            <span className="level-badge" style={{ background: '#8b5cf6' }}>{tokenBalance}</span>
+            <span style={{ fontSize: 10, color: '#999' }}>余额</span>
+          </div>
+          <div style={{ fontSize: 9, color: '#999', marginTop: 4 }}>发图:{tokenPricing.postImage} | 私聊:{tokenPricing.viewPrivateChat} | AI:{tokenPricing.aiChat}</div>
+        </div>
         <div className="info-card">
           <div className="info-card-title">⭐ 等级</div>
           <div className="level-row">
@@ -2363,6 +2901,7 @@ export default function PhonePage() {
               <div className="big-clock">
                 <div className="big-time">{time}</div>
                 <div className="big-date">{dateStr}</div>
+                <div style={{ fontSize: 10, color: '#b45309', marginTop: 2, opacity: 0.8 }}>💎 {tokenBalance} Token · Lv.{userLevel}</div>
               </div>
 
               {/* Parent Widgets */}
