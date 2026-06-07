@@ -427,21 +427,27 @@ export default function PhonePage() {
                   : (msg.speaker === data.messages[0]?.speaker ? 1000 : 2000 + Math.random() * 2000);
                 await new Promise(r => setTimeout(r, delayMs));
                 const speakerKey: 'dad' | 'mom' = (msg.speaker === 'mom') ? 'mom' : 'dad';
-                if (isPartnerChat) {
-                  const newMsg = { from: speakerKey, text: msg.text, id: nextId() };
-                  setChatHistory(prev => ({
-                    ...prev,
-                    family: [...prev.family, newMsg],
-                  }));
-                } else {
-                  // 私聊和群聊用不同的 ID，避免 key 冲突
-                  const privateMsg = { from: speakerKey, text: msg.text, id: nextId() };
-                  const familyMsg = { from: speakerKey, text: msg.text, id: nextId() };
-                  setChatHistory(prev => ({
-                    ...prev,
-                    [speakerKey]: [...prev[speakerKey], privateMsg],
-                    family: [...prev.family, familyMsg],
-                  }));
+                
+                // 拆分消息，模拟真人聊天节奏
+                const parts = splitAiMessage(msg.text);
+                for (let pi = 0; pi < parts.length; pi++) {
+                  if (pi > 0) {
+                    await new Promise(r => setTimeout(r, 1000 + Math.random() * 1000));
+                  }
+                  if (isPartnerChat) {
+                    setChatHistory(prev => ({
+                      ...prev,
+                      family: [...prev.family, { from: speakerKey, text: parts[pi], id: nextId() }],
+                    }));
+                  } else {
+                    const privateMsg = { from: speakerKey, text: parts[pi], id: nextId() };
+                    const familyMsg = { from: speakerKey, text: parts[pi], id: nextId() };
+                    setChatHistory(prev => ({
+                      ...prev,
+                      [speakerKey]: [...prev[speakerKey], privateMsg],
+                      family: [...prev.family, familyMsg],
+                    }));
+                  }
                 }
               }
             }
@@ -457,6 +463,121 @@ export default function PhonePage() {
       if (autoChatTimerRef.current) clearTimeout(autoChatTimerRef.current);
     };
   }, [currentApp]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ========== AI消息拆分（模拟真人聊天节奏） ==========
+  /**
+   * 将AI回复拆分成1-4条消息，模拟真人聊天节奏：
+   * - 1-2个词 → 1条
+   * - 正常一句话 → 2条
+   * - 有转折/多意思 → 3条
+   * - 内容较长/丰富 → 4条
+   */
+  function splitAiMessage(text: string): string[] {
+    const trimmed = text.trim();
+    if (!trimmed) return [trimmed];
+    
+    // 短消息（≤6字）不拆分
+    if (trimmed.length <= 6) return [trimmed];
+
+    // 尝试按自然断句拆分：省略号、句号、感叹号、问号、逗号+转折
+    // 先用 ||| 分隔符（如果AI输出了的话）
+    if (trimmed.includes('|||')) {
+      const parts = trimmed.split('|||').map(s => s.trim()).filter(s => s.length > 0);
+      if (parts.length >= 1) return parts.slice(0, 4);
+    }
+
+    // 按标点断句
+    const sentences: string[] = [];
+    let current = '';
+    for (let i = 0; i < trimmed.length; i++) {
+      current += trimmed[i];
+      const ch = trimmed[i];
+      // 断句标点：句号、感叹号、问号、省略号、波浪号
+      const isBreakPunct = /[。！？…~～\n]/.test(ch);
+      // 逗号/分号后面如果是转折词，也断
+      const isCommaBreak = /[，；,;]/.test(ch);
+      const nextCh = trimmed[i + 1] || '';
+      const isTurnWord = /[但是不过然而可是而且然后接着所以]/.test(nextCh);
+      
+      if (isBreakPunct || (isCommaBreak && isTurnWord)) {
+        sentences.push(current.trim());
+        current = '';
+      }
+    }
+    if (current.trim()) sentences.push(current.trim());
+
+    // 如果只有1句且较短，直接返回
+    if (sentences.length <= 1) {
+      if (trimmed.length <= 15) return [trimmed];
+      // 较长单句尝试在逗号处断开
+      const commaParts = trimmed.split(/[，,]/);
+      if (commaParts.length >= 2 && commaParts.every(p => p.trim().length > 0)) {
+        const result: string[] = [];
+        let buf = '';
+        for (const part of commaParts) {
+          if (buf && (buf + part).length > 20) {
+            result.push(buf.trim());
+            buf = part;
+          } else {
+            buf = buf ? buf + '，' + part : part;
+          }
+        }
+        if (buf.trim()) result.push(buf.trim());
+        return result.slice(0, 4);
+      }
+      return [trimmed];
+    }
+
+    // 合并过短的句子（<3字合并到前一句）
+    const merged: string[] = [];
+    for (const s of sentences) {
+      if (merged.length > 0 && s.length < 3) {
+        merged[merged.length - 1] += s;
+      } else {
+        merged.push(s);
+      }
+    }
+
+    // 限制1-4条
+    if (merged.length <= 4) return merged;
+
+    // 超过4条则合并相邻的
+    const result: string[] = [];
+    let buf = '';
+    for (const s of merged) {
+      if (result.length >= 3) {
+        buf = buf ? buf + s : s;
+      } else if ((buf + s).length > 25 && result.length < 3) {
+        if (buf) result.push(buf);
+        buf = s;
+      } else {
+        buf = buf ? buf + s : s;
+      }
+    }
+    if (buf.trim()) result.push(buf.trim());
+    return result.slice(0, 4);
+  }
+
+  /**
+   * 将拆分后的消息逐条添加到聊天记录，每条间隔1-2秒
+   */
+  async function addSplitMessages(
+    character: 'dad' | 'mom' | 'family',
+    speaker: 'dad' | 'mom',
+    fullText: string,
+  ) {
+    const parts = splitAiMessage(fullText);
+    for (let i = 0; i < parts.length; i++) {
+      if (i > 0) {
+        // 每条消息间隔1-2秒
+        await new Promise(r => setTimeout(r, 1000 + Math.random() * 1000));
+      }
+      setChatHistory(prev => ({
+        ...prev,
+        [character]: [...prev[character], { from: speaker, text: parts[i], id: nextId() }],
+      }));
+    }
+  }
 
   // ========== 验证通登录 ==========
   const handleLogin = () => {
@@ -737,19 +858,28 @@ export default function PhonePage() {
 
           if (!res.ok) continue;
 
-          const msgId = nextId();
+          // 流式接收完整文本（临时占位消息）
+          const streamMsgId = nextId();
           setChatHistory(prev => ({
             ...prev,
-            family: [...prev.family, { from: speaker, text: '', id: msgId }],
+            family: [...prev.family, { from: speaker, text: '', id: streamMsgId }],
           }));
 
           const fullText = await readSSEStream(res, (text) => {
             setChatHistory(prev => {
               const msgs = [...prev.family];
-              const idx = msgs.findIndex(m => m.id === msgId);
-              if (idx !== -1) msgs[idx] = { from: speaker, text, id: msgId };
+              const idx = msgs.findIndex(m => m.id === streamMsgId);
+              if (idx !== -1) msgs[idx] = { from: speaker, text, id: streamMsgId };
               return { ...prev, family: msgs };
             });
+          });
+
+          // 移除占位消息，替换为拆分后的多条消息
+          const splitParts = splitAiMessage(fullText);
+          setChatHistory(prev => {
+            const msgs = prev.family.filter(m => m.id !== streamMsgId);
+            const splitMsgs = splitParts.map(p => ({ from: speaker, text: p, id: nextId() }));
+            return { ...prev, family: [...msgs, ...splitMsgs] };
           });
 
           lastSpeakerText = fullText;
@@ -768,19 +898,28 @@ export default function PhonePage() {
         if (!res.ok) throw new Error('请求失败');
         setTypingWho(null);
 
-        const msgId = nextId();
+        // 流式接收完整文本（临时占位消息）
+        const privStreamId = nextId();
         setChatHistory(prev => ({
           ...prev,
-          [character]: [...prev[character], { from: character, text: '', id: msgId }],
+          [character]: [...prev[character], { from: character, text: '', id: privStreamId }],
         }));
 
-        await readSSEStream(res, (text) => {
+        const privFullText = await readSSEStream(res, (text) => {
           setChatHistory(prev => {
             const msgs = [...prev[character]];
-            const idx = msgs.findIndex(m => m.id === msgId);
-            if (idx !== -1) msgs[idx] = { from: character, text, id: msgId };
+            const idx = msgs.findIndex(m => m.id === privStreamId);
+            if (idx !== -1) msgs[idx] = { from: character, text, id: privStreamId };
             return { ...prev, [character]: msgs };
           });
+        });
+
+        // 移除占位消息，替换为拆分后的多条消息
+        const privParts = splitAiMessage(privFullText);
+        setChatHistory(prev => {
+          const msgs = prev[character].filter(m => m.id !== privStreamId);
+          const splitMsgs = privParts.map(p => ({ from: character, text: p, id: nextId() }));
+          return { ...prev, [character]: [...msgs, ...splitMsgs] };
         });
       }
     } catch {
