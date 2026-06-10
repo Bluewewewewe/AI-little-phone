@@ -143,18 +143,39 @@ interface ChatHistory {
 }
 
 // ========== Parent Status ==========
+type StatusGif = { emoji: string; anim: string; label: string };
 function getParentStatus(hour: number) {
   let dadStatus: string, dadDesc: string, momStatus: string, momDesc: string;
-  if (hour >= 7 && hour < 8) { dadStatus = '🟢 在家'; dadDesc = '做早餐中'; momStatus = '🟢 在家'; momDesc = '赖床中'; }
-  else if (hour >= 8 && hour < 9) { dadStatus = '🟡 出门'; dadDesc = '上班路上'; momStatus = '🟢 在家'; momDesc = '化妆'; }
-  else if (hour >= 9 && hour < 12) { dadStatus = '🔴 忙碌'; dadDesc = '公司开会'; momStatus = '🟡 出门'; momDesc = '工作/逛街'; }
-  else if (hour >= 12 && hour < 13) { dadStatus = '🟢 在家'; dadDesc = '午休吃饭'; momStatus = '🟡 出门'; momDesc = '和朋友午饭'; }
-  else if (hour >= 13 && hour < 18) { dadStatus = '🔴 忙碌'; dadDesc = '继续工作'; momStatus = '🟢 在家'; momDesc = '回家追剧'; }
-  else if (hour >= 18 && hour < 19) { dadStatus = '🟡 出门'; dadDesc = '下班回家'; momStatus = '🟢 在家'; momDesc = '做晚饭'; }
-  else if (hour >= 19 && hour < 21) { dadStatus = '🟢 在家'; dadDesc = '看电视'; momStatus = '🟢 在家'; momDesc = '靠在爸爸身上'; }
-  else if (hour >= 21 && hour < 23) { dadStatus = '🟢 在家'; dadDesc = '聊天互动'; momStatus = '🟢 在家'; momDesc = '聊天互动'; }
-  else { dadStatus = '🟢 在家'; dadDesc = '熬夜刷手机'; momStatus = '🟢 在家'; momDesc = '半睡半醒'; }
-  return { dadStatus, dadDesc, momStatus, momDesc };
+  let dadGif: StatusGif, momGif: StatusGif;
+  if (hour >= 7 && hour < 8) {
+    dadStatus = '🟢 在家'; dadDesc = '做早餐中'; momStatus = '🟢 在家'; momDesc = '赖床中';
+    dadGif = { emoji: '🍳', anim: 'sizzle', label: '煎蛋中' }; momGif = { emoji: '😴', anim: 'zzz', label: 'zzz' };
+  } else if (hour >= 8 && hour < 9) {
+    dadStatus = '🟡 出门'; dadDesc = '上班路上'; momStatus = '🟢 在家'; momDesc = '化妆';
+    dadGif = { emoji: '🚗', anim: 'drive', label: '嘟嘟' }; momGif = { emoji: '💄', anim: 'sparkle', label: '变美中' };
+  } else if (hour >= 9 && hour < 12) {
+    dadStatus = '🔴 忙碌'; dadDesc = '公司开会'; momStatus = '🟡 出门'; momDesc = '工作/逛街';
+    dadGif = { emoji: '💼', anim: 'typing', label: '开会中' }; momGif = { emoji: '🛍️', anim: 'bounce', label: '买买买' };
+  } else if (hour >= 12 && hour < 13) {
+    dadStatus = '🟢 在家'; dadDesc = '午休吃饭'; momStatus = '🟡 出门'; momDesc = '和朋友午饭';
+    dadGif = { emoji: '🍱', anim: 'steam', label: '干饭' }; momGif = { emoji: '🥂', anim: 'cheers', label: '干杯' };
+  } else if (hour >= 13 && hour < 18) {
+    dadStatus = '🔴 忙碌'; dadDesc = '继续工作'; momStatus = '🟢 在家'; momDesc = '回家追剧';
+    dadGif = { emoji: '💻', anim: 'typing', label: '搬砖' }; momGif = { emoji: '📺', anim: 'tvglow', label: '追剧中' };
+  } else if (hour >= 18 && hour < 19) {
+    dadStatus = '🟡 出门'; dadDesc = '下班回家'; momStatus = '🟢 在家'; momDesc = '做晚饭';
+    dadGif = { emoji: '🏠', anim: 'drive', label: '回家啦' }; momGif = { emoji: '🍲', anim: 'steam', label: '煲汤中' };
+  } else if (hour >= 19 && hour < 21) {
+    dadStatus = '🟢 在家'; dadDesc = '看电视'; momStatus = '🟢 在家'; momDesc = '靠在爸爸身上';
+    dadGif = { emoji: '🛋️', anim: 'rock', label: '放松' }; momGif = { emoji: '💕', anim: 'heartbeat', label: '贴贴' };
+  } else if (hour >= 21 && hour < 23) {
+    dadStatus = '🟢 在家'; dadDesc = '聊天互动'; momStatus = '🟢 在家'; momDesc = '聊天互动';
+    dadGif = { emoji: '💬', anim: 'bounce', label: '聊天中' }; momGif = { emoji: '😊', anim: 'sparkle', label: '开心' };
+  } else {
+    dadStatus = '🟢 在家'; dadDesc = '熬夜刷手机'; momStatus = '🟢 在家'; momDesc = '半睡半醒';
+    dadGif = { emoji: '📱', anim: 'swipe', label: '刷刷刷' }; momGif = { emoji: '💤', anim: 'zzz', label: '半梦半醒' };
+  }
+  return { dadStatus, dadDesc, momStatus, momDesc, dadGif, momGif };
 }
 
 let msgIdCounter = Date.now();
@@ -204,7 +225,7 @@ export default function PhonePage() {
   // Time
   const [time, setTime] = useState('--:--');
   const [dateStr, setDateStr] = useState('');
-  const [parentStatus, setParentStatus] = useState<{dadStatus:string,dadDesc:string,momStatus:string,momDesc:string}>({dadStatus:'···',dadDesc:'',momStatus:'···',momDesc:''});
+  const [parentStatus, setParentStatus] = useState<{dadStatus:string,dadDesc:string,momStatus:string,momDesc:string,dadGif:StatusGif,momGif:StatusGif}>({dadStatus:'···',dadDesc:'',momStatus:'···',momDesc:'',dadGif:{emoji:'⏳',anim:'',label:''},momGif:{emoji:'⏳',anim:'',label:''}});
 
   // Navigation
   const [currentPage, setCurrentPage] = useState(0);
@@ -3119,20 +3140,30 @@ export default function PhonePage() {
               {/* Parent Widgets */}
               <div className="parent-widgets">
                 <div className="parent-widget">
-                  <span className="parent-emoji">👨</span>
-                  <div className="parent-info">
-                    <span className="parent-name">{unlockState.unlocked ? '爸爸' : DEFAULT_NAMES.dad1}</span>
-                    <span className="parent-status">{parentStatus.dadStatus}</span>
+                    <div className="parent-avatar-anim">
+                      <img src="/status_head.png" className="parent-avatar-anim-head" alt="" />
+                      <img src="/status_full.png" className="parent-avatar-anim-full" alt="" />
+                    </div>
+                    <div className="parent-info">
+                      <span className="parent-name">{unlockState.unlocked ? '爸爸' : DEFAULT_NAMES.dad1}</span>
+                      <span className="parent-status">{parentStatus.dadStatus}</span>
+                      <span className="parent-desc-inline">{parentStatus.dadDesc}</span>
+                    </div>
+                    <div className="parent-gif-badge" data-anim={parentStatus.dadGif.anim}>
+                      <span className="gif-emoji">{parentStatus.dadGif.emoji}</span>
+                      <span className="gif-label">{parentStatus.dadGif.label}</span>
+                    </div>
                   </div>
-                  <span className="parent-desc">{parentStatus.dadDesc}</span>
-                </div>
                 <div className="parent-widget">
                   <span className="parent-emoji">👩</span>
                   <div className="parent-info">
                     <span className="parent-name">{unlockState.unlocked ? '妈咪' : DEFAULT_NAMES.dad2}</span>
                     <span className="parent-status">{parentStatus.momStatus}</span>
                   </div>
-                  <span className="parent-desc">{parentStatus.momDesc}</span>
+                  <div className="parent-gif-badge" data-anim={parentStatus.momGif.anim}>
+                    <span className="gif-emoji">{parentStatus.momGif.emoji}</span>
+                    <span className="gif-label">{parentStatus.momGif.label || parentStatus.momDesc}</span>
+                  </div>
                 </div>
               </div>
 
