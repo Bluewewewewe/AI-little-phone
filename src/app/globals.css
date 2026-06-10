@@ -279,30 +279,16 @@ body {
 .parent-gif-badge[data-anim="swipe"] .gif-emoji { animation: anim-swipe 1s ease-in-out infinite; }
 
 /* Parent Avatar Animation (Q-character peeking) */
-.parent-avatar-anim {
-  position: relative; width: 36px; height: 40px; flex-shrink: 0;
-}
-.parent-avatar-anim-head, .parent-avatar-anim-full {
-  position: absolute; top: 0; left: 0; width: 36px; height: auto;
+.parent-avatar-bob {
+  width: 36px; height: auto; flex-shrink: 0;
   image-rendering: -webkit-optimize-contrast;
+  animation: avatar-bob 2.8s ease-in-out infinite;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
 }
-.parent-avatar-anim-head {
-  z-index: 2;
-  animation: avatar-peek 3s ease-in-out infinite;
-}
-.parent-avatar-anim-full {
-  z-index: 1; opacity: 0;
-  animation: avatar-reveal 3s ease-in-out infinite;
-}
-@keyframes avatar-peek {
-  0%, 15% { opacity: 1; transform: translateY(0); }
-  40%, 60% { opacity: 1; transform: translateY(0); }
-  75%, 100% { opacity: 0; transform: translateY(-4px); }
-}
-@keyframes avatar-reveal {
-  0%, 15% { opacity: 0; transform: translateY(8px); }
-  40%, 60% { opacity: 1; transform: translateY(0); }
-  75%, 100% { opacity: 0; transform: translateY(4px); }
+@keyframes avatar-bob {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-3px); }
+  60% { transform: translateY(1px); }
 }
 
 /* App Grid */
