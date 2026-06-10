@@ -3140,7 +3140,7 @@ export default function PhonePage() {
               {/* Parent Widgets */}
               <div className="parent-widgets">
                 <div className="parent-widget">
-                    <img src="/status_full.png" className="parent-avatar-bob" alt="" />
+                  <span className="parent-emoji">👨</span>
                     <div className="parent-info">
                       <span className="parent-name">{unlockState.unlocked ? '爸爸' : DEFAULT_NAMES.dad1}</span>
                       <span className="parent-status">{parentStatus.dadStatus}</span>

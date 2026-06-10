@@ -279,17 +279,7 @@ body {
 .parent-gif-badge[data-anim="swipe"] .gif-emoji { animation: anim-swipe 1s ease-in-out infinite; }
 
 /* Parent Avatar Animation (Q-character peeking) */
-.parent-avatar-bob {
-  width: 36px; height: auto; flex-shrink: 0;
-  image-rendering: -webkit-optimize-contrast;
-  animation: avatar-bob 2.8s ease-in-out infinite;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
-}
-@keyframes avatar-bob {
-  0%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-3px); }
-  60% { transform: translateY(1px); }
-}
+
 
 /* App Grid */
 .app-grid-wrapper { flex: 1; overflow: hidden; padding: 8px 20px; position: relative; display: flex; flex-direction: column; }
