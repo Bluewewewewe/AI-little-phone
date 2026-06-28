@@ -2,13 +2,15 @@ import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 import { buildSystemPrompt } from '@/lib/world-book';
 import { getModelForScene } from '@/lib/config';
+import { buildMemoryContext, extractAndSaveMemory } from '@/lib/chat-memory';
+import { buildPublicMemoryContext, getPublicMemories } from '@/lib/public-memory';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, character, speaker, history, identityContext, scene } = await request.json();
+    const { message, character, speaker, history, identityContext, scene, userId } = await request.json();
 
     if (!message || !character) {
       return new Response(JSON.stringify({ error: '缺少参数' }), {
@@ -25,10 +27,20 @@ export async function POST(request: NextRequest) {
     const currentSpeaker = character === 'family' ? (speaker || 'dad') : character;
     const systemPrompt = buildSystemPrompt(character, currentSpeaker as 'dad' | 'mom');
     
+    // 注入聊天记忆上下文
+    const memoryContext = userId ? buildMemoryContext(userId) : '';
+    
+    // 注入公共记忆上下文
+    const publicMemories = await getPublicMemories();
+    const publicMemoryContext = buildPublicMemoryContext(publicMemories);
+    
     // 注入身份上下文到system prompt
-    const fullSystemPrompt = identityContext 
-      ? `${systemPrompt}\n\n${identityContext}`
-      : systemPrompt;
+    const fullSystemPrompt = [
+      systemPrompt,
+      memoryContext,
+      publicMemoryContext,
+      identityContext,
+    ].filter(Boolean).join('\n\n');
     
     const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
       { role: 'system', content: fullSystemPrompt },
@@ -55,17 +67,28 @@ export async function POST(request: NextRequest) {
 
     // 返回 SSE 流
     const encoder = new TextEncoder();
+    let fullResponse = '';
     const readable = new ReadableStream({
       async start(controller) {
         try {
           for await (const chunk of stream) {
             if (chunk.content) {
               const text = chunk.content.toString();
+              fullResponse += text;
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: text, speaker: currentSpeaker })}\n\n`));
             }
           }
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
+
+          // 后台提取记忆（不阻塞响应）
+          if (userId && fullResponse.trim()) {
+            try {
+              extractAndSaveMemory(userId, message, fullResponse.trim(), speaker);
+            } catch (memErr) {
+              console.error('Memory extraction error:', memErr);
+            }
+          }
         } catch (err) {
           console.error('Stream error:', err);
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: '生成失败' })}\n\n`));
