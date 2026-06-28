@@ -2705,80 +2705,80 @@ export default function PhonePage() {
   // ========== 验证通登录界面 ==========
   function renderLoginScreen() {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #fffbeb 0%, #fef3c7 30%, #fde68a 70%, #fbbf24 100%)', position: 'relative', overflow: 'hidden', padding: 20 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #fffbeb 0%, #fef3c7 30%, #fde68a 70%, #fbbf24 100%)', position: 'relative', overflow: 'hidden', padding: '12px 16px' }}>
         {/* 装饰光晕 */}
-        <div style={{ position: 'absolute', top: -80, right: -60, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.35) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
-        <div style={{ position: 'absolute', bottom: -40, left: -80, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.18) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
-        <div style={{ position: 'absolute', top: '30%', left: '8%', width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
+        <div style={{ position: 'absolute', top: -40, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.35) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
+        <div style={{ position: 'absolute', bottom: -20, left: -40, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.18) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
+        <div style={{ position: 'absolute', top: '35%', left: '5%', width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
 
-        <div style={{ width: '100%', maxWidth: 360, position: 'relative', zIndex: 1 }}>
+        <div style={{ width: '100%', position: 'relative', zIndex: 1 }}>
           {/* 品牌区域 */}
-          <div style={{ textAlign: 'center', marginBottom: 40, marginTop: -20 }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
             {/* Logo圆形底座 */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 88, height: 88, borderRadius: 28, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(146,64,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8)', marginBottom: 16 }}>
-              <span style={{ fontSize: 44 }}>📱</span>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: 20, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(16px)', boxShadow: '0 6px 24px rgba(146,64,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8)', marginBottom: 10 }}>
+              <span style={{ fontSize: 32 }}>📱</span>
             </div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: '#78350f', letterSpacing: 2, lineHeight: 1.3 }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#78350f', letterSpacing: 2 }}>
               AI小手机
             </div>
-            <div style={{ fontSize: 13, color: '#b45309', marginTop: 6, fontWeight: 500, letterSpacing: 3 }}>
+            <div style={{ fontSize: 11, color: '#b45309', marginTop: 3, fontWeight: 500, letterSpacing: 3 }}>
               CP社交平台
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
-              <span style={{ display: 'inline-block', width: 20, height: 1, background: 'linear-gradient(90deg, transparent, #d97706)' }} />
-              <span style={{ fontSize: 10, color: '#d97706', letterSpacing: 2 }}>验证通</span>
-              <span style={{ display: 'inline-block', width: 20, height: 1, background: 'linear-gradient(90deg, #d97706, transparent)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8 }}>
+              <span style={{ display: 'inline-block', width: 16, height: 1, background: 'linear-gradient(90deg, transparent, #d97706)' }} />
+              <span style={{ fontSize: 9, color: '#d97706', letterSpacing: 2 }}>验证通</span>
+              <span style={{ display: 'inline-block', width: 16, height: 1, background: 'linear-gradient(90deg, #d97706, transparent)' }} />
             </div>
           </div>
 
           {/* 登录卡片 */}
-          <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(28px)', borderRadius: 24, padding: '28px 24px', boxShadow: '0 12px 40px rgba(146,64,0,0.08), 0 2px 8px rgba(146,64,0,0.04)', borderTop: '1px solid rgba(255,255,255,0.7)', borderLeft: '1px solid rgba(255,255,255,0.4)' }}>
+          <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(28px)', borderRadius: 20, padding: '20px 18px', boxShadow: '0 8px 32px rgba(146,64,0,0.08), 0 2px 8px rgba(146,64,0,0.04)', borderTop: '1px solid rgba(255,255,255,0.7)', borderLeft: '1px solid rgba(255,255,255,0.4)' }}>
             {/* 输入区 */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 6, letterSpacing: 1 }}>账 号</div>
-              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.85)', borderRadius: 14, border: '1.5px solid rgba(253,230,138,0.6)', overflow: 'hidden', transition: 'border-color 0.2s' }}>
-                <span style={{ padding: '0 0 0 14', fontSize: 18, color: '#d97706' }}>👤</span>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: '#92400e', fontWeight: 600, marginBottom: 4, letterSpacing: 1 }}>账 号</div>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.85)', borderRadius: 12, border: '1.5px solid rgba(253,230,138,0.6)', overflow: 'hidden' }}>
+                <span style={{ padding: '0 0 0 12', fontSize: 16, color: '#d97706' }}>👤</span>
                 <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleLogin()}
                   placeholder="输入你的账号" maxLength={20}
-                  style={{ flex: 1, padding: '13px 14px 13px 8px', border: 'none', fontSize: 14, outline: 'none', background: 'transparent', color: '#78350f' }} />
+                  style={{ flex: 1, padding: '11px 12px 11px 6px', border: 'none', fontSize: 13, outline: 'none', background: 'transparent', color: '#78350f' }} />
               </div>
             </div>
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 6, letterSpacing: 1 }}>密 码</div>
-              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.85)', borderRadius: 14, border: '1.5px solid rgba(253,230,138,0.6)', overflow: 'hidden' }}>
-                <span style={{ padding: '0 0 0 14', fontSize: 18, color: '#d97706' }}>🔒</span>
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 10, color: '#92400e', fontWeight: 600, marginBottom: 4, letterSpacing: 1 }}>密 码</div>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.85)', borderRadius: 12, border: '1.5px solid rgba(253,230,138,0.6)', overflow: 'hidden' }}>
+                <span style={{ padding: '0 0 0 12', fontSize: 16, color: '#d97706' }}>🔒</span>
                 <input value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleLogin()}
                   placeholder="输入你的密码" type="password" maxLength={30}
-                  style={{ flex: 1, padding: '13px 14px 13px 8px', border: 'none', fontSize: 14, outline: 'none', background: 'transparent', color: '#78350f' }} />
+                  style={{ flex: 1, padding: '11px 12px 11px 6px', border: 'none', fontSize: 13, outline: 'none', background: 'transparent', color: '#78350f' }} />
               </div>
             </div>
 
             {/* 登录按钮 */}
             <button onClick={handleLogin}
-              style={{ width: '100%', padding: '14px 0', borderRadius: 14, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 6px 20px rgba(245,158,11,0.35)', transition: 'all 0.2s', letterSpacing: 4, position: 'relative', overflow: 'hidden' }}
+              style={{ width: '100%', padding: '12px 0', borderRadius: 12, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(245,158,11,0.35)', transition: 'all 0.2s', letterSpacing: 4 }}
               onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.97)', e.currentTarget.style.boxShadow = '0 2px 8px rgba(245,158,11,0.25)')}
-              onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 6px 20px rgba(245,158,11,0.35)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 6px 20px rgba(245,158,11,0.35)')}>
+              onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,158,11,0.35)')}
+              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,158,11,0.35)')}>
               登 录
             </button>
 
             {/* 协议 */}
-            <div style={{ textAlign: 'center', marginTop: 14, fontSize: 10, color: '#a16207', lineHeight: 1.6 }}>
+            <div style={{ textAlign: 'center', marginTop: 10, fontSize: 9, color: '#a16207', lineHeight: 1.5 }}>
               登录即代表同意 <span style={{ color: '#d97706', textDecoration: 'underline', cursor: 'pointer' }}>用户协议</span> 和 <span style={{ color: '#d97706', textDecoration: 'underline', cursor: 'pointer' }}>隐私政策</span>
             </div>
           </div>
 
           {/* 底部信息 */}
-          <div style={{ textAlign: 'center', marginTop: 24 }}>
-            <div style={{ fontSize: 10, color: '#b45309', opacity: 0.7, marginBottom: 8 }}>
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <div style={{ fontSize: 9, color: '#b45309', opacity: 0.7, marginBottom: 4 }}>
               💡 管理员账号：admin / manager_lin / cp_official
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 }}>
-              <span style={{ fontSize: 10, color: '#d97706', opacity: 0.5 }}>v1.0.0</span>
-              <span style={{ width: 1, height: 10, background: '#d97706', opacity: 0.3 }} />
-              <span style={{ fontSize: 10, color: '#d97706', opacity: 0.5 }}>AI小手机团队</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <span style={{ fontSize: 9, color: '#d97706', opacity: 0.5 }}>v1.0.0</span>
+              <span style={{ width: 1, height: 8, background: '#d97706', opacity: 0.3 }} />
+              <span style={{ fontSize: 9, color: '#d97706', opacity: 0.5 }}>AI小手机团队</span>
             </div>
           </div>
         </div>
@@ -2794,68 +2794,68 @@ export default function PhonePage() {
     const avgCost = (tokenTotalConsumed / Math.max(totalUsers, 1)).toFixed(0);
 
     return (
-      <div style={{ minHeight: '100vh', background: '#f8f7f4', padding: '0 0 24px' }}>
+      <div style={{ flex: 1, background: '#f8f7f4', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {/* 顶部栏 */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #e5e7eb', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ flexShrink: 0, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #e5e7eb', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <span style={{ fontSize: 16, fontWeight: 800, color: '#92400e' }}>🔧 管理员总控</span>
-            <span style={{ fontSize: 11, color: '#999', marginLeft: 8 }}>@{loginUsername}</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: '#92400e' }}>🔧 管理员总控</span>
+            <span style={{ fontSize: 9, color: '#999', marginLeft: 4 }}>@{loginUsername}</span>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 4 }}>
             <button onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setLoginUsername(''); }}
-              style={{ fontSize: 11, padding: '6px 12px', borderRadius: 16, background: '#f3f4f6', color: '#666', border: 'none', fontWeight: 500, cursor: 'pointer' }}>
-              退出登录
+              style={{ fontSize: 9, padding: '4px 8px', borderRadius: 12, background: '#f3f4f6', color: '#666', border: 'none', fontWeight: 500, cursor: 'pointer' }}>
+              退出
             </button>
             <button onClick={() => setAdminViewMode('user')}
-              style={{ fontSize: 12, padding: '6px 14px', borderRadius: 16, background: 'linear-gradient(135deg, #f59e0b, #ec4899)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(245,158,11,0.2)' }}>
-              🎮 切换普通用户模式
+              style={{ fontSize: 10, padding: '4px 10px', borderRadius: 12, background: 'linear-gradient(135deg, #f59e0b, #ec4899)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(245,158,11,0.2)' }}>
+              🎮 用户模式
             </button>
           </div>
         </div>
         {/* Tab 导航 */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e5e7eb', background: '#fff', padding: '0 12px' }}>
+        <div style={{ flexShrink: 0, display: 'flex', borderBottom: '2px solid #e5e7eb', background: '#fff' }}>
           {[
-            { key: 'dashboard' as const, icon: '📊', label: '数据看板' },
-            { key: 'cpchat' as const, icon: '💬', label: 'CP私聊控制' },
-            { key: 'content' as const, icon: '🔧', label: '内容管理' },
-            { key: 'token' as const, icon: '💰', label: 'Token定价' },
-            { key: 'god' as const, icon: '👁️', label: '上帝视角' },
+            { key: 'dashboard' as const, icon: '📊', label: '看板' },
+            { key: 'cpchat' as const, icon: '💬', label: '私聊' },
+            { key: 'content' as const, icon: '🔧', label: '内容' },
+            { key: 'token' as const, icon: '💰', label: '定价' },
+            { key: 'god' as const, icon: '👁️', label: '上帝' },
           ].map(tab => (
             <div key={tab.key} onClick={() => setAdminTab(tab.key)}
-              style={{ padding: '10px 12px', cursor: 'pointer', fontSize: 11, fontWeight: adminTab === tab.key ? 700 : 400, color: adminTab === tab.key ? '#f59e0b' : '#999', borderBottom: adminTab === tab.key ? '2px solid #f59e0b' : '2px solid transparent', transition: 'all 0.2s', textAlign: 'center', flex: 1 }}>
-              <div style={{ fontSize: 16 }}>{tab.icon}</div>
-              <div style={{ marginTop: 2 }}>{tab.label}</div>
+              style={{ padding: '8px 0', cursor: 'pointer', fontSize: 10, fontWeight: adminTab === tab.key ? 700 : 400, color: adminTab === tab.key ? '#f59e0b' : '#999', borderBottom: adminTab === tab.key ? '2px solid #f59e0b' : '2px solid transparent', transition: 'all 0.2s', textAlign: 'center', flex: 1 }}>
+              <div style={{ fontSize: 14 }}>{tab.icon}</div>
+              <div style={{ marginTop: 1 }}>{tab.label}</div>
             </div>
           ))}
         </div>
-        <div style={{ padding: '16px 20px' }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: '10px 12px' }}>
           {/* 数据看板 */}
           {adminTab === 'dashboard' && (
             <div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 10 }}>
                 {[
                   { label: '总用户数', value: totalUsers, icon: '👥', color: '#3b82f6' },
                   { label: '今日活跃', value: todayActive, icon: '🔥', color: '#ef4444' },
                   { label: '累计消耗Token', value: tokenTotalConsumed.toLocaleString(), icon: '💎', color: '#8b5cf6' },
                   { label: 'API总成本', value: `${totalCost}元`, icon: '💰', color: '#f59e0b' },
                 ].map(card => (
-                  <div key={card.label} style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>{card.icon}</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: card.color }}>{card.value}</div>
-                    <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>{card.label}</div>
+                  <div key={card.label} style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                    <div style={{ fontSize: 16, marginBottom: 2 }}>{card.icon}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: card.color }}>{card.value}</div>
+                    <div style={{ fontSize: 9, color: '#999', marginTop: 1 }}>{card.label}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>📈 成本分析</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', padding: '4px 0' }}>
+              <div style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginBottom: 6 }}>📈 成本分析</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#666', padding: '3px 0' }}>
                   <span>人均消耗</span><span style={{ fontWeight: 600 }}>{avgCost} Token</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', padding: '4px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#666', padding: '3px 0' }}>
                   <span>单位成本</span><span style={{ fontWeight: 600 }}>{tokenCostPer}元/万Token</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', padding: '4px 0' }}>
-                  <span>建议定价</span><span style={{ fontWeight: 600, color: '#f59e0b' }}>{(tokenCostPer * 1.5).toFixed(1)}元/万Token (50%利润)</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#666', padding: '3px 0' }}>
+                  <span>建议定价</span><span style={{ fontWeight: 600, color: '#f59e0b' }}>{(tokenCostPer * 1.5).toFixed(1)}元/万Token</span>
                 </div>
               </div>
             </div>
@@ -2864,44 +2864,42 @@ export default function PhonePage() {
           {/* CP私聊控制室 */}
           {adminTab === 'cpchat' && (
             <div>
-              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>💬 A和B的私聊记录</div>
-                <div style={{ maxHeight: 300, overflowY: 'auto', background: '#f8f8f8', borderRadius: 10, padding: 10 }}>
+              <div style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginBottom: 6 }}>💬 A和B的私聊记录</div>
+                <div style={{ maxHeight: 200, overflowY: 'auto', background: '#f8f8f8', borderRadius: 8, padding: 8 }}>
                   {cpChatMessages.map(msg => (
-                    <div key={msg.id} style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: msg.from === 'A' ? 'rgba(245,158,11,0.2)' : 'rgba(236,72,153,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
+                    <div key={msg.id} style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+                      <div style={{ width: 22, height: 22, borderRadius: '50%', background: msg.from === 'A' ? 'rgba(245,158,11,0.2)' : 'rgba(236,72,153,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, flexShrink: 0 }}>
                         {msg.from === 'A' ? '👨' : '👩'}
                       </div>
                       <div>
-                        <div style={{ fontSize: 10, color: '#999' }}>{msg.from === 'A' ? '田栩宁' : '梓渝'} · {msg.time}</div>
-                        <div style={{ fontSize: 13, color: '#333', lineHeight: 1.5 }}>{msg.text}</div>
+                        <div style={{ fontSize: 8, color: '#999' }}>{msg.from === 'A' ? '田栩宁' : '梓渝'} · {msg.time}</div>
+                        <div style={{ fontSize: 11, color: '#333', lineHeight: 1.4 }}>{msg.text}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>✍️ 设置私聊</div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <div style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginBottom: 6 }}>✍️ 设置私聊</div>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
                   <select value={cpChatTarget} onChange={e => setCpChatTarget(e.target.value as 'A' | 'B')}
-                    style={{ padding: '8px 12px', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, background: '#fff' }}>
-                    <option value="A">A(田栩宁)对B说</option>
-                    <option value="B">B(梓渝)对A说</option>
+                    style={{ padding: '6px 8px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 10, background: '#fff' }}>
+                    <option value="A">A→B</option>
+                    <option value="B">B→A</option>
                   </select>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 6 }}>
                   <input value={cpChatInput} onChange={e => setCpChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleAdminSetCpChat()}
-                    placeholder="输入私聊内容..." style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 13, outline: 'none' }} />
+                    placeholder="输入私聊内容..." style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 11, outline: 'none' }} />
                   <button onClick={handleAdminSetCpChat}
-                    style={{ padding: '10px 16px', borderRadius: 10, background: '#f59e0b', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 12 }}>插入</button>
+                    style={{ padding: '8px 12px', borderRadius: 8, background: '#f59e0b', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 10 }}>插入</button>
                 </div>
               </div>
               <button onClick={() => {
-                if (cpChatMessages.length > 0) {
-                  alert('已将最新私聊推送给所有用户！');
-                }
-              }} style={{ width: '100%', padding: '10px', borderRadius: 10, background: 'linear-gradient(135deg, #ec4899, #f59e0b)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 12 }}>
+                if (cpChatMessages.length > 0) { alert('已将最新私聊推送给所有用户！'); }
+              }} style={{ width: '100%', padding: '8px', borderRadius: 8, background: 'linear-gradient(135deg, #ec4899, #f59e0b)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 10 }}>
                 📢 推送最新私聊给所有用户
               </button>
             </div>
@@ -2910,54 +2908,45 @@ export default function PhonePage() {
           {/* 内容管理 */}
           {adminTab === 'content' && (
             <div>
-              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>🔥 热搜榜管理</div>
+              <div style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginBottom: 6 }}>🔥 热搜榜管理</div>
                 {weiboHotSearch.map((item, idx) => (
-                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid #f5f5f5' }}>
-                    <span style={{ width: 20, fontSize: 13, fontWeight: 700, color: idx < 3 ? '#ef4444' : '#999', flexShrink: 0 }}>{idx + 1}</span>
-                    <span style={{ flex: 1, fontSize: 12, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <span style={{ width: 16, fontSize: 11, fontWeight: 700, color: idx < 3 ? '#ef4444' : '#999', flexShrink: 0 }}>{idx + 1}</span>
+                    <span style={{ flex: 1, fontSize: 10, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.title}
-                      {item.tag && <span style={{ marginLeft: 4, fontSize: 9, background: item.tagColor || '#f97316', color: '#fff', padding: '0 3px', borderRadius: 3 }}>{item.tag}</span>}
+                      {item.tag && <span style={{ marginLeft: 2, fontSize: 7, background: item.tagColor || '#f97316', color: '#fff', padding: '0 2px', borderRadius: 2 }}>{item.tag}</span>}
                     </span>
                     <button onClick={() => {
                       setWeiboHotSearch(prev => {
                         const updated = [item, ...prev.filter(p => p.id !== item.id)];
                         return updated.map((h, i) => ({ ...h, id: i + 1 }));
                       });
-                    }} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 8, background: adminHotSearchLocked.includes(item.id) ? '#fef3c7' : '#f3f4f6', color: adminHotSearchLocked.includes(item.id) ? '#f59e0b' : '#666', border: 'none', cursor: 'pointer' }}>
-                      {adminHotSearchLocked.includes(item.id) ? '📌已置顶' : '置顶'}
+                    }} style={{ fontSize: 8, padding: '2px 6px', borderRadius: 6, background: adminHotSearchLocked.includes(item.id) ? '#fef3c7' : '#f3f4f6', color: adminHotSearchLocked.includes(item.id) ? '#f59e0b' : '#666', border: 'none', cursor: 'pointer' }}>
+                      {adminHotSearchLocked.includes(item.id) ? '📌' : '置顶'}
                     </button>
                   </div>
                 ))}
               </div>
-              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>📢 发送官方公告</div>
-                <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginBottom: 6 }}>📢 发送官方公告</div>
+                <div style={{ display: 'flex', gap: 6 }}>
                   <input value={adminAnnouncement} onChange={e => setAdminAnnouncement(e.target.value)}
-                    placeholder="输入公告内容..." style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 13, outline: 'none' }} />
+                    placeholder="输入公告内容..." style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 11, outline: 'none' }} />
                   <button onClick={() => {
                     if (adminAnnouncement.trim()) {
                       const newPost: WeiboPost = {
                         id: weiboNextId.current++,
-                        avatar: '📢',
-                        name: '官方公告',
-                        tag: '官方',
-                        verified: true,
-                        time: '刚刚',
-                        text: adminAnnouncement.trim(),
-                        color: '#ef4444',
-                        likes: 0,
-                        iLiked: false,
-                        comments: [],
-                        reposts: 0,
-                        expandedComments: false,
-                        commentsLoaded: true,
+                        avatar: '📢', name: '官方公告', tag: '官方', verified: true,
+                        time: '刚刚', text: adminAnnouncement.trim(), color: '#ef4444',
+                        likes: 0, iLiked: false, comments: [], reposts: 0,
+                        expandedComments: false, commentsLoaded: true,
                       };
                       setWeiboData(prev => [newPost, ...prev]);
                       setAdminAnnouncement('');
                       alert('公告已发布！');
                     }
-                  }} style={{ padding: '10px 16px', borderRadius: 10, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 12 }}>发布</button>
+                  }} style={{ padding: '8px 12px', borderRadius: 8, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 10 }}>发布</button>
                 </div>
               </div>
             </div>
@@ -3058,178 +3047,198 @@ export default function PhonePage() {
     );
   }
 
-  // ========== 未登录 → 显示登录界面 ==========
-  if (!isLoggedIn) {
-    return renderLoginScreen();
-  }
-
-  // ========== 管理员模式 → 显示后台 ==========
-  if (isAdmin && adminViewMode === 'admin') {
-    return renderAdminDashboard();
-  }
+  // ========== 统一手机框布局 ==========
+  const showInfoPanel = isLoggedIn && !(isAdmin && adminViewMode === 'admin');
 
   return (
     <div className="phone-page">
-      {/* Left Info Panel */}
-      <div className="info-panel">
-        {isAdmin && (
-          <div className="info-card" style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', border: '1px solid #f59e0b' }}>
-            <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 4 }}>🔧 管理员模式</div>
-            <button onClick={() => setAdminViewMode('admin')}
-              style={{ width: '100%', padding: '6px', borderRadius: 10, background: '#f59e0b', color: '#fff', border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-              返回管理后台
-            </button>
-          </div>
-        )}
-        <div className="info-card">
-          <div className="info-card-title">💎 Token</div>
-          <div className="level-row">
-            <span className="level-badge" style={{ background: '#8b5cf6' }}>{tokenBalance}</span>
-            <span style={{ fontSize: 10, color: '#999' }}>余额</span>
-          </div>
-          <div style={{ fontSize: 9, color: '#999', marginTop: 4 }}>发图:{tokenPricing.postImage} | 私聊:{tokenPricing.viewPrivateChat} | AI:{tokenPricing.aiChat}</div>
-        </div>
-        <div className="info-card">
-          <div className="info-card-title">⭐ 等级</div>
-          <div className="level-row">
-            <span className="level-badge">Lv.1</span>
-            <span className="chapter-badge">Ch1 · 地下秘密</span>
-          </div>
-          <div className="progress-bar"><div className="progress-fill" style={{ width: '15%' }}></div></div>
-          <div className="progress-label">距离 Lv.2 还需 85 经验</div>
-        </div>
-        <div className="info-card">
-          <div className="info-card-title">💖 亲密度</div>
-          <div className="intimacy-row">
-            <div className="intimacy-item">
-              <span className="intimacy-name" style={{ color: '#f59e0b' }}>👨 爸爸</span>
-              <div className="intimacy-bar"><div className="intimacy-fill" style={{ width: '12%', background: '#f59e0b' }}></div></div>
-              <span className="intimacy-val">12</span>
+      {/* Left Info Panel - only when logged in and not in admin mode */}
+      {showInfoPanel && (
+        <div className="info-panel">
+          {isAdmin && (
+            <div className="info-card" style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', border: '1px solid #f59e0b' }}>
+              <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 4 }}>🔧 管理员模式</div>
+              <button onClick={() => setAdminViewMode('admin')}
+                style={{ width: '100%', padding: '6px', borderRadius: 10, background: '#f59e0b', color: '#fff', border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                返回管理后台
+              </button>
             </div>
-            <div className="intimacy-item">
-              <span className="intimacy-name" style={{ color: '#ec4899' }}>👩 妈咪</span>
-              <div className="intimacy-bar"><div className="intimacy-fill" style={{ width: '8%', background: '#ec4899' }}></div></div>
-              <span className="intimacy-val">8</span>
+          )}
+          <div className="info-card">
+            <div className="info-card-title">💎 Token</div>
+            <div className="level-row">
+              <span className="level-badge" style={{ background: '#8b5cf6' }}>{tokenBalance}</span>
+              <span style={{ fontSize: 10, color: '#999' }}>余额</span>
+            </div>
+            <div style={{ fontSize: 9, color: '#999', marginTop: 4 }}>发图:{tokenPricing.postImage} | 私聊:{tokenPricing.viewPrivateChat} | AI:{tokenPricing.aiChat}</div>
+          </div>
+          <div className="info-card">
+            <div className="info-card-title">⭐ 等级</div>
+            <div className="level-row">
+              <span className="level-badge">Lv.1</span>
+              <span className="chapter-badge">Ch1 · 地下秘密</span>
+            </div>
+            <div className="progress-bar"><div className="progress-fill" style={{ width: '15%' }}></div></div>
+            <div className="progress-label">距离 Lv.2 还需 85 经验</div>
+          </div>
+          <div className="info-card">
+            <div className="info-card-title">💖 亲密度</div>
+            <div className="intimacy-row">
+              <div className="intimacy-item">
+                <span className="intimacy-name" style={{ color: '#f59e0b' }}>👨 爸爸</span>
+                <div className="intimacy-bar"><div className="intimacy-fill" style={{ width: '12%', background: '#f59e0b' }}></div></div>
+                <span className="intimacy-val">12</span>
+              </div>
+              <div className="intimacy-item">
+                <span className="intimacy-name" style={{ color: '#ec4899' }}>👩 妈咪</span>
+                <div className="intimacy-bar"><div className="intimacy-fill" style={{ width: '8%', background: '#ec4899' }}></div></div>
+                <span className="intimacy-val">8</span>
+              </div>
             </div>
           </div>
+          <div className="info-card">
+            <div className="info-card-title" style={{ fontSize: 13, color: '#999', textAlign: 'center' }}>世界书：src/lib/world-book.ts</div>
+          </div>
         </div>
-        <div className="info-card">
-          <div className="info-card-title" style={{ fontSize: 13, color: '#999', textAlign: 'center' }}>世界书：src/lib/world-book.ts</div>
-        </div>
-      </div>
+      )}
 
-      {/* Phone Frame */}
+      {/* Phone Frame - always visible */}
       <div className="phone-frame">
         <div className="phone-screen">
-          {/* Home Screen */}
-          <div className={`home-screen${currentApp ? ' hidden' : ''}`}>
-            {/* Status Bar */}
-            <div className="status-bar">
-              <span>{time}</span>
-              <span className="status-right">📶 🔋 100%</span>
+          {/* ===== 未登录 → 登录界面（在手机框内） ===== */}
+          {!isLoggedIn ? (
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg, #fef9ee 0%, #fef3c7 40%, #fde68a 100%)', borderRadius: '48px', overflow: 'hidden' }}>
+              {/* Status Bar */}
+              <div className="status-bar">
+                <span>{time}</span>
+                <span className="status-right">📶 🔋 100%</span>
+              </div>
+              {renderLoginScreen()}
             </div>
-
-            <div className="home-content">
-              {/* Big Clock */}
-              <div className="big-clock">
-                <div className="big-time">{time}</div>
-                <div className="big-date">{dateStr}</div>
-                <div style={{ fontSize: 10, color: '#b45309', marginTop: 2, opacity: 0.8 }}>💎 {tokenBalance} Token · Lv.{userLevel}</div>
+          ) : isAdmin && adminViewMode === 'admin' ? (
+            /* ===== 管理员后台（在手机框内） ===== */
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#f8f9fa', borderRadius: '48px', overflow: 'hidden' }}>
+              {/* Status Bar */}
+              <div className="status-bar">
+                <span>{time}</span>
+                <span className="status-right">📶 🔋 100%</span>
               </div>
-
-              {/* Parent Widgets */}
-              <div className="parent-widgets">
-                <div className="parent-widget">
-                  <span className="parent-emoji">👨</span>
-                    <div className="parent-info">
-                      <span className="parent-name">{unlockState.unlocked ? '爸爸' : DEFAULT_NAMES.dad1}</span>
-                      <span className="parent-status">{parentStatus.dadStatus}</span>
-                      <span className="parent-desc-inline">{parentStatus.dadDesc}</span>
-                    </div>
-                    <div className="parent-gif-badge" data-anim={parentStatus.dadGif.anim}>
-                      <span className="gif-emoji">{parentStatus.dadGif.emoji}</span>
-                      <span className="gif-label">{parentStatus.dadGif.label}</span>
-                    </div>
-                  </div>
-                <div className="parent-widget">
-                  <span className="parent-emoji">👩</span>
-                  <div className="parent-info">
-                    <span className="parent-name">{unlockState.unlocked ? '妈咪' : DEFAULT_NAMES.dad2}</span>
-                    <span className="parent-status">{parentStatus.momStatus}</span>
-                  </div>
-                  <div className="parent-gif-badge" data-anim={parentStatus.momGif.anim}>
-                    <span className="gif-emoji">{parentStatus.momGif.emoji}</span>
-                    <span className="gif-label">{parentStatus.momGif.label || parentStatus.momDesc}</span>
-                  </div>
+              {renderAdminDashboard()}
+            </div>
+          ) : (
+            /* ===== 普通用户模式 ===== */
+            <>
+              {/* Home Screen */}
+              <div className={`home-screen${currentApp ? ' hidden' : ''}`}>
+                {/* Status Bar */}
+                <div className="status-bar">
+                  <span>{time}</span>
+                  <span className="status-right">📶 🔋 100%</span>
                 </div>
-              </div>
 
-              {/* App Grid */}
-              <div
-                className="app-grid-wrapper"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                onMouseDown={handleMouseDown}
-              >
-                <div className="app-grid-slider" ref={sliderRef} style={{ transform: `translateX(${-currentPage * 100}%)` }}>
-                  <div className="app-page-grid">
-                    {PAGE1_APPS.map(app => {
-                      const locked = !unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id);
-                      return (
-                        <div key={`p1-${app.id}`} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
-                          onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
-                          <div className="app-emoji-box" style={{ background: locked ? '#aaa' : app.color }}>
-                            {locked ? '🔒' : app.emoji}
-                          </div>
-                          <span className="app-label">{getAppLabel(app.id, unlockState.unlocked)}</span>
+                <div className="home-content">
+                  {/* Big Clock */}
+                  <div className="big-clock">
+                    <div className="big-time">{time}</div>
+                    <div className="big-date">{dateStr}</div>
+                    <div style={{ fontSize: 10, color: '#b45309', marginTop: 2, opacity: 0.8 }}>💎 {tokenBalance} Token · Lv.{userLevel}</div>
+                  </div>
+
+                  {/* Parent Widgets */}
+                  <div className="parent-widgets">
+                    <div className="parent-widget">
+                      <span className="parent-emoji">👨</span>
+                        <div className="parent-info">
+                          <span className="parent-name">{unlockState.unlocked ? '爸爸' : DEFAULT_NAMES.dad1}</span>
+                          <span className="parent-status">{parentStatus.dadStatus}</span>
+                          <span className="parent-desc-inline">{parentStatus.dadDesc}</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                  <div className="app-page-grid">
-                    {PAGE2_APPS.map(app => {
-                      const locked = !unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id);
-                      return (
-                        <div key={`p2-${app.id}`} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
-                          onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
-                          <div className="app-emoji-box" style={{ background: locked ? '#aaa' : app.color }}>
-                            {locked ? '🔒' : app.emoji}
-                          </div>
-                          <span className="app-label">{getAppLabel(app.id, unlockState.unlocked)}</span>
+                        <div className="parent-gif-badge" data-anim={parentStatus.dadGif.anim}>
+                          <span className="gif-emoji">{parentStatus.dadGif.emoji}</span>
+                          <span className="gif-label">{parentStatus.dadGif.label}</span>
                         </div>
-                      );
-                    })}
+                      </div>
+                    <div className="parent-widget">
+                      <span className="parent-emoji">👩</span>
+                      <div className="parent-info">
+                        <span className="parent-name">{unlockState.unlocked ? '妈咪' : DEFAULT_NAMES.dad2}</span>
+                        <span className="parent-status">{parentStatus.momStatus}</span>
+                      </div>
+                      <div className="parent-gif-badge" data-anim={parentStatus.momGif.anim}>
+                        <span className="gif-emoji">{parentStatus.momGif.emoji}</span>
+                        <span className="gif-label">{parentStatus.momGif.label || parentStatus.momDesc}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* App Grid */}
+                  <div
+                    className="app-grid-wrapper"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onMouseDown={handleMouseDown}
+                  >
+                    <div className="app-grid-slider" ref={sliderRef} style={{ transform: `translateX(${-currentPage * 100}%)` }}>
+                      <div className="app-page-grid">
+                        {PAGE1_APPS.map(app => {
+                          const locked = !unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id);
+                          return (
+                            <div key={`p1-${app.id}`} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
+                              onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
+                              <div className="app-emoji-box" style={{ background: locked ? '#aaa' : app.color }}>
+                                {locked ? '🔒' : app.emoji}
+                              </div>
+                              <span className="app-label">{getAppLabel(app.id, unlockState.unlocked)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="app-page-grid">
+                        {PAGE2_APPS.map(app => {
+                          const locked = !unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id);
+                          return (
+                            <div key={`p2-${app.id}`} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
+                              onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
+                              <div className="app-emoji-box" style={{ background: locked ? '#aaa' : app.color }}>
+                                {locked ? '🔒' : app.emoji}
+                              </div>
+                              <span className="app-label">{getAppLabel(app.id, unlockState.unlocked)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="page-dots">
+                      {[0, 1].map(i => (
+                        <span key={i} className={`dot${i === currentPage ? ' active' : ''}`} />
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div className="page-dots">
-                  {[0, 1].map(i => (
-                    <span key={i} className={`dot${i === currentPage ? ' active' : ''}`} />
-                  ))}
+
+                {/* Dock */}
+                <div className="dock">
+                  {DOCK_APPS.map(app => renderAppIcon(app, true))}
                 </div>
-              </div>
-            </div>
 
-            {/* Dock */}
-            <div className="dock">
-              {DOCK_APPS.map(app => renderAppIcon(app, true))}
-            </div>
-
-            {/* Home Indicator */}
-            <div className="home-indicator" onClick={() => { if (currentApp) closeApp(); }}></div>
-          </div>
-
-          {/* App Layer */}
-          {currentApp && (
-            <div className={`app-layer${appClosing ? ' closing' : ''}`}>
-              <div className="app-header">
-                <button className="app-back" onClick={closeApp}>← 返回</button>
-                <span className="app-title">{currentApp === 'dad' ? dadLabel : currentApp === 'mom' ? momLabel : currentApp === 'family' ? '家庭群 (3)' : getAppLabel(currentApp, unlockState.unlocked)}</span>
+                {/* Home Indicator */}
+                <div className="home-indicator" onClick={() => { if (currentApp) closeApp(); }}></div>
               </div>
-              <div className="app-content">
-                {renderAppContent()}
-              </div>
-            </div>
+
+              {/* App Layer */}
+              {currentApp && (
+                <div className={`app-layer${appClosing ? ' closing' : ''}`}>
+                  <div className="app-header">
+                    <button className="app-back" onClick={closeApp}>← 返回</button>
+                    <span className="app-title">{currentApp === 'dad' ? dadLabel : currentApp === 'mom' ? momLabel : currentApp === 'family' ? '家庭群 (3)' : getAppLabel(currentApp, unlockState.unlocked)}</span>
+                  </div>
+                  <div className="app-content">
+                    {renderAppContent()}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
