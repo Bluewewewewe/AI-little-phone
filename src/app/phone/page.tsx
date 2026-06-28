@@ -7,6 +7,8 @@ import {
   isAdminPassword,
   SECRET_NAMES, DEFAULT_NAMES,
 } from '@/lib/unlock-config';
+import { getRecentMemories, addMemoryBatch, getMemoryContext, clearChatMemory, loadChatMemory } from '@/lib/chat-memory';
+import { getPublicMemories, getPublicMemoryContext, submitPromotionCandidate } from '@/lib/public-memory';
 
 // ========== Types ==========
 interface Message {
@@ -360,6 +362,79 @@ export default function PhonePage() {
 
   const [meSubPage, setMeSubPage] = useState<'main' | 'settings' | 'identity' | 'unlock' | 'about'>('main');
   const [identityStep, setIdentityStep] = useState(0);
+
+  // ========== 双层记忆系统 ==========
+  const [publicMemories, setPublicMemories] = useState<Record<string, string[]>>({});
+  const chatMemoryRef = useRef<ReturnType<typeof loadChatMemory>>(null);
+  const publicMemoriesRef = useRef<Record<string, string[]>>({});
+
+  // 加载公共记忆（5分钟缓存）
+  useEffect(() => {
+    if (!mounted) return;
+    const CACHE_KEY = 'public_memories_cache';
+    const CACHE_TIME_KEY = 'public_memories_cache_time';
+    const CACHE_TTL = 5 * 60 * 1000; // 5分钟
+
+    const loadPublicMemories = async () => {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+        if (cached && cachedTime && Date.now() - parseInt(cachedTime) < CACHE_TTL) {
+          const data = JSON.parse(cached);
+          setPublicMemories(data);
+          publicMemoriesRef.current = data;
+          return;
+        }
+        const res = await fetch('/api/admin/memory?action=list');
+        if (res.ok) {
+          const data = await res.json();
+          const grouped: Record<string, string[]> = {};
+          for (const m of data.memories || []) {
+            const cat = m.category || 'general';
+            if (!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(m.content);
+          }
+          setPublicMemories(grouped);
+          publicMemoriesRef.current = grouped;
+          localStorage.setItem(CACHE_KEY, JSON.stringify(grouped));
+          localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
+        }
+      } catch { /* ignore */ }
+    };
+    loadPublicMemories();
+  }, [mounted]);
+
+  // 登录后加载聊天记忆
+  useEffect(() => {
+    if (!isLoggedIn || !loginUsername) return;
+    chatMemoryRef.current = loadChatMemory(loginUsername);
+  }, [isLoggedIn, loginUsername]);
+
+  // 构建记忆上下文（注入到聊天请求中）
+  const buildMemoryContext = useCallback(() => {
+    const parts: string[] = [];
+    // 聊天记忆
+    const recent = getRecentMemories(loginUsername, 5);
+    if (recent.length > 0) {
+      parts.push('【用户聊天记忆】');
+      for (const m of recent) {
+        parts.push(`- [${m.category}] ${m.content}`);
+      }
+    }
+    // 公共记忆
+    const pm = publicMemoriesRef.current;
+    const pmKeys = Object.keys(pm);
+    if (pmKeys.length > 0) {
+      parts.push('【公共世界记忆】');
+      for (const cat of pmKeys) {
+        const items = pm[cat].slice(-3); // 每个分类最多3条
+        for (const item of items) {
+          parts.push(`- [${cat}] ${item}`);
+        }
+      }
+    }
+    return parts.join('\n');
+  }, []);
   const [identityInput, setIdentityInput] = useState('');
   const [unlockInput1, setUnlockInput1] = useState('');
   const [unlockInput2, setUnlockInput2] = useState('');
@@ -870,10 +945,11 @@ export default function PhonePage() {
             ? [...updatedHistory, { role: 'assistant' as const, content: `${speaker === 'dad' ? '梓渝' : '田雷'}：${lastSpeakerText}` }]
             : updatedHistory;
 
+          const memoryCtx = buildMemoryContext();
           const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: userMsg, character: 'family', speaker, history: speakerHistory, identityContext: identityCtx, scene: 'chat' }),
+            body: JSON.stringify({ message: userMsg, character: 'family', speaker, history: speakerHistory, identityContext: identityCtx, memoryContext: memoryCtx, scene: 'chat' }),
           });
           setTypingWho(null);
 
@@ -911,10 +987,11 @@ export default function PhonePage() {
         const baseDelay = getDelay(character as 'dad' | 'mom', true);
         setTypingWho(character);
         await new Promise(r => setTimeout(r, baseDelay));
+        const memoryCtx = buildMemoryContext();
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userMsg, character, history, identityContext: identityCtx, scene: 'chat' }),
+          body: JSON.stringify({ message: userMsg, character, history, identityContext: identityCtx, memoryContext: memoryCtx, scene: 'chat' }),
         });
         if (!res.ok) throw new Error('请求失败');
         setTypingWho(null);
@@ -955,6 +1032,31 @@ export default function PhonePage() {
       }));
     } finally {
       setIsSending(false);
+      // 异步提取聊天记忆（不阻塞UI）
+      if (loginUsername && userMsg) {
+        const aiReplies = chatHistory[character]
+          .filter(m => m.from !== 'me' && m.from !== 'system')
+          .slice(-5)
+          .map(m => m.text)
+          .join('\n');
+        fetch('/api/memory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: loginUsername,
+            userMessage: userMsg,
+            aiReplies,
+            character,
+          }),
+        }).then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            if (data.memories?.length > 0) {
+              addMemoryBatch(loginUsername, data.memories);
+            }
+          }
+        }).catch(() => {});
+      }
     }
   }
 

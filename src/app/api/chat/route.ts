@@ -8,7 +8,7 @@ export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, character, speaker, history, identityContext, scene } = await request.json();
+    const { message, character, speaker, history, identityContext, scene, memoryContext } = await request.json();
 
     if (!message || !character) {
       return new Response(JSON.stringify({ error: '缺少参数' }), {
@@ -21,14 +21,14 @@ export async function POST(request: NextRequest) {
     const config = new Config();
     const client = new LLMClient(config, customHeaders);
 
-    // 家庭群：指定当前谁在说话
     const currentSpeaker = character === 'family' ? (speaker || 'dad') : character;
     const systemPrompt = buildSystemPrompt(character, currentSpeaker as 'dad' | 'mom');
     
-    // 注入身份上下文到system prompt
-    const fullSystemPrompt = identityContext 
-      ? `${systemPrompt}\n\n${identityContext}`
-      : systemPrompt;
+    // 注入身份上下文 + 记忆上下文到system prompt
+    const parts: string[] = [systemPrompt];
+    if (identityContext) parts.push(identityContext);
+    if (memoryContext) parts.push(memoryContext);
+    const fullSystemPrompt = parts.join('\n\n');
     
     const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
       { role: 'system', content: fullSystemPrompt },
