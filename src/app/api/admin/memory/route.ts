@@ -1,6 +1,6 @@
 /**
  * 管理员记忆审核 API
- * GET: 获取晋升候选列表 + 统计
+ * GET: 获取晋升候选列表 + 统计 + 跨用户重复检测
  * POST: 审批/拒绝候选
  */
 
@@ -10,6 +10,8 @@ import {
   getPromotionStats,
   approvePromotionCandidate,
   rejectPromotionCandidate,
+  getDuplicateGroups,
+  getDuplicateSummary,
 } from '@/lib/public-memory';
 
 export const runtime = 'nodejs';
@@ -18,16 +20,26 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as 'pending' | 'approved' | 'rejected' | null;
+    const includeDuplicates = searchParams.get('duplicates') !== 'false';
 
-    const [candidates, stats] = await Promise.all([
+    const promises: Promise<unknown>[] = [
       getPromotionCandidates(status || undefined),
       getPromotionStats(),
-    ]);
+    ];
+
+    if (includeDuplicates) {
+      promises.push(getDuplicateGroups());
+      promises.push(getDuplicateSummary());
+    }
+
+    const [candidates, stats, duplicateGroups, duplicateSummary] = await Promise.all(promises);
 
     return new Response(JSON.stringify({
       success: true,
       candidates,
       stats,
+      duplicateGroups: duplicateGroups || [],
+      duplicateSummary: duplicateSummary || null,
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

@@ -1,6 +1,7 @@
 /**
  * 公共记忆系统 - Supabase 存储，所有用户共享读取
  * 5分钟缓存减少请求
+ * 含跨用户重复检测查询
  */
 
 import { getSupabaseClient } from '@/storage/database/supabase-client';
@@ -25,8 +26,11 @@ export interface PromotionCandidate {
   id: string;
   user_id: string;
   original_message: string;
+  extracted_memory?: string;
   ai_reason: string;
   category: string;
+  content_fingerprint?: string;
+  duplicate_count?: string;
   status: 'pending' | 'approved' | 'rejected';
   approved_by?: string;
   approved_category?: string;
@@ -228,4 +232,83 @@ export async function getPromotionStats(): Promise<{
     else if (row.status === 'rejected') stats.rejected++;
   }
   return stats;
+}
+
+// ========== 跨用户重复检测查询 ==========
+
+export interface DuplicateGroup {
+  fingerprint: string;
+  category: string;
+  candidates: PromotionCandidate[];
+  uniqueUserCount: number;
+  representativeContent: string;
+}
+
+/**
+ * 获取按指纹分组的重复候选列表
+ * 用于管理员审核面板展示多用户重复提及的内容
+ */
+export async function getDuplicateGroups(): Promise<DuplicateGroup[]> {
+  const { data, error } = await getClient()
+    .from('promotion_candidates')
+    .select('*')
+    .in('status', ['pending', 'approved'])
+    .order('created_at', { ascending: false });
+
+  if (error || !data) return [];
+
+  // 按 content_fingerprint 分组
+  const byFingerprint = new Map<string, PromotionCandidate[]>();
+  for (const row of data) {
+    const fp = row.content_fingerprint;
+    if (!fp) continue;
+    const list = byFingerprint.get(fp) || [];
+    list.push(row as PromotionCandidate);
+    byFingerprint.set(fp, list);
+  }
+
+  // 过滤出有重复的组（>=2 个不同用户）
+  const groups: DuplicateGroup[] = [];
+  for (const [fingerprint, candidates] of byFingerprint) {
+    const uniqueUsers = new Set(candidates.map(c => c.user_id));
+    if (uniqueUsers.size < 2) continue;
+
+    groups.push({
+      fingerprint,
+      category: candidates[0].category || 'general',
+      candidates: candidates.sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ),
+      uniqueUserCount: uniqueUsers.size,
+      representativeContent: candidates[0].extracted_memory || candidates[0].original_message,
+    });
+  }
+
+  return groups.sort((a, b) => b.uniqueUserCount - a.uniqueUserCount);
+}
+
+/**
+ * 获取跨用户重复统计摘要
+ */
+export async function getDuplicateSummary(): Promise<{
+  totalDuplicateGroups: number;
+  totalDuplicateCandidates: number;
+  totalUniqueUsersInvolved: number;
+  topDuplicateContent: string | null;
+}> {
+  const groups = await getDuplicateGroups();
+  const allUsers = new Set<string>();
+  let totalCandidates = 0;
+
+  for (const g of groups) {
+    totalCandidates += g.candidates.length;
+    for (const c of g.candidates) allUsers.add(c.user_id);
+  }
+
+  return {
+    totalDuplicateGroups: groups.length,
+    totalDuplicateCandidates: totalCandidates,
+    totalUniqueUsersInvolved: allUsers.size,
+    topDuplicateContent: groups.length > 0 ? groups[0].representativeContent : null,
+  };
 }

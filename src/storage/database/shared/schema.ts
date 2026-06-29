@@ -10,6 +10,8 @@ export const promotionCandidates = pgTable("promotion_candidates", {
 	extractedMemory: text("extracted_memory").notNull(),
 	aiReason: text("ai_reason"),
 	category: varchar({ length: 50 }),
+	contentFingerprint: varchar("content_fingerprint", { length: 64 }),
+	duplicateCount: varchar("duplicate_count").default('0'),
 	status: varchar({ length: 20 }).default('pending').notNull(),
 	reviewerNote: text("reviewer_note"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -18,6 +20,7 @@ export const promotionCandidates = pgTable("promotion_candidates", {
 	index("pc_created_at_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
 	index("pc_status_idx").using("btree", table.status.asc().nullsLast().op("text_ops")),
 	index("pc_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("pc_fingerprint_idx").using("btree", table.contentFingerprint.asc().nullsLast().op("text_ops")),
 ]);
 
 export const healthCheck = pgTable("health_check", {
