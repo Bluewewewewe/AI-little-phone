@@ -114,4 +114,4 @@ export function isAdminPassword(input: string): boolean {
 export const LOCKED_AVAILABLE_APPS = ['family', 'dad', 'mom', 'me', 'call', 'music'];
 
 // 解锁后才有的APP
-export const UNLOCK_ONLY_APPS = ['moments', 'weibo', 'worldbook', 'pet', 'dressup', 'home', 'browser'];
+export const UNLOCK_ONLY_APPS = ['moments', 'weibo', 'worldbook', 'pet', 'dressup', 'home', 'browser', 'shopping'];

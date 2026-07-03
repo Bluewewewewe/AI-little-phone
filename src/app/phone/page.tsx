@@ -11,6 +11,8 @@ import {
   refreshWeiboData, generateSimComments, rollEasterEgg, getSuperTopicData,
 } from '@/lib/weibo-simulator';
 import { needsRefresh as needsNewsRefresh, getLastUpdateDescription } from '@/lib/news-fetcher';
+import { addToCart, removeFromCart, clearCart, getCartTotal, getHotProducts, getProductsByCategory, triggerCPAutoShop, getRandomOnlineMembers, generateBrowseComments, INITIAL_PRODUCTS, INITIAL_MEMBERS, INITIAL_ORDERS } from '@/lib/shopping';
+import type { ShopProduct, CartItem, ShopMember, ShopOrder, BrowseComment, ProductCategory } from '@/lib/shopping';
 import {
   checkUnlock, buildIdentityContext, LOCKED_AVAILABLE_APPS, UNLOCK_ONLY_APPS,
   isAdminPassword,
@@ -206,6 +208,7 @@ const PAGE2_APPS = [
   { id: 'worldbook', emoji: '📖', label: '世界书', color: '#8b5cf6' },
   { id: 'call', emoji: '📞', label: '通话', color: '#06b6d4' },
   { id: 'browser', emoji: '🌐', label: '浏览器', color: '#6366f1' },
+  { id: 'shopping', emoji: '🛒', label: '啪多多', color: '#dc2626' },
 ];
 const DOCK_APPS = [
   { id: 'call', emoji: '📞', color: '#06b6d4' },
@@ -224,7 +227,7 @@ function getAppLabel(id: string, unlocked: boolean): string {
     family: '家庭群', dad: '爸爸', mom: '妈咪',
     moments: '朋友圈', weibo: '微博', home: '家里',
     pet: '宠物', dressup: '换装', me: '我的',
-    worldbook: '世界书', call: '通话', browser: '浏览器', music: '音乐',
+    worldbook: '世界书', call: '通话', browser: '浏览器', music: '音乐', shopping: '啪多多',
   };
   return map[id] || id;
 }
@@ -1405,6 +1408,100 @@ export default function PhonePage() {
   const [topicPage, setTopicPage] = useState<string | null>(null);
   const [topicPosts, setTopicPosts] = useState<WeiboPost[]>([]);
   const weiboNextId = useRef(100);
+
+  // ========== 啪多多购物状态 ==========
+  const [shopProducts, setShopProducts] = useState<ShopProduct[]>(INITIAL_PRODUCTS);
+  const [shopCart, setShopCart] = useState<CartItem[]>([]);
+  const [shopMembers, setShopMembers] = useState<ShopMember[]>(INITIAL_MEMBERS);
+  const [shopOrders, setShopOrders] = useState<ShopOrder[]>(INITIAL_ORDERS);
+  const [shopBrowseComments, setShopBrowseComments] = useState<BrowseComment[]>([]);
+  const [shopCategory, setShopCategory] = useState<ProductCategory | '全部'>('全部');
+  const [shopShowCart, setShopShowCart] = useState(false);
+  const [shopTogetherMode, setShopTogetherMode] = useState(false);
+  const [shopCpMessage, setShopCpMessage] = useState<string | null>(null);
+  const [shopNotification, setShopNotification] = useState<string | null>(null);
+  const [shopBuyInput, setShopBuyInput] = useState('');
+
+  // 添加商品到购物车
+  const handleShopAddToCart = (product: ShopProduct) => {
+    if (product.stock <= 0) {
+      setShopNotification('该商品已售罄');
+      setTimeout(() => setShopNotification(null), 2000);
+      return;
+    }
+    setShopCart(prev => addToCart(prev, product));
+    setShopProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock: p.stock - 1 } : p));
+    setShopNotification(`已添加「${product.name}」到购物车`);
+    setTimeout(() => setShopNotification(null), 2000);
+  };
+
+  // 结算购物车
+  const handleShopCheckout = (recipientName?: string) => {
+    if (shopCart.length === 0) return;
+    const total = getCartTotal(shopCart);
+    const user = shopMembers.find(m => m.id === 'user');
+    if (!user || user.balance < total) {
+      setShopNotification('米米币不足！');
+      setTimeout(() => setShopNotification(null), 2000);
+      return;
+    }
+    // 扣减余额
+    setShopMembers(prev => prev.map(m => m.id === 'user' ? { ...m, balance: m.balance - total } : m));
+    // 生成订单
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const newOrders: ShopOrder[] = shopCart.map((item, i) => ({
+      id: `o${Date.now()}_${i}`,
+      timestamp: timeStr,
+      buyerId: 'user',
+      buyerName: '甜玉米',
+      recipientName: recipientName || '自用',
+      productName: item.productName,
+      price: item.price,
+      quantity: item.quantity,
+    }));
+    setShopOrders(prev => [...newOrders, ...prev]);
+    // 更新销量
+    setShopProducts(prev => prev.map(p => {
+      const cartItem = shopCart.find(ci => ci.productId === p.id);
+      return cartItem ? { ...p, soldCount: p.soldCount + cartItem.quantity } : p;
+    }));
+    setShopCart([]);
+    setShopShowCart(false);
+    setShopNotification(`结算成功！共 ${total} 米米币`);
+    setTimeout(() => setShopNotification(null), 3000);
+  };
+
+  // 触发一起逛
+  const handleTogetherBrowse = () => {
+    const updatedMembers = getRandomOnlineMembers(shopMembers);
+    setShopMembers(updatedMembers);
+    const comments = generateBrowseComments(updatedMembers, shopProducts);
+    setShopBrowseComments(comments);
+    setShopTogetherMode(true);
+  };
+
+  // 随机触发CP自主购物（进入APP时）
+  useEffect(() => {
+    if (currentApp === 'shopping') {
+      const result = triggerCPAutoShop(shopProducts, shopOrders);
+      if (result) {
+        setShopCpMessage(result.message);
+        if (result.newOrder) {
+          const newOrder: ShopOrder = {
+            ...result.newOrder,
+            id: `o${Date.now()}`,
+            timestamp: '刚刚',
+          };
+          setShopOrders(prev => [newOrder, ...prev]);
+          setShopProducts(prev => prev.map(p =>
+            p.name === result.newOrder!.productName ? { ...p, stock: Math.max(0, p.stock - result.newOrder!.quantity), soldCount: p.soldCount + result.newOrder!.quantity } : p
+          ));
+        }
+        setTimeout(() => setShopCpMessage(null), 5000);
+      }
+    }
+  }, [currentApp]);
 
   // 热搜热度变化：用户操作时触发
   const bumpHotSearch = (topicKeyword: string) => {
@@ -3124,6 +3221,487 @@ export default function PhonePage() {
     );
   }
 
+  // ========== 啪多多购物平台渲染 ==========
+  function renderShopping() {
+    const filteredProducts = shopCategory === '全部'
+      ? shopProducts.filter(p => p.isActive)
+      : shopProducts.filter(p => p.isActive && p.category === shopCategory);
+
+    const hotProducts = getHotProducts(shopProducts, 3);
+    const user = shopMembers.find(m => m.id === 'user');
+    const cartTotal = getCartTotal(shopCart);
+    const onlineMembers = shopMembers.filter(m => m.isOnline);
+
+    return (
+      <div className="shopping-page" style={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {/* 顶部红底导航 */}
+        <div style={{
+          background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+          padding: '8px 12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          color: '#fff',
+          flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 20 }}>🛒</span>
+            <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: 2 }}>啪多多</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 11, opacity: 0.9 }}>🪙 {user?.balance ?? 0}</span>
+            <button
+              onClick={() => setShopShowCart(!shopShowCart)}
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                border: 'none',
+                color: '#fff',
+                borderRadius: 14,
+                padding: '4px 10px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              🛒 {shopCart.length > 0 && <span style={{
+                background: '#fbbf24',
+                color: '#7c2d12',
+                borderRadius: '50%',
+                width: 18,
+                height: 18,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 10,
+                fontWeight: 700,
+              }}>{shopCart.reduce((s, i) => s + i.quantity, 0)}</span>}
+            </button>
+          </div>
+        </div>
+
+        {/* 通知条 */}
+        {shopNotification && (
+          <div style={{
+            background: '#fef3c7',
+            color: '#92400e',
+            textAlign: 'center',
+            padding: '6px 12px',
+            fontSize: 12,
+            fontWeight: 600,
+            flexShrink: 0,
+            animation: 'slideDown 0.3s ease',
+          }}>{shopNotification}</div>
+        )}
+
+        {/* CP自主购物消息 */}
+        {shopCpMessage && (
+          <div style={{
+            background: 'linear-gradient(90deg, #fef3c7, #fde68a)',
+            color: '#92400e',
+            textAlign: 'center',
+            padding: '8px 12px',
+            fontSize: 12,
+            fontWeight: 600,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+          }}>
+            <span>🏠</span> {shopCpMessage}
+          </div>
+        )}
+
+        {/* 购物车弹窗 */}
+        {shopShowCart && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.4)',
+            zIndex: 50,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+          }} onClick={() => setShopShowCart(false)}>
+            <div style={{
+              background: '#fff',
+              borderRadius: '20px 20px 0 0',
+              padding: '16px',
+              maxHeight: '60%',
+              overflow: 'auto',
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <span style={{ fontSize: 16, fontWeight: 700 }}>🛒 购物车（{shopCart.reduce((s, i) => s + i.quantity, 0)}件）</span>
+                <button
+                  onClick={() => { setShopCart([]); setShopShowCart(false); }}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 6,
+                    padding: '2px 8px',
+                    fontSize: 11,
+                    color: '#9ca3af',
+                    cursor: 'pointer',
+                  }}
+                >清空</button>
+              </div>
+              {shopCart.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 30, color: '#9ca3af', fontSize: 13 }}>购物车是空的</div>
+              ) : (
+                <>
+                  {shopCart.map((item, i) => (
+                    <div key={i} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0',
+                      borderBottom: '1px solid #f3f4f6',
+                      fontSize: 13,
+                    }}>
+                      <span>{item.productName} ×{item.quantity}</span>
+                      <span style={{ color: '#dc2626', fontWeight: 600 }}>{item.price * item.quantity}🪙</span>
+                    </div>
+                  ))}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: 12,
+                    padding: '10px 0',
+                    borderTop: '2px solid #fde68a',
+                    fontSize: 14,
+                    fontWeight: 700,
+                  }}>
+                    <span>合计</span>
+                    <span style={{ color: '#dc2626', fontSize: 18 }}>{cartTotal}🪙</span>
+                  </div>
+                  <button
+                    onClick={() => handleShopCheckout()}
+                    disabled={cartTotal === 0 || (user && user.balance < cartTotal)}
+                    style={{
+                      width: '100%',
+                      marginTop: 10,
+                      padding: '12px',
+                      background: (user && user.balance >= cartTotal) ? '#dc2626' : '#d1d5db',
+                      border: 'none',
+                      borderRadius: 10,
+                      color: '#fff',
+                      fontSize: 15,
+                      fontWeight: 700,
+                      cursor: (user && user.balance >= cartTotal) ? 'pointer' : 'not-allowed',
+                    }}
+                  >结算购物车</button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 主内容区 */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '0 10px 10px' }}>
+          {/* 搜索栏 */}
+          <div style={{
+            display: 'flex',
+            gap: 6,
+            padding: '8px 0',
+          }}>
+            <input
+              value={shopBuyInput}
+              onChange={e => setShopBuyInput(e.target.value)}
+              placeholder="搜索啪多多好物..."
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: '2px solid #fecaca',
+                fontSize: 13,
+                outline: 'none',
+                background: '#fff',
+              }}
+            />
+            <button
+              onClick={handleTogetherBrowse}
+              style={{
+                padding: '8px 12px',
+                background: '#dc2626',
+                border: 'none',
+                borderRadius: 8,
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >👫 一起逛</button>
+          </div>
+
+          {/* 分类标签 */}
+          <div style={{
+            display: 'flex',
+            gap: 6,
+            overflowX: 'auto',
+            paddingBottom: 8,
+            flexShrink: 0,
+          }}>
+            {(['全部', '服装', '家居', '数码', '食品', '礼物', '其他'] as const).map(cat => (
+              <button
+                key={cat}
+                onClick={() => setShopCategory(cat)}
+                style={{
+                  padding: '4px 12px',
+                  borderRadius: 14,
+                  border: shopCategory === cat ? '2px solid #dc2626' : '1px solid #fecaca',
+                  background: shopCategory === cat ? '#fef2f2' : '#fff',
+                  color: shopCategory === cat ? '#dc2626' : '#6b7280',
+                  fontSize: 12,
+                  fontWeight: shopCategory === cat ? 700 : 500,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >{cat}</button>
+            ))}
+          </div>
+
+          {/* 一起逛模式 */}
+          {shopTogetherMode && (
+            <div style={{
+              background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+              borderRadius: 12,
+              padding: 12,
+              marginBottom: 10,
+              border: '2px solid #fbbf24',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 700 }}>🛒 啪多多 · 当前在线</span>
+                <button
+                  onClick={() => { setShopTogetherMode(false); setShopBrowseComments([]); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    color: '#92400e',
+                  }}
+                >✕</button>
+              </div>
+              <div style={{ fontSize: 11, color: '#92400e', marginBottom: 6 }}>
+                👀 正在逛：{onlineMembers.filter(m => m.id !== 'user').map(m => m.name).join('、') || '暂无家庭成员在线'}
+              </div>
+              {shopMembers.filter(m => m.isOnline && m.id !== 'user').map(m => (
+                <div key={m.id} style={{ fontSize: 11, color: '#92400e', marginBottom: 2 }}>
+                  🛍️ {m.name} 正在看「{m.browsingCategory}」分类
+                </div>
+              ))}
+              {shopBrowseComments.length > 0 && (
+                <div style={{ marginTop: 8, borderTop: '1px dashed #fbbf24', paddingTop: 6 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#92400e', marginBottom: 4 }}>💬 实时评论：</div>
+                  {shopBrowseComments.map((c, i) => (
+                    <div key={i} style={{ fontSize: 11, color: '#92400e', marginBottom: 3 }}>
+                      [{c.time}] {c.memberName}："{c.text}"
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 热销榜（仅在全部分类时显示） */}
+          {shopCategory === '全部' && !shopTogetherMode && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                🔥 热销排行
+              </div>
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                {hotProducts.map((p, i) => (
+                  <div key={p.id} style={{
+                    minWidth: 140,
+                    background: 'linear-gradient(180deg, #fef2f2, #fff)',
+                    borderRadius: 12,
+                    padding: 10,
+                    border: '1px solid #fecaca',
+                    flexShrink: 0,
+                  }}>
+                    <div style={{
+                      background: i === 0 ? '#dc2626' : i === 1 ? '#f97316' : '#fbbf24',
+                      color: '#fff',
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      marginBottom: 4,
+                    }}>{i + 1}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{p.name}</div>
+                    <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>已售{p.soldCount}件 ⭐</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#dc2626' }}>{p.price}🪙</span>
+                      <button
+                        onClick={() => handleShopAddToCart(p)}
+                        disabled={p.stock <= 0}
+                        style={{
+                          padding: '3px 8px',
+                          background: p.stock > 0 ? '#dc2626' : '#d1d5db',
+                          border: 'none',
+                          borderRadius: 6,
+                          color: '#fff',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          cursor: p.stock > 0 ? 'pointer' : 'not-allowed',
+                        }}
+                      >+</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 商品网格 */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: 8,
+          }}>
+            {filteredProducts.map(p => (
+              <div key={p.id} style={{
+                background: '#fff',
+                borderRadius: 12,
+                overflow: 'hidden',
+                border: '1px solid #f3f4f6',
+              }}>
+                {/* 商品图片区 */}
+                <div style={{
+                  height: 100,
+                  background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 36,
+                  position: 'relative',
+                }}>
+                  {p.category === '服装' && '👗'}
+                  {p.category === '家居' && '🏠'}
+                  {p.category === '数码' && '📱'}
+                  {p.category === '食品' && '🍖'}
+                  {p.category === '礼物' && '🎁'}
+                  {p.category === '其他' && '📦'}
+                  {p.stock <= 5 && p.stock > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      background: '#fbbf24',
+                      color: '#7c2d12',
+                      borderRadius: 4,
+                      padding: '1px 6px',
+                      fontSize: 9,
+                      fontWeight: 700,
+                    }}>仅剩{p.stock}件</span>
+                  )}
+                  {p.stock <= 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(0,0,0,0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: 14,
+                      fontWeight: 700,
+                    }}>已售罄</span>
+                  )}
+                </div>
+                <div style={{ padding: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{p.name}</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>{p.detail}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#dc2626' }}>{p.price}</span>
+                      <span style={{ fontSize: 10, color: '#dc2626', fontWeight: 600 }}>🪙</span>
+                    </div>
+                    <button
+                      onClick={() => handleShopAddToCart(p)}
+                      disabled={p.stock <= 0}
+                      style={{
+                        padding: '4px 10px',
+                        background: p.stock > 0 ? '#dc2626' : '#d1d5db',
+                        border: 'none',
+                        borderRadius: 14,
+                        color: '#fff',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: p.stock > 0 ? 'pointer' : 'not-allowed',
+                      }}
+                    >加入购物车</button>
+                  </div>
+                  <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 3 }}>已售{p.soldCount}件 | 库存{p.stock}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 最近订单 */}
+          {shopOrders.length > 0 && (
+            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #f3f4f6' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>📦 最近订单</div>
+              {shopOrders.slice(0, 5).map(o => (
+                <div key={o.id} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '6px 0',
+                  borderBottom: '1px solid #f9fafb',
+                  fontSize: 11,
+                }}>
+                  <span>
+                    <span style={{ fontWeight: 600 }}>{o.buyerName}</span>
+                    {o.recipientName !== '自用' && o.buyerId !== 'user' && (
+                      <span style={{ color: '#dc2626' }}> → {o.recipientName}</span>
+                    )}
+                    <span style={{ color: '#6b7280' }}> 买了 {o.productName} ×{o.quantity}</span>
+                  </span>
+                  <span style={{ color: '#9ca3af', fontSize: 10 }}>{o.timestamp}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {filteredProducts.length === 0 && (
+            <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 13 }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>🛒</div>
+              该分类暂无商品
+            </div>
+          )}
+        </div>
+
+        {/* 底部红条 */}
+        <div style={{
+          background: '#dc2626',
+          padding: '6px 0',
+          textAlign: 'center',
+          color: '#fff',
+          fontSize: 10,
+          fontWeight: 600,
+          letterSpacing: 1,
+          flexShrink: 0,
+        }}>
+          啪多多 · 米米币支付 · 正品保障
+        </div>
+      </div>
+    );
+  }
+
   function renderAppContent() {
     if (!currentApp) return null;
     switch (currentApp) {
@@ -3140,6 +3718,7 @@ export default function PhonePage() {
       case 'call': return renderCall();
       case 'browser': return renderBrowser();
       case 'music': return renderMusic();
+      case 'shopping': return renderShopping();
       default: return <div className="empty-state"><div className="empty-emoji">📱</div>APP开发中</div>;
     }
   }
