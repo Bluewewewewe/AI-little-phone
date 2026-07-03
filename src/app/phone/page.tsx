@@ -1096,13 +1096,13 @@ export default function PhonePage() {
             });
           });
 
-          // 移除占位消息，替换为拆分后的多条消息
-          const splitParts = splitAiMessage(fullText);
+          // 移除占位消息，逐条添加拆分消息（模拟打字速度）
           setChatHistory(prev => {
             const msgs = prev.family.filter(m => m.id !== streamMsgId);
-            const splitMsgs = splitParts.map(p => ({ from: speaker, text: p, id: nextId() }));
-            return { ...prev, family: [...msgs, ...splitMsgs] };
+            return { ...prev, family: msgs };
           });
+          setTypingWho(speaker);
+          addSplitMessages('family', speaker, fullText);
 
           lastSpeakerText = fullText;
           updatedHistory = [...updatedHistory, { role: 'assistant' as const, content: `${speaker === 'dad' ? '田雷' : '梓渝'}：${fullText}` }];
@@ -1137,13 +1137,14 @@ export default function PhonePage() {
           });
         });
 
-        // 移除占位消息，替换为拆分后的多条消息
-        const privParts = splitAiMessage(privFullText);
-        setChatHistory(prev => {
-          const msgs = prev[character].filter(m => m.id !== privStreamId);
-          const splitMsgs = privParts.map(p => ({ from: character, text: p, id: nextId() }));
-          return { ...prev, [character]: [...msgs, ...splitMsgs] };
-        });
+        // 移除流式占位消息，逐条延迟添加拆分消息
+        setChatHistory(prev => ({
+          ...prev,
+          [character]: prev[character].filter(m => m.id !== privStreamId),
+        }));
+        setTypingWho(character);
+        await addSplitMessages(character === 'dad' ? 'dad' : 'mom', character, privFullText);
+        setTypingWho(null);
       }
     } catch {
       setTypingWho(null);
