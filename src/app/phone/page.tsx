@@ -393,7 +393,8 @@ export default function PhonePage() {
           setIsAdmin(true);
           setAdminViewMode('admin');
         }
-        console.log(`🔧 Debug mode ON - Level: ${level === 'all' ? 'ALL' : level} (${applied.levelName})`);
+        setUserLevel(applied.userLevel);
+        console.log(`🔧 Debug mode ON - Level: ${level === 'all' ? 'ALL' : level} (${applied.levelName}), 用户等级: Lv.${applied.userLevel}`);
       } else {
         console.log('🔧 Debug mode ON - 无指定关卡，手动选择');
       }
@@ -3601,11 +3602,11 @@ export default function PhonePage() {
           <div className="info-card">
             <div className="info-card-title">⭐ 等级</div>
             <div className="level-row">
-              <span className="level-badge">Lv.1</span>
-              <span className="chapter-badge">Ch1 · 地下秘密</span>
+              <span className="level-badge">Lv.{userLevel}</span>
+              <span className="chapter-badge">{userLevel >= 50 ? 'Ch6 · 身份风暴' : userLevel >= 30 ? 'Ch5 · 官宣天下' : userLevel >= 20 ? 'Ch4 · 粉圈潜行' : userLevel >= 15 ? 'Ch3 · 偷窥真心' : userLevel >= 10 ? 'Ch2 · 暗流涌动' : 'Ch1 · 地下秘密'}</span>
             </div>
-            <div className="progress-bar"><div className="progress-fill" style={{ width: '15%' }}></div></div>
-            <div className="progress-label">距离 Lv.2 还需 85 经验</div>
+            <div className="progress-bar"><div className="progress-fill" style={{ width: `${Math.min((userLevel % 10) * 10, 100)}%` }}></div></div>
+            <div className="progress-label">距离 Lv.{userLevel + 1} 还需 {100 - (userLevel % 10) * 10} 经验</div>
           </div>
           <div className="info-card">
             <div className="info-card-title">💖 亲密度</div>
@@ -3831,11 +3832,13 @@ export default function PhonePage() {
                     setUnlockState(prev => ({ ...prev, unlocked: true }));
                     setIsAdmin(true);
                     setAdminViewMode('admin');
+                    setUserLevel(99);
                   } else if (val) {
                     const lv = Number(val);
                     setDebugLevel(lv);
                     const applied = applyDebugLevel(lv);
                     setUnlockState(prev => ({ ...prev, unlocked: applied.unlocked }));
+                    setUserLevel(applied.userLevel);
                     if (applied.adminAccess) {
                       setIsAdmin(true);
                       setAdminViewMode('admin');
@@ -3864,6 +3867,7 @@ export default function PhonePage() {
                 setUnlockState(prev => ({ ...prev, unlocked: true }));
                 setIsAdmin(true);
                 setAdminViewMode('admin');
+                setUserLevel(99);
               }} style={{ ...debugBtnStyle, background: '#f59e0b', color: '#1a1a1a' }}>
                 🔓 解锁全部
               </button>

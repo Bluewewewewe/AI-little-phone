@@ -44,20 +44,22 @@ export function applyDebugLevel(level: number | 'all'): {
   unlocked: boolean;
   adminAccess: boolean;
   levelName: string;
+  userLevel: number;
 } {
   if (level === 'all') {
-    return { unlocked: true, adminAccess: true, levelName: '全部解锁（all）' };
+    return { unlocked: true, adminAccess: true, levelName: '全部解锁（all）', userLevel: 99 };
   }
 
   const lv = Number(level);
   const levelInfo = DEBUG_LEVELS.find(l => l.level === lv);
+  
+  // Level → userLevel mapping: 1→1, 2→5, 3→10, 4→20, 5→30, 6→50
+  const userLevelMap: Record<number, number> = { 1: 1, 2: 5, 3: 10, 4: 20, 5: 30, 6: 50 };
 
-  // Level 1: 未解锁CP
-  // Level 2+: CP已解锁
-  // Level 3+: 全功能 + admin
   return {
     unlocked: lv >= 2,
     adminAccess: lv >= 3,
     levelName: levelInfo?.name || `Level ${lv}`,
+    userLevel: userLevelMap[lv] || lv * 5,
   };
 }
