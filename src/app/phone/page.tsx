@@ -8,6 +8,7 @@ import {
   SECRET_NAMES, DEFAULT_NAMES,
 } from '@/lib/unlock-config';
 import { getRecentMemories, addMemoryBatch, getMemoryContext, clearChatMemory, loadChatMemory } from '@/lib/chat-memory';
+import { DEBUG_ENABLED, DEBUG_LEVELS, parseDebugParams, applyDebugLevel } from '@/lib/debug-config';
 import { getPublicMemories, getPublicMemoryContext, submitPromotionCandidate } from '@/lib/public-memory';
 
 // ========== Types ==========
@@ -362,6 +363,61 @@ export default function PhonePage() {
 
   const [meSubPage, setMeSubPage] = useState<'main' | 'settings' | 'identity' | 'unlock' | 'about'>('main');
   const [identityStep, setIdentityStep] = useState(0);
+
+  // ========== 开发者调试系统 ==========
+  const [debugMode, setDebugMode] = useState(false);
+  const [debugLevel, setDebugLevel] = useState<number | 'all' | null>(null);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const debugClickCount = useRef(0);
+  const debugClickTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // ========== 调试系统初始化（URL参数 + 5连击） ==========
+  useEffect(() => {
+    if (!mounted) return;
+    const { enabled, level } = parseDebugParams();
+    if (enabled) {
+      setDebugMode(true);
+      setDebugLevel(level);
+      if (level) {
+        const applied = applyDebugLevel(level);
+        if (applied.unlocked) {
+          setUnlockState(prev => ({ ...prev, unlocked: true }));
+        }
+        if (applied.adminAccess) {
+          setIsAdmin(true);
+          setAdminViewMode('admin');
+        }
+        console.log(`🔧 Debug mode ON - Level: ${level === 'all' ? 'ALL' : level} (${applied.levelName})`);
+      } else {
+        console.log('🔧 Debug mode ON - 无指定关卡，手动选择');
+      }
+    }
+  }, [mounted]);
+
+  // 5连击检测
+  const handleDebugTitleClick = useCallback(() => {
+    if (!DEBUG_ENABLED || debugMode) return;
+    debugClickCount.current += 1;
+    if (debugClickTimer.current) clearTimeout(debugClickTimer.current);
+    if (debugClickCount.current >= 5) {
+      setDebugMode(true);
+      setShowDebugPanel(true);
+      debugClickCount.current = 0;
+      console.log('🔧 Debug panel activated via 5-click');
+    } else {
+      debugClickTimer.current = setTimeout(() => { debugClickCount.current = 0; }, 2000);
+    }
+  }, [debugMode]);
+
+  // ESC 关闭面板
+  useEffect(() => {
+    if (!showDebugPanel) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowDebugPanel(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [showDebugPanel]);
 
   // ========== 双层记忆系统 ==========
   const [publicMemories, setPublicMemories] = useState<Record<string, string[]>>({});
@@ -3206,6 +3262,16 @@ export default function PhonePage() {
   // ========== 统一手机框布局 ==========
   const showInfoPanel = isLoggedIn && !(isAdmin && adminViewMode === 'admin');
 
+  // 调试面板按钮样式
+  const debugBtnStyle: React.CSSProperties = {
+    width: '100%', padding: '10px', borderRadius: 10, border: 'none',
+    fontSize: 13, fontWeight: 600, cursor: 'pointer',
+  };
+  const smallBtnStyle: React.CSSProperties = {
+    padding: '5px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)',
+    background: 'rgba(255,255,255,0.06)', color: '#ccc', fontSize: 11, cursor: 'pointer',
+  };
+
   return (
     <div className="phone-page">
       {/* Left Info Panel - only when logged in and not in admin mode */}
@@ -3293,8 +3359,8 @@ export default function PhonePage() {
                 </div>
 
                 <div className="home-content">
-                  {/* Big Clock */}
-                  <div className="big-clock">
+                  {/* Big Clock - 5连击触发调试面板 */}
+                  <div className="big-clock" onClick={handleDebugTitleClick}>
                     <div className="big-time">{time}</div>
                     <div className="big-date">{dateStr}</div>
                     <div style={{ fontSize: 10, color: '#b45309', marginTop: 2, opacity: 0.8 }}>💎 {tokenBalance} Token · Lv.{userLevel}</div>
@@ -3398,6 +3464,133 @@ export default function PhonePage() {
           )}
         </div>
       </div>
+
+      {/* ========== 调试模式提示条 ========== */}
+      {debugMode && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+          background: 'rgba(245, 158, 11, 0.92)', color: '#fff',
+          textAlign: 'center', padding: '4px 0', fontSize: 11, fontWeight: 600,
+          backdropFilter: 'blur(8px)', letterSpacing: '0.5px',
+        }}>
+          🔧 调试模式{debugLevel ? ` · ${debugLevel === 'all' ? '全部解锁' : `Level ${debugLevel}`}` : ''}
+          <button onClick={() => setShowDebugPanel(true)}
+            style={{ marginLeft: 8, padding: '2px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 10, cursor: 'pointer' }}>
+            面板
+          </button>
+        </div>
+      )}
+
+      {/* ========== 调试面板覆盖层 ========== */}
+      {showDebugPanel && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 10000,
+          background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }} onClick={(e) => { if (e.target === e.currentTarget) setShowDebugPanel(false); }}>
+          <div style={{
+            background: 'rgba(30,30,30,0.95)', borderRadius: 20, padding: '28px 24px',
+            width: 'min(380px, 90vw)', maxHeight: '80vh', overflowY: 'auto',
+            color: '#e5e5e5', boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+            border: '1px solid rgba(255,255,255,0.12)',
+          }} onClick={(e) => e.stopPropagation()}>
+            {/* 标题栏 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <span style={{ fontSize: 16, fontWeight: 700 }}>🔧 开发者面板</span>
+              <button onClick={() => setShowDebugPanel(false)}
+                style={{ width: 32, height: 32, borderRadius: 10, border: 'none', background: 'rgba(255,255,255,0.1)', color: '#ccc', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                ✕
+              </button>
+            </div>
+
+            {/* 当前状态 */}
+            <div style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>📊 当前状态</div>
+              <div style={{ fontSize: 12, lineHeight: 1.8 }}>
+                <div>🔑 CP解锁：<span style={{ color: unlockState.unlocked ? '#4ade80' : '#f87171' }}>{unlockState.unlocked ? '已解锁' : '未解锁'}</span></div>
+                <div>👤 管理员：<span style={{ color: isAdmin ? '#4ade80' : '#888' }}>{isAdmin ? '是' : '否'}</span></div>
+                <div>💎 Token余额：{tokenBalance}</div>
+                <div>⭐ 用户等级：Lv.{userLevel}</div>
+                <div>📱 可用APP数：{unlockState.unlocked ? 12 : 6}</div>
+              </div>
+            </div>
+
+            {/* 跳关选择 */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>🎯 跳转关卡</div>
+              <select
+                value={debugLevel ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'all') {
+                    setDebugLevel('all');
+                    setUnlockState(prev => ({ ...prev, unlocked: true }));
+                    setIsAdmin(true);
+                    setAdminViewMode('admin');
+                  } else if (val) {
+                    const lv = Number(val);
+                    setDebugLevel(lv);
+                    const applied = applyDebugLevel(lv);
+                    setUnlockState(prev => ({ ...prev, unlocked: applied.unlocked }));
+                    if (applied.adminAccess) {
+                      setIsAdmin(true);
+                      setAdminViewMode('admin');
+                    }
+                  }
+                }}
+                style={{
+                  width: '100%', padding: '10px 12px', borderRadius: 10,
+                  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#e5e5e5', fontSize: 13, outline: 'none',
+                }}>
+                <option value="" style={{ color: '#333' }}>— 选择关卡 —</option>
+                {DEBUG_LEVELS.map(l => (
+                  <option key={l.level} value={l.level} style={{ color: '#333' }}>
+                    Lv.{l.level} · {l.name}
+                  </option>
+                ))}
+                <option value="all" style={{ color: '#f59e0b' }}>🔓 解锁全部（all）</option>
+              </select>
+            </div>
+
+            {/* 快捷按钮 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              <button onClick={() => {
+                setDebugLevel('all');
+                setUnlockState(prev => ({ ...prev, unlocked: true }));
+                setIsAdmin(true);
+                setAdminViewMode('admin');
+              }} style={{ ...debugBtnStyle, background: '#f59e0b', color: '#1a1a1a' }}>
+                🔓 解锁全部
+              </button>
+              <button onClick={() => {
+                if (confirm('确定要重置所有数据吗？这将清除所有存档。')) {
+                  localStorage.clear();
+                  window.location.reload();
+                }
+              }} style={{ ...debugBtnStyle, background: 'rgba(239,68,68,0.2)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.3)' }}>
+                🗑️ 重置存档
+              </button>
+            </div>
+
+            {/* 快捷操作 */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>⚡ 快捷操作</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <button onClick={() => { setTokenBalance(99999); }} style={smallBtnStyle}>💎 +99999 Token</button>
+                <button onClick={() => { setUserLevel(99); }} style={smallBtnStyle}>⭐ Lv.99</button>
+                <button onClick={() => { setUnlockState(prev => ({ ...prev, unlocked: !prev.unlocked })); }} style={smallBtnStyle}>🔑 切换CP</button>
+                <button onClick={() => { setIsAdmin(!isAdmin); setAdminViewMode(isAdmin ? 'user' : 'admin'); }} style={smallBtnStyle}>👑 切换管理员</button>
+                <button onClick={() => { setCurrentApp(null); }} style={smallBtnStyle}>🏠 回首页</button>
+              </div>
+            </div>
+
+            <div style={{ fontSize: 10, color: '#555', textAlign: 'center', marginTop: 8 }}>
+              ESC 关闭 · 上线前设 DEBUG_ENABLED=false 即可关闭
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
