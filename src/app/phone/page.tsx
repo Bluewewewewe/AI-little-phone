@@ -2807,83 +2807,95 @@ export default function PhonePage() {
   // ========== 验证通登录界面 ==========
   function renderLoginScreen() {
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #fffbeb 0%, #fef3c7 30%, #fde68a 70%, #fbbf24 100%)', position: 'relative', overflow: 'hidden', padding: '12px 16px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(170deg, #fffbeb 0%, #fef3c7 35%, #fde68a 75%, #fcd34d 100%)', position: 'relative', overflow: 'hidden', padding: '16px 20px' }}>
         {/* 装饰光晕 */}
-        <div style={{ position: 'absolute', top: -40, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.35) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
-        <div style={{ position: 'absolute', bottom: -20, left: -40, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.18) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
-        <div style={{ position: 'absolute', top: '35%', left: '5%', width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
+        <div style={{ position: 'absolute', top: '-12%', right: '-8%', width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.28) 0%, rgba(251,191,36,0.06) 40%, transparent 70%)', pointerEvents: 'none' as const, animation: 'float-glow 6s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', bottom: '-5%', left: '-10%', width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.13) 0%, rgba(236,72,153,0.03) 40%, transparent 70%)', pointerEvents: 'none' as const, animation: 'float-glow 8s ease-in-out infinite 2s' }} />
+        <div style={{ position: 'absolute', top: '40%', left: '3%', width: 60, height: 60, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
 
         <div style={{ width: '100%', position: 'relative', zIndex: 1 }}>
           {/* 品牌区域 */}
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
             {/* Logo圆形底座 */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: 20, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(16px)', boxShadow: '0 6px 24px rgba(146,64,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8)', marginBottom: 10 }}>
-              <span style={{ fontSize: 32 }}>📱</span>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 72, height: 72, borderRadius: 22, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(146,64,0,0.1), 0 2px 6px rgba(146,64,0,0.05), inset 0 1px 0 rgba(255,255,255,0.9)', marginBottom: 12, transition: 'transform 0.3s ease' }}>
+              <span style={{ fontSize: 34, filter: 'drop-shadow(0 2px 4px rgba(146,64,0,0.1))' }}>📱</span>
             </div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#78350f', letterSpacing: 2 }}>
+            <div style={{ fontSize: 24, fontWeight: 900, color: '#78350f', letterSpacing: 2.5, textShadow: '0 2px 4px rgba(146,64,0,0.06)' }}>
               AI小手机
             </div>
-            <div style={{ fontSize: 11, color: '#b45309', marginTop: 3, fontWeight: 500, letterSpacing: 3 }}>
+            <div style={{ fontSize: 11, color: '#b45309', marginTop: 4, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase' as const }}>
               CP社交平台
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8 }}>
-              <span style={{ display: 'inline-block', width: 16, height: 1, background: 'linear-gradient(90deg, transparent, #d97706)' }} />
-              <span style={{ fontSize: 9, color: '#d97706', letterSpacing: 2 }}>验证通</span>
-              <span style={{ display: 'inline-block', width: 16, height: 1, background: 'linear-gradient(90deg, #d97706, transparent)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10 }}>
+              <span style={{ display: 'inline-block', width: 20, height: 1, background: 'linear-gradient(90deg, transparent, #d97706)', borderRadius: 1 }} />
+              <span style={{ fontSize: 10, color: '#d97706', letterSpacing: 3, fontWeight: 600 }}>验证通</span>
+              <span style={{ display: 'inline-block', width: 20, height: 1, background: 'linear-gradient(90deg, #d97706, transparent)', borderRadius: 1 }} />
             </div>
           </div>
 
           {/* 登录卡片 */}
-          <div style={{ background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(28px)', borderRadius: 20, padding: '20px 18px', boxShadow: '0 8px 32px rgba(146,64,0,0.08), 0 2px 8px rgba(146,64,0,0.04)', borderTop: '1px solid rgba(255,255,255,0.7)', borderLeft: '1px solid rgba(255,255,255,0.4)' }}>
+          <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', borderRadius: 24, padding: '22px 20px', boxShadow: '0 12px 40px rgba(146,64,0,0.08), 0 2px 8px rgba(146,64,0,0.04), inset 0 1px 0 rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.5)' }}>
             {/* 输入区 */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 10, color: '#92400e', fontWeight: 600, marginBottom: 4, letterSpacing: 1 }}>账 号</div>
-              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.85)', borderRadius: 12, border: '1.5px solid rgba(253,230,138,0.6)', overflow: 'hidden' }}>
-                <span style={{ padding: '0 0 0 12', fontSize: 16, color: '#d97706' }}>👤</span>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: '#92400e', fontWeight: 700, marginBottom: 6, letterSpacing: 1.5 }}>账 号</div>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.8)', borderRadius: 14, border: '1.5px solid rgba(253,230,138,0.5)', overflow: 'hidden', transition: 'border-color 0.2s, box-shadow 0.2s' }}
+                onFocusCapture={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.6)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.08)'; }}
+                onBlurCapture={e => { e.currentTarget.style.borderColor = 'rgba(253,230,138,0.5)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                <span style={{ padding: '0 0 0 14px', fontSize: 16, opacity: 0.7 }}>👤</span>
                 <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleLogin()}
                   placeholder="输入你的账号" maxLength={20}
-                  style={{ flex: 1, padding: '11px 12px 11px 6px', border: 'none', fontSize: 13, outline: 'none', background: 'transparent', color: '#78350f' }} />
+                  style={{ flex: 1, padding: '12px 14px 12px 8px', border: 'none', fontSize: 14, outline: 'none', background: 'transparent', color: '#78350f', fontWeight: 500 }} />
               </div>
             </div>
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: 10, color: '#92400e', fontWeight: 600, marginBottom: 4, letterSpacing: 1 }}>密 码</div>
-              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.85)', borderRadius: 12, border: '1.5px solid rgba(253,230,138,0.6)', overflow: 'hidden' }}>
-                <span style={{ padding: '0 0 0 12', fontSize: 16, color: '#d97706' }}>🔒</span>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, color: '#92400e', fontWeight: 700, marginBottom: 6, letterSpacing: 1.5 }}>密 码</div>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.8)', borderRadius: 14, border: '1.5px solid rgba(253,230,138,0.5)', overflow: 'hidden', transition: 'border-color 0.2s, box-shadow 0.2s' }}
+                onFocusCapture={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.6)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.08)'; }}
+                onBlurCapture={e => { e.currentTarget.style.borderColor = 'rgba(253,230,138,0.5)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                <span style={{ padding: '0 0 0 14px', fontSize: 16, opacity: 0.7 }}>🔒</span>
                 <input value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleLogin()}
                   placeholder="输入你的密码" type="password" maxLength={30}
-                  style={{ flex: 1, padding: '11px 12px 11px 6px', border: 'none', fontSize: 13, outline: 'none', background: 'transparent', color: '#78350f' }} />
+                  style={{ flex: 1, padding: '12px 14px 12px 8px', border: 'none', fontSize: 14, outline: 'none', background: 'transparent', color: '#78350f', fontWeight: 500 }} />
               </div>
             </div>
 
             {/* 登录按钮 */}
             <button onClick={handleLogin}
-              style={{ width: '100%', padding: '12px 0', borderRadius: 12, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(245,158,11,0.35)', transition: 'all 0.2s', letterSpacing: 4 }}
-              onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.97)', e.currentTarget.style.boxShadow = '0 2px 8px rgba(245,158,11,0.25)')}
-              onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,158,11,0.35)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,158,11,0.35)')}>
+              style={{ width: '100%', padding: '13px 0', borderRadius: 14, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 6px 20px rgba(245,158,11,0.35), 0 2px 4px rgba(245,158,11,0.15)', transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)', letterSpacing: 5 }}
+              onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.96)', e.currentTarget.style.boxShadow = '0 2px 8px rgba(245,158,11,0.2)')}
+              onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 6px 20px rgba(245,158,11,0.35), 0 2px 4px rgba(245,158,11,0.15)')}
+              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 6px 20px rgba(245,158,11,0.35), 0 2px 4px rgba(245,158,11,0.15)')}>
               登 录
             </button>
 
             {/* 协议 */}
-            <div style={{ textAlign: 'center', marginTop: 10, fontSize: 9, color: '#a16207', lineHeight: 1.5 }}>
-              登录即代表同意 <span style={{ color: '#d97706', textDecoration: 'underline', cursor: 'pointer' }}>用户协议</span> 和 <span style={{ color: '#d97706', textDecoration: 'underline', cursor: 'pointer' }}>隐私政策</span>
+            <div style={{ textAlign: 'center', marginTop: 12, fontSize: 10, color: '#a16207', lineHeight: 1.6 }}>
+              登录即代表同意 <span style={{ color: '#d97706', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500 }}>用户协议</span> 和 <span style={{ color: '#d97706', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500 }}>隐私政策</span>
             </div>
           </div>
 
           {/* 底部信息 */}
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <div style={{ fontSize: 9, color: '#b45309', opacity: 0.7, marginBottom: 4 }}>
+          <div style={{ textAlign: 'center', marginTop: 18 }}>
+            <div style={{ fontSize: 10, color: '#b45309', opacity: 0.65, marginBottom: 4, fontWeight: 500 }}>
               💡 管理员账号：admin / manager_lin / cp_official
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-              <span style={{ fontSize: 9, color: '#d97706', opacity: 0.5 }}>v1.0.0</span>
-              <span style={{ width: 1, height: 8, background: '#d97706', opacity: 0.3 }} />
-              <span style={{ fontSize: 9, color: '#d97706', opacity: 0.5 }}>AI小手机团队</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+              <span style={{ fontSize: 10, color: '#d97706', opacity: 0.45 }}>v1.0.0</span>
+              <span style={{ width: 1, height: 10, background: '#d97706', opacity: 0.2, borderRadius: 1 }} />
+              <span style={{ fontSize: 10, color: '#d97706', opacity: 0.45 }}>AI小手机团队</span>
             </div>
           </div>
         </div>
+
+        {/* 浮动光晕动画 */}
+        <style>{`
+          @keyframes float-glow {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
+            50% { transform: translateY(-8px) scale(1.05); opacity: 1; }
+          }
+        `}</style>
       </div>
     );
   }
@@ -2896,26 +2908,32 @@ export default function PhonePage() {
     const avgCost = (tokenTotalConsumed / Math.max(totalUsers, 1)).toFixed(0);
 
     return (
-      <div style={{ flex: 1, background: '#f8f7f4', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, background: 'linear-gradient(180deg, #faf8f3 0%, #f8f5ee 100%)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {/* 顶部栏 */}
-        <div style={{ flexShrink: 0, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #e5e7eb', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#92400e' }}>🔧 管理员总控</span>
-            <span style={{ fontSize: 9, color: '#999', marginLeft: 4 }}>@{loginUsername}</span>
+        <div style={{ flexShrink: 0, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(146,64,0,0.08)', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 10, background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(245,158,11,0.25)' }}>
+              <span style={{ fontSize: 14 }}>🔧</span>
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#78350f', letterSpacing: 0.5 }}>管理员总控</div>
+              <div style={{ fontSize: 9, color: '#b45309', opacity: 0.6 }}>@{loginUsername}</div>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 6 }}>
             <button onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setLoginUsername(''); }}
-              style={{ fontSize: 9, padding: '4px 8px', borderRadius: 12, background: '#f3f4f6', color: '#666', border: 'none', fontWeight: 500, cursor: 'pointer' }}>
+              style={{ fontSize: 10, padding: '6px 12px', borderRadius: 10, background: 'rgba(0,0,0,0.04)', color: '#888', border: '1px solid rgba(0,0,0,0.06)', fontWeight: 500, cursor: 'pointer' }}>
               退出
             </button>
             <button onClick={() => setAdminViewMode('user')}
-              style={{ fontSize: 10, padding: '4px 10px', borderRadius: 12, background: 'linear-gradient(135deg, #f59e0b, #ec4899)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(245,158,11,0.2)' }}>
+              style={{ fontSize: 10, padding: '6px 14px', borderRadius: 10, background: 'linear-gradient(135deg, #f59e0b, #ec4899)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', boxShadow: '0 3px 12px rgba(245,158,11,0.3)', letterSpacing: 0.5 }}>
               🎮 用户模式
             </button>
           </div>
         </div>
+
         {/* Tab 导航 */}
-        <div style={{ flexShrink: 0, display: 'flex', borderBottom: '2px solid #e5e7eb', background: '#fff' }}>
+        <div style={{ flexShrink: 0, display: 'flex', borderBottom: '1px solid rgba(146,64,0,0.06)', background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', padding: '0 6px' }}>
           {[
             { key: 'dashboard' as const, icon: '📊', label: '看板' },
             { key: 'cpchat' as const, icon: '💬', label: '私聊' },
@@ -2924,40 +2942,46 @@ export default function PhonePage() {
             { key: 'god' as const, icon: '👁️', label: '上帝' },
           ].map(tab => (
             <div key={tab.key} onClick={() => setAdminTab(tab.key)}
-              style={{ padding: '8px 0', cursor: 'pointer', fontSize: 10, fontWeight: adminTab === tab.key ? 700 : 400, color: adminTab === tab.key ? '#f59e0b' : '#999', borderBottom: adminTab === tab.key ? '2px solid #f59e0b' : '2px solid transparent', transition: 'all 0.2s', textAlign: 'center', flex: 1 }}>
-              <div style={{ fontSize: 14 }}>{tab.icon}</div>
+              style={{ padding: '10px 0', cursor: 'pointer', fontSize: 10, fontWeight: adminTab === tab.key ? 700 : 500, color: adminTab === tab.key ? '#92400e' : '#bbb', borderBottom: adminTab === tab.key ? '2.5px solid #f59e0b' : '2.5px solid transparent', transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)', textAlign: 'center', flex: 1, position: 'relative' }}>
+              <div style={{ fontSize: 16, marginBottom: 2, filter: adminTab === tab.key ? 'none' : 'grayscale(0.5)', opacity: adminTab === tab.key ? 1 : 0.5, transition: 'all 0.25s' }}>{tab.icon}</div>
               <div style={{ marginTop: 1 }}>{tab.label}</div>
             </div>
           ))}
         </div>
-        <div style={{ flex: 1, overflow: 'auto', padding: '10px 12px' }}>
+
+        <div style={{ flex: 1, overflow: 'auto', padding: '12px' }}>
           {/* 数据看板 */}
           {adminTab === 'dashboard' && (
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 10 }}>
                 {[
-                  { label: '总用户数', value: totalUsers, icon: '👥', color: '#3b82f6' },
-                  { label: '今日活跃', value: todayActive, icon: '🔥', color: '#ef4444' },
-                  { label: '累计消耗Token', value: tokenTotalConsumed.toLocaleString(), icon: '💎', color: '#8b5cf6' },
-                  { label: 'API总成本', value: `${totalCost}元`, icon: '💰', color: '#f59e0b' },
+                  { label: '总用户数', value: totalUsers, icon: '👥', color: '#3b82f6', bg: 'rgba(59,130,246,0.08)' },
+                  { label: '今日活跃', value: todayActive, icon: '🔥', color: '#ef4444', bg: 'rgba(239,68,68,0.08)' },
+                  { label: '累计消耗Token', value: tokenTotalConsumed.toLocaleString(), icon: '💎', color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)' },
+                  { label: 'API总成本', value: `${totalCost}元`, icon: '💰', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
                 ].map(card => (
-                  <div key={card.label} style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                    <div style={{ fontSize: 16, marginBottom: 2 }}>{card.icon}</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: card.color }}>{card.value}</div>
-                    <div style={{ fontSize: 9, color: '#999', marginTop: 1 }}>{card.label}</div>
+                  <div key={card.label} style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 14, boxShadow: '0 2px 12px rgba(146,64,0,0.04), 0 1px 2px rgba(146,64,0,0.03)', border: '1px solid rgba(255,255,255,0.6)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 9, background: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>{card.icon}</div>
+                    </div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: card.color, lineHeight: 1.2 }}>{card.value}</div>
+                    <div style={{ fontSize: 10, color: '#999', marginTop: 2, fontWeight: 500 }}>{card.label}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginBottom: 6 }}>📈 成本分析</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#666', padding: '3px 0' }}>
-                  <span>人均消耗</span><span style={{ fontWeight: 600 }}>{avgCost} Token</span>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 14, boxShadow: '0 2px 12px rgba(146,64,0,0.04), 0 1px 2px rgba(146,64,0,0.03)', border: '1px solid rgba(255,255,255,0.6)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#78350f', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 4, height: 14, borderRadius: 2, background: '#f59e0b' }} />
+                  📈 成本分析
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#666', padding: '3px 0' }}>
-                  <span>单位成本</span><span style={{ fontWeight: 600 }}>{tokenCostPer}元/万Token</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#666', padding: '5px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                  <span>人均消耗</span><span style={{ fontWeight: 600, color: '#333' }}>{avgCost} Token</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#666', padding: '3px 0' }}>
-                  <span>建议定价</span><span style={{ fontWeight: 600, color: '#f59e0b' }}>{(tokenCostPer * 1.5).toFixed(1)}元/万Token</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#666', padding: '5px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                  <span>单位成本</span><span style={{ fontWeight: 600, color: '#333' }}>{tokenCostPer}元/万Token</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#666', padding: '5px 0' }}>
+                  <span>建议定价</span><span style={{ fontWeight: 700, color: '#f59e0b' }}>{(tokenCostPer * 1.5).toFixed(1)}元/万Token</span>
                 </div>
               </div>
             </div>
@@ -2966,42 +2990,48 @@ export default function PhonePage() {
           {/* CP私聊控制室 */}
           {adminTab === 'cpchat' && (
             <div>
-              <div style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginBottom: 6 }}>💬 A和B的私聊记录</div>
-                <div style={{ maxHeight: 200, overflowY: 'auto', background: '#f8f8f8', borderRadius: 8, padding: 8 }}>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 14, boxShadow: '0 2px 12px rgba(146,64,0,0.04), 0 1px 2px rgba(146,64,0,0.03)', border: '1px solid rgba(255,255,255,0.6)', marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#78350f', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 4, height: 14, borderRadius: 2, background: '#ec4899' }} />
+                  💬 CP私聊记录
+                </div>
+                <div style={{ maxHeight: 180, overflowY: 'auto', background: 'rgba(248,245,237,0.8)', borderRadius: 10, padding: 10 }}>
                   {cpChatMessages.map(msg => (
-                    <div key={msg.id} style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
-                      <div style={{ width: 22, height: 22, borderRadius: '50%', background: msg.from === 'A' ? 'rgba(245,158,11,0.2)' : 'rgba(236,72,153,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, flexShrink: 0 }}>
-                        {msg.from === 'A' ? '👨' : '👩'}
+                    <div key={msg.id} style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'flex-start' }}>
+                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: msg.from === 'A' ? 'linear-gradient(135deg, #f59e0b, #fbbf24)' : 'linear-gradient(135deg, #ec4899, #f472b6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, flexShrink: 0, color: '#fff', fontWeight: 700 }}>
+                        {msg.from === 'A' ? '田' : '梓'}
                       </div>
                       <div>
-                        <div style={{ fontSize: 8, color: '#999' }}>{msg.from === 'A' ? '田栩宁' : '梓渝'} · {msg.time}</div>
-                        <div style={{ fontSize: 11, color: '#333', lineHeight: 1.4 }}>{msg.text}</div>
+                        <div style={{ fontSize: 8, color: '#bbb', marginBottom: 1 }}>{msg.from === 'A' ? '田栩宁' : '梓渝'} · {msg.time}</div>
+                        <div style={{ fontSize: 11, color: '#333', lineHeight: 1.5, background: msg.from === 'A' ? 'rgba(245,158,11,0.06)' : 'rgba(236,72,153,0.06)', padding: '4px 8px', borderRadius: 8 }}>{msg.text}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginBottom: 6 }}>✍️ 设置私聊</div>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 14, boxShadow: '0 2px 12px rgba(146,64,0,0.04), 0 1px 2px rgba(146,64,0,0.03)', border: '1px solid rgba(255,255,255,0.6)', marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#78350f', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 4, height: 14, borderRadius: 2, background: '#f59e0b' }} />
+                  ✍️ 设置私聊
+                </div>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                   <select value={cpChatTarget} onChange={e => setCpChatTarget(e.target.value as 'A' | 'B')}
-                    style={{ padding: '6px 8px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 10, background: '#fff' }}>
-                    <option value="A">A→B</option>
-                    <option value="B">B→A</option>
+                    style={{ padding: '7px 10px', borderRadius: 10, border: '1.5px solid rgba(253,230,138,0.5)', fontSize: 10, background: 'rgba(255,255,255,0.8)', outline: 'none', fontWeight: 500, color: '#78350f' }}>
+                    <option value="A">A → B（田→梓）</option>
+                    <option value="B">B → A（梓→田）</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <input value={cpChatInput} onChange={e => setCpChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleAdminSetCpChat()}
-                    placeholder="输入私聊内容..." style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 11, outline: 'none' }} />
+                    placeholder="输入私聊内容..." style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: '1.5px solid rgba(253,230,138,0.5)', fontSize: 11, outline: 'none', background: 'rgba(255,255,255,0.8)', color: '#78350f' }} />
                   <button onClick={handleAdminSetCpChat}
-                    style={{ padding: '8px 12px', borderRadius: 8, background: '#f59e0b', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 10 }}>插入</button>
+                    style={{ padding: '8px 14px', borderRadius: 10, background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 10, boxShadow: '0 2px 8px rgba(245,158,11,0.25)', whiteSpace: 'nowrap' }}>插入</button>
                 </div>
               </div>
               <button onClick={() => {
                 if (cpChatMessages.length > 0) { alert('已将最新私聊推送给所有用户！'); }
-              }} style={{ width: '100%', padding: '8px', borderRadius: 8, background: 'linear-gradient(135deg, #ec4899, #f59e0b)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 10 }}>
+              }} style={{ width: '100%', padding: '10px', borderRadius: 12, background: 'linear-gradient(135deg, #ec4899, #f59e0b)', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', fontSize: 11, boxShadow: '0 4px 16px rgba(236,72,153,0.25)', letterSpacing: 1 }}>
                 📢 推送最新私聊给所有用户
               </button>
             </div>
@@ -3010,31 +3040,37 @@ export default function PhonePage() {
           {/* 内容管理 */}
           {adminTab === 'content' && (
             <div>
-              <div style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginBottom: 6 }}>🔥 热搜榜管理</div>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 14, boxShadow: '0 2px 12px rgba(146,64,0,0.04), 0 1px 2px rgba(146,64,0,0.03)', border: '1px solid rgba(255,255,255,0.6)', marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#78350f', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 4, height: 14, borderRadius: 2, background: '#ef4444' }} />
+                  🔥 热搜榜管理
+                </div>
                 {weiboHotSearch.map((item, idx) => (
-                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', borderBottom: '1px solid #f5f5f5' }}>
-                    <span style={{ width: 16, fontSize: 11, fontWeight: 700, color: idx < 3 ? '#ef4444' : '#999', flexShrink: 0 }}>{idx + 1}</span>
-                    <span style={{ flex: 1, fontSize: 10, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                    <span style={{ width: 20, fontSize: 12, fontWeight: 800, color: idx < 3 ? '#ef4444' : idx < 5 ? '#f59e0b' : '#bbb', flexShrink: 0, textAlign: 'center' }}>{idx + 1}</span>
+                    <span style={{ flex: 1, fontSize: 10, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
                       {item.title}
-                      {item.tag && <span style={{ marginLeft: 2, fontSize: 7, background: item.tagColor || '#f97316', color: '#fff', padding: '0 2px', borderRadius: 2 }}>{item.tag}</span>}
+                      {item.tag && <span style={{ marginLeft: 3, fontSize: 7, background: item.tagColor || '#f97316', color: '#fff', padding: '1px 4px', borderRadius: 3, fontWeight: 600, verticalAlign: 'middle' }}>{item.tag}</span>}
                     </span>
                     <button onClick={() => {
                       setWeiboHotSearch(prev => {
                         const updated = [item, ...prev.filter(p => p.id !== item.id)];
                         return updated.map((h, i) => ({ ...h, id: i + 1 }));
                       });
-                    }} style={{ fontSize: 8, padding: '2px 6px', borderRadius: 6, background: adminHotSearchLocked.includes(item.id) ? '#fef3c7' : '#f3f4f6', color: adminHotSearchLocked.includes(item.id) ? '#f59e0b' : '#666', border: 'none', cursor: 'pointer' }}>
-                      {adminHotSearchLocked.includes(item.id) ? '📌' : '置顶'}
+                    }} style={{ fontSize: 8, padding: '3px 8px', borderRadius: 8, background: adminHotSearchLocked.includes(item.id) ? 'rgba(254,243,199,0.8)' : 'rgba(0,0,0,0.04)', color: adminHotSearchLocked.includes(item.id) ? '#f59e0b' : '#888', border: 'none', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {adminHotSearchLocked.includes(item.id) ? '📌 已置顶' : '置顶'}
                     </button>
                   </div>
                 ))}
               </div>
-              <div style={{ background: '#fff', borderRadius: 10, padding: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginBottom: 6 }}>📢 发送官方公告</div>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 14, boxShadow: '0 2px 12px rgba(146,64,0,0.04), 0 1px 2px rgba(146,64,0,0.03)', border: '1px solid rgba(255,255,255,0.6)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#78350f', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 4, height: 14, borderRadius: 2, background: '#ef4444' }} />
+                  📢 发送官方公告
+                </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <input value={adminAnnouncement} onChange={e => setAdminAnnouncement(e.target.value)}
-                    placeholder="输入公告内容..." style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 11, outline: 'none' }} />
+                    placeholder="输入公告内容..." style={{ flex: 1, padding: '9px 12px', borderRadius: 10, border: '1.5px solid rgba(253,230,138,0.5)', fontSize: 11, outline: 'none', background: 'rgba(255,255,255,0.8)', color: '#78350f' }} />
                   <button onClick={() => {
                     if (adminAnnouncement.trim()) {
                       const newPost: WeiboPost = {
@@ -3048,7 +3084,7 @@ export default function PhonePage() {
                       setAdminAnnouncement('');
                       alert('公告已发布！');
                     }
-                  }} style={{ padding: '8px 12px', borderRadius: 8, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 10 }}>发布</button>
+                  }} style={{ padding: '9px 16px', borderRadius: 10, background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 10, boxShadow: '0 2px 8px rgba(239,68,68,0.25)', whiteSpace: 'nowrap' }}>发布</button>
                 </div>
               </div>
             </div>
@@ -3057,42 +3093,51 @@ export default function PhonePage() {
           {/* Token与定价设置 */}
           {adminTab === 'token' && (
             <div>
-              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>💰 消耗单价设置</div>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 14, boxShadow: '0 2px 12px rgba(146,64,0,0.04), 0 1px 2px rgba(146,64,0,0.03)', border: '1px solid rgba(255,255,255,0.6)', marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#78350f', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 4, height: 14, borderRadius: 2, background: '#f59e0b' }} />
+                  💰 消耗单价设置
+                </div>
                 {[
                   { key: 'postImage' as const, label: '发图消耗', icon: '📷' },
                   { key: 'viewPrivateChat' as const, label: '看私聊消耗', icon: '🔒' },
                   { key: 'aiChat' as const, label: 'AI对话消耗', icon: '🤖' },
                 ].map(item => (
-                  <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
-                    <span style={{ fontSize: 12, color: '#666' }}>{item.icon} {item.label}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                    <span style={{ fontSize: 11, color: '#666', fontWeight: 500 }}>{item.icon} {item.label}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <input type="number" value={tokenPricing[item.key]}
                         onChange={e => setTokenPricing(prev => ({ ...prev, [item.key]: Math.max(0, parseInt(e.target.value) || 0) }))}
-                        style={{ width: 50, padding: '4px 8px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12, textAlign: 'center', outline: 'none' }} />
-                      <span style={{ fontSize: 10, color: '#999' }}>Token</span>
+                        style={{ width: 54, padding: '6px 8px', borderRadius: 10, border: '1.5px solid rgba(253,230,138,0.5)', fontSize: 12, textAlign: 'center', outline: 'none', background: 'rgba(255,255,255,0.8)', fontWeight: 600, color: '#78350f' }} />
+                      <span style={{ fontSize: 10, color: '#bbb' }}>Token</span>
                     </div>
                   </div>
                 ))}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0' }}>
-                  <span style={{ fontSize: 12, color: '#666' }}>💵 单位Token成本</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 11, color: '#666', fontWeight: 500 }}>💵 单位Token成本</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <input type="number" value={tokenCostPer} step="0.1"
                       onChange={e => setTokenCostPer(Math.max(0, parseFloat(e.target.value) || 0))}
-                      style={{ width: 60, padding: '4px 8px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12, textAlign: 'center', outline: 'none' }} />
-                    <span style={{ fontSize: 10, color: '#999' }}>元/万Token</span>
+                      style={{ width: 64, padding: '6px 8px', borderRadius: 10, border: '1.5px solid rgba(253,230,138,0.5)', fontSize: 12, textAlign: 'center', outline: 'none', background: 'rgba(255,255,255,0.8)', fontWeight: 600, color: '#78350f' }} />
+                    <span style={{ fontSize: 10, color: '#bbb' }}>元/万Token</span>
                   </div>
                 </div>
               </div>
-              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>👥 用户消耗明细</div>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 14, boxShadow: '0 2px 12px rgba(146,64,0,0.04), 0 1px 2px rgba(146,64,0,0.03)', border: '1px solid rgba(255,255,255,0.6)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#78350f', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 4, height: 14, borderRadius: 2, background: '#8b5cf6' }} />
+                  👥 用户消耗明细
+                </div>
                 {tokenUserRecords.map((user, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < tokenUserRecords.length - 1 ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: '#333' }}>{user.name} <span style={{ fontSize: 9, background: '#fef3c7', color: '#f59e0b', padding: '0 4px', borderRadius: 4 }}>Lv.{user.level}</span></div>
-                      <div style={{ fontSize: 10, color: '#999' }}>最近活跃：{user.lastActive}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#333' }}>
+                        {user.name}
+                        <span style={{ marginLeft: 4, fontSize: 9, background: 'rgba(254,243,199,0.8)', color: '#b45309', padding: '1px 5px', borderRadius: 5, fontWeight: 600 }}>Lv.{user.level}</span>
+                      </div>
+                      <div style={{ fontSize: 9, color: '#bbb', marginTop: 1 }}>最近活跃：{user.lastActive}</div>
                     </div>
-                    <div style={{ fontSize: 12, color: '#8b5cf6', fontWeight: 600 }}>{user.consumed.toLocaleString()} Token</div>
+                    <div style={{ fontSize: 13, color: '#8b5cf6', fontWeight: 700 }}>{user.consumed.toLocaleString()} <span style={{ fontSize: 9, color: '#bbb', fontWeight: 400 }}>Token</span></div>
                   </div>
                 ))}
               </div>
@@ -3102,43 +3147,52 @@ export default function PhonePage() {
           {/* 上帝视角 */}
           {adminTab === 'god' && (
             <div>
-              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>👁️ 全平台数据概览</div>
-                <div style={{ fontSize: 12, color: '#666', lineHeight: 2 }}>
-                  <div>📱 总用户数：<b>{totalUsers}</b></div>
-                  <div>🔥 今日活跃：<b>{todayActive}</b></div>
-                  <div>📝 总微博数：<b>{weiboData.length}</b></div>
-                  <div>💬 总评论数：<b>{weiboData.reduce((sum, p) => sum + p.comments.length, 0)}</b></div>
-                  <div>💎 累计消耗：<b>{tokenTotalConsumed.toLocaleString()} Token</b></div>
-                  <div>💰 总成本：<b>{totalCost}元</b></div>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 14, boxShadow: '0 2px 12px rgba(146,64,0,0.04), 0 1px 2px rgba(146,64,0,0.03)', border: '1px solid rgba(255,255,255,0.6)', marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#78350f', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 4, height: 14, borderRadius: 2, background: '#8b5cf6' }} />
+                  👁️ 全平台数据概览
+                </div>
+                <div style={{ fontSize: 11, color: '#666', lineHeight: 2.2 }}>
+                  <div>📱 总用户数：<b style={{ color: '#333' }}>{totalUsers}</b></div>
+                  <div>🔥 今日活跃：<b style={{ color: '#333' }}>{todayActive}</b></div>
+                  <div>📝 总微博数：<b style={{ color: '#333' }}>{weiboData.length}</b></div>
+                  <div>💬 总评论数：<b style={{ color: '#333' }}>{weiboData.reduce((sum, p) => sum + p.comments.length, 0)}</b></div>
+                  <div>💎 累计消耗：<b style={{ color: '#8b5cf6' }}>{tokenTotalConsumed.toLocaleString()} Token</b></div>
+                  <div>💰 总成本：<b style={{ color: '#f59e0b' }}>{totalCost}元</b></div>
                 </div>
               </div>
-              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>💬 A和B完整私聊历史</div>
-                <div style={{ maxHeight: 300, overflowY: 'auto', background: '#f8f8f8', borderRadius: 10, padding: 10 }}>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 14, boxShadow: '0 2px 12px rgba(146,64,0,0.04), 0 1px 2px rgba(146,64,0,0.03)', border: '1px solid rgba(255,255,255,0.6)', marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#78350f', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 4, height: 14, borderRadius: 2, background: '#ec4899' }} />
+                  💬 CP完整私聊历史
+                </div>
+                <div style={{ maxHeight: 250, overflowY: 'auto', background: 'rgba(248,245,237,0.8)', borderRadius: 10, padding: 10 }}>
                   {cpChatMessages.map(msg => (
-                    <div key={msg.id} style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: msg.from === 'A' ? 'rgba(245,158,11,0.2)' : 'rgba(236,72,153,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0 }}>
-                        {msg.from === 'A' ? '👨' : '👩'}
+                    <div key={msg.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                      <div style={{ width: 26, height: 26, borderRadius: '50%', background: msg.from === 'A' ? 'linear-gradient(135deg, #f59e0b, #fbbf24)' : 'linear-gradient(135deg, #ec4899, #f472b6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0, color: '#fff', fontWeight: 700 }}>
+                        {msg.from === 'A' ? '田' : '梓'}
                       </div>
                       <div>
-                        <span style={{ fontSize: 10, color: '#999' }}>{msg.from === 'A' ? '田栩宁' : '梓渝'}</span>
-                        <div style={{ fontSize: 12, color: '#333' }}>{msg.text}</div>
+                        <span style={{ fontSize: 9, color: '#bbb' }}>{msg.from === 'A' ? '田栩宁' : '梓渝'}</span>
+                        <div style={{ fontSize: 11, color: '#333', lineHeight: 1.5, background: msg.from === 'A' ? 'rgba(245,158,11,0.06)' : 'rgba(236,72,153,0.06)', padding: '4px 8px', borderRadius: 8 }}>{msg.text}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div style={{ background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>👥 用户主页查看</div>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 14, boxShadow: '0 2px 12px rgba(146,64,0,0.04), 0 1px 2px rgba(146,64,0,0.03)', border: '1px solid rgba(255,255,255,0.6)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#78350f', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 4, height: 14, borderRadius: 2, background: '#3b82f6' }} />
+                  👥 用户主页查看
+                </div>
                 {tokenUserRecords.map((user, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < tokenUserRecords.length - 1 ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(254,243,199,0.8), rgba(253,230,138,0.5))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, boxShadow: '0 2px 6px rgba(146,64,0,0.08)' }}>👤</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#333' }}>{user.name}</div>
-                      <div style={{ fontSize: 10, color: '#999' }}>Lv.{user.level} · 消耗 {user.consumed.toLocaleString()} Token</div>
+                      <div style={{ fontSize: 9, color: '#bbb' }}>Lv.{user.level} · 消耗 {user.consumed.toLocaleString()} Token</div>
                     </div>
-                    <button style={{ fontSize: 10, padding: '3px 10px', borderRadius: 8, background: '#f3f4f6', color: '#666', border: 'none', cursor: 'pointer' }}>查看</button>
+                    <button style={{ fontSize: 10, padding: '4px 12px', borderRadius: 8, background: 'rgba(0,0,0,0.04)', color: '#888', border: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer', fontWeight: 500 }}>查看</button>
                   </div>
                 ))}
               </div>
