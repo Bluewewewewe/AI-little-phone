@@ -1267,6 +1267,7 @@ export default function PhonePage() {
     topic?: string;
     expandedComments: boolean;
     commentsLoaded: boolean;
+    visibility?: 'public' | 'cp_only'; // public=所有人可见, cp_only=仅田雷梓渝AI可见
   }
   interface HotSearchItem {
     id: number;
@@ -1274,6 +1275,10 @@ export default function PhonePage() {
     heat: number;
     tag?: string;
     tagColor?: string;
+    type: 'entertainment' | 'social' | 'general';
+    detail?: string;       // 详细内容
+    detailImage?: string;  // 详情图片URL
+    posts?: WeiboPost[];   // 关联的帖子列表
   }
   interface WeiboAccount {
     nickname: string;
@@ -1284,16 +1289,19 @@ export default function PhonePage() {
 
   // 初始热搜榜
   const INITIAL_HOT_SEARCH: HotSearchItem[] = [
-    { id: 1, title: '8岁男孩走失全城寻人', heat: 8762000, tag: '沸', tagColor: '#ef4444' },
-    { id: 2, title: '你CP今晚官宣了', heat: 5431000, tag: '热', tagColor: '#f97316' },
-    { id: 3, title: '每日一善助学行动', heat: 2035000, tag: '新', tagColor: '#22c55e' },
-    { id: 4, title: 'AI小手机发布会', heat: 1873000 },
-    { id: 5, title: '老旧小区加装电梯新政', heat: 1568000 },
-    { id: 6, title: '某明星新歌上线', heat: 1452000 },
-    { id: 7, title: '周末暴雨预警', heat: 987000 },
-    { id: 8, title: '考研国家线预测', heat: 873000 },
-    { id: 9, title: '新开火锅店排队5小时', heat: 654000 },
-    { id: 10, title: '流浪猫救助站急需物资', heat: 542000 },
+    // --- 社会榜 ---
+    { id: 1, title: '8岁男孩走失全城寻人', heat: 8762000, tag: '沸', tagColor: '#ef4444', type: 'social', detail: '【紧急寻人】8岁男孩小明于今日下午3点在市中心走失，身穿蓝色T恤、白色短裤，身高约130cm。家人万分着急，恳请全城好心人帮忙留意！如有线索请拨打110或联系家属：138****6789。', posts: [] },
+    { id: 2, title: '每日一善助学行动', heat: 2035000, tag: '新', tagColor: '#22c55e', type: 'social', detail: '「每日一善」公益项目最新一期助学行动正式启动！本期将为山区100名贫困儿童提供全年学习用品和午餐补助。每份爱心200元，你的一份善意，可能是改变一个孩子命运的起点。参与方式：微博搜索"每日一善"进入公益页面。', posts: [] },
+    { id: 3, title: '老旧小区加装电梯新政', heat: 1568000, type: 'social', detail: '住建部发布最新政策：老旧小区加装电梯补贴提高至每部30万元，审批流程简化至15个工作日。覆盖全国300+城市，惠及2000万居民。你家小区符合条件吗？', posts: [] },
+    { id: 4, title: '周末暴雨预警', heat: 987000, type: 'social', detail: '气象台发布暴雨橙色预警：本周末华南、华东地区将迎来大到暴雨，局部地区降水量可达100mm以上。请广大市民做好防汛准备，减少外出，注意安全！', posts: [] },
+    { id: 5, title: '流浪猫救助站急需物资', heat: 542000, type: 'social', detail: '位于城西的"喵星人救助站"目前收留了200+只流浪猫，冬季来临急需猫粮、猫砂、保暖垫等物资。如果你也想为这些毛孩子出一份力，可以通过微博私信@喵星人救助站 了解捐赠方式。', posts: [] },
+    // --- 文娱榜 ---
+    { id: 6, title: '你CP今晚官宣了', heat: 5431000, tag: '热', tagColor: '#f97316', type: 'entertainment', detail: '【重磅】网传田栩宁和梓渝即将官宣！知情人士透露两人将于今晚8点在微博同步发博确认关系。CP粉集体沸腾，#你CP今晚官宣了# 话题阅读量已破5亿。是真是假，今晚见分晓！', posts: [] },
+    { id: 7, title: 'AI小手机发布会', heat: 1873000, type: 'entertainment', detail: 'AI小手机2.0版本发布会在即！新增家园系统、外卖平台、世界观切换等重磅功能。CP粉表示：终于可以在手机里给田栩宁和梓渝点外卖了！', posts: [] },
+    { id: 8, title: '某明星新歌上线', heat: 1452000, type: 'entertainment', detail: '梓渝新歌《逆光》今日0点全网上线！MV由田栩宁友情出演，两人在MV中的对视镜头让粉丝尖叫不止。网易云/QQ音乐/酷狗同步上线，快去支持！', posts: [] },
+    // --- 总榜（综合） ---
+    { id: 9, title: '考研国家线预测', heat: 873000, type: 'general', detail: '2026考研国家线最新预测出炉！教育学、法学预计上涨5-8分，工学预计持平或微降。各位考研人稳住心态，最后一公里加油！', posts: [] },
+    { id: 10, title: '新开火锅店排队5小时', heat: 654000, type: 'general', detail: '网红火锅品牌"辣到飞起"在城南开出第8家分店，开业首日排队超5小时。据说他家毛肚是空运过来的，锅底配方是三代祖传。有人已经去打卡了吗？', posts: [] },
   ];
 
   const [weiboData, setWeiboData] = useState<WeiboPost[]>([
@@ -1319,6 +1327,13 @@ export default function PhonePage() {
   const [weiboProfileNick, setWeiboProfileNick] = useState('');
   const [weiboProfileBio, setWeiboProfileBio] = useState('');
   const [weiboProfileAvatar, setWeiboProfileAvatar] = useState('😎');
+  // 热搜Tab：all=总榜, entertainment=文娱榜, social=社会榜
+  const [hotSearchTab, setHotSearchTab] = useState<'all' | 'entertainment' | 'social'>('all');
+  // 热搜详情展开
+  const [expandedHotItem, setExpandedHotItem] = useState<number | null>(null);
+  // 话题页：查看某个话题下的所有帖子
+  const [topicPage, setTopicPage] = useState<string | null>(null);
+  const [topicPosts, setTopicPosts] = useState<WeiboPost[]>([]);
   const weiboNextId = useRef(100);
 
   // 热搜热度变化：用户操作时触发
@@ -1963,6 +1978,7 @@ export default function PhonePage() {
         topic: weiboPostTopic || undefined,
         expandedComments: false,
         commentsLoaded: true,
+        visibility: 'cp_only', // 用户帖子仅田雷/梓渝/AI可见
       };
       setWeiboData(prev => [newPost, ...prev]);
       setWeiboPostText('');
@@ -2027,32 +2043,164 @@ export default function PhonePage() {
       </div>
     );
 
-    // 热搜榜组件
-    const renderHotSearch = () => (
-      <div style={{ padding: '0 12px 12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>🔥 微博热搜</span>
-          <span style={{ fontSize: 10, color: '#999' }}>实时更新</span>
-        </div>
-        {weiboHotSearch.map((item, idx) => (
-          <div key={item.id} style={{ display: 'flex', alignItems: 'center', padding: '8px 4px', borderBottom: '1px solid rgba(0,0,0,0.04)', cursor: 'pointer' }}
-            onClick={() => {
-              bumpHotSearch(item.title);
-              setWeiboPostTopic(item.title);
-              setShowWeiboPost(true);
-            }}>
-            <span style={{ width: 20, fontSize: 13, fontWeight: 700, color: idx < 3 ? '#ef4444' : '#999', flexShrink: 0 }}>{idx + 1}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {item.title}
-                {item.tag && <span style={{ marginLeft: 4, fontSize: 9, background: item.tagColor || '#f97316', color: '#fff', padding: '0 4px', borderRadius: 3, verticalAlign: 'middle' }}>{item.tag}</span>}
-              </div>
-              <div style={{ fontSize: 10, color: '#999', marginTop: 1 }}>{formatHeat(item.heat)}</div>
-            </div>
+    // 热搜榜组件 - 三榜切换 + 展开详情
+    const renderHotSearch = () => {
+      const filtered = weiboHotSearch.filter(item => {
+        if (hotSearchTab === 'all') return true;
+        if (hotSearchTab === 'entertainment') return item.type === 'entertainment';
+        if (hotSearchTab === 'social') return item.type === 'social' || item.type === 'general';
+        return true;
+      });
+      const tabLabel = hotSearchTab === 'all' ? '总榜' : hotSearchTab === 'entertainment' ? '文娱榜' : '社会榜';
+      const tabIcon = hotSearchTab === 'all' ? '🏆' : hotSearchTab === 'entertainment' ? '🎬' : '🤝';
+      return (
+        <div style={{ padding: '0 12px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>{tabIcon} 微博{tabLabel}</span>
+            <span style={{ fontSize: 10, color: '#999' }}>实时更新</span>
           </div>
-        ))}
-      </div>
-    );
+          {/* Tab切换 */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            {(['all', 'entertainment', 'social'] as const).map(tab => {
+              const labels = { all: '🏆 总榜', entertainment: '🎬 文娱榜', social: '🤝 社会榜' };
+              const active = hotSearchTab === tab;
+              return (
+                <button key={tab} onClick={() => { setHotSearchTab(tab); setExpandedHotItem(null); }}
+                  style={{
+                    padding: '5px 12px', borderRadius: 16, fontSize: 10, fontWeight: active ? 700 : 500,
+                    cursor: 'pointer', border: active ? '1.5px solid #f59e0b' : '1px solid rgba(0,0,0,0.08)',
+                    background: active ? 'rgba(254,243,199,0.8)' : 'rgba(255,255,255,0.6)',
+                    color: active ? '#92400e' : '#888', transition: 'all 0.2s',
+                  }}>{labels[tab]}</button>
+              );
+            })}
+          </div>
+          {filtered.map((item, idx) => {
+            const isExpanded = expandedHotItem === item.id;
+            return (
+              <div key={item.id}>
+                <div style={{ display: 'flex', alignItems: 'center', padding: '8px 4px', borderBottom: isExpanded ? 'none' : '1px solid rgba(0,0,0,0.04)', cursor: 'pointer' }}
+                  onClick={() => {
+                    setExpandedHotItem(isExpanded ? null : item.id);
+                    bumpHotSearch(item.title);
+                  }}>
+                  <span style={{ width: 20, fontSize: 13, fontWeight: 700, color: idx < 3 ? '#ef4444' : '#999', flexShrink: 0 }}>{idx + 1}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.title}
+                      {item.tag && <span style={{ marginLeft: 4, fontSize: 9, background: item.tagColor || '#f97316', color: '#fff', padding: '0 4px', borderRadius: 3, verticalAlign: 'middle' }}>{item.tag}</span>}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#999', marginTop: 1 }}>{formatHeat(item.heat)}</div>
+                  </div>
+                  <span style={{ fontSize: 14, color: '#ccc', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}>▾</span>
+                </div>
+                {/* 展开详情 */}
+                {isExpanded && (
+                  <div style={{ marginLeft: 24, padding: '10px 14px', marginBottom: 8, background: 'rgba(255,255,255,0.75)', borderRadius: 12, border: '1px solid rgba(253,230,138,0.4)', boxShadow: '0 2px 8px rgba(146,64,0,0.04)' }}>
+                    {/* 标签 */}
+                    <div style={{ marginBottom: 6 }}>
+                      <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 10, background: item.type === 'social' ? '#dcfce7' : item.type === 'entertainment' ? '#fef3c7' : '#f3f4f6', color: item.type === 'social' ? '#166534' : item.type === 'entertainment' ? '#92400e' : '#666', fontWeight: 600 }}>
+                        {item.type === 'social' ? '🤝 社会榜' : item.type === 'entertainment' ? '🎬 文娱榜' : '🏆 总榜'}
+                      </span>
+                    </div>
+                    {/* 详情文字 */}
+                    <div style={{ fontSize: 12, lineHeight: 1.7, color: '#444', marginBottom: 8 }}>{item.detail || '暂无详细内容'}</div>
+                    {/* 详情图片 */}
+                    {item.detailImage && (
+                      <div style={{ marginBottom: 8, borderRadius: 10, overflow: 'hidden' }}>
+                        <img src={item.detailImage} alt={item.title} style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10 }} />
+                      </div>
+                    )}
+                    {/* 操作按钮 */}
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => { setTopicPage(item.title); }}
+                        style={{ flex: 1, padding: '7px 12px', borderRadius: 8, background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', border: 'none', fontWeight: 600, fontSize: 10, cursor: 'pointer', boxShadow: '0 2px 6px rgba(245,158,11,0.2)' }}>
+                        📖 查看词条帖子
+                      </button>
+                      <button onClick={() => { setWeiboPostTopic(item.title); setShowWeiboPost(true); }}
+                        style={{ flex: 1, padding: '7px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.8)', color: '#92400e', border: '1px solid rgba(245,158,11,0.3)', fontWeight: 600, fontSize: 10, cursor: 'pointer' }}>
+                        ✍️ 发帖参与
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    };
+
+    // 话题页：查看某个话题下所有帖子
+    const renderTopicPage = () => {
+      if (!topicPage) return null;
+      // 收集所有带这个话题的帖子
+      const relatedPosts = weiboData.filter(p =>
+        p.topic === topicPage ||
+        p.text.includes(topicPage) ||
+        (p.text.includes('#') && topicPage.includes(p.text.split('#')[1]?.split('#')[0] || ''))
+      );
+      const allPosts = relatedPosts.length > 0 ? relatedPosts : topicPosts;
+      // 模拟生成一些AI评论帖
+      const aiGeneratedPosts: WeiboPost[] = topicPosts.length === 0 && relatedPosts.length === 0 ? [
+        { id: 9001, avatar: '🌽', name: '甜玉米1号', time: '刚刚', text: `#${topicPage}# 这个话题太有讨论价值了！大家怎么看？`, color: '#22c55e', likes: 234, iLiked: false, comments: [
+          { id: 99001, avatar: '🍯', from: '蜜糖CP粉', text: '我觉得这波必须支持！', time: '1分钟前', likes: 45, iLiked: false },
+          { id: 99002, avatar: '💕', from: '宇宙第一甜', text: '同意+1 真的好有爱', time: '刚刚', likes: 23, iLiked: false },
+        ], reposts: 89, expandedComments: false, commentsLoaded: true },
+        { id: 9002, avatar: '🔥', name: 'CP前线记者', time: '5分钟前', text: `刚看到#${topicPage}# 这个话题冲上热搜了！作为前线记者我来报道一下`, color: '#ef4444', likes: 567, iLiked: false, comments: [
+          { id: 99003, avatar: '🎀', from: '甜甜的小粉丝', text: '记者大大辛苦了！', time: '3分钟前', likes: 12, iLiked: false },
+        ], reposts: 156, expandedComments: false, commentsLoaded: true },
+      ] : [];
+      const displayPosts = allPosts.length > 0 ? allPosts : aiGeneratedPosts;
+      return (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 55, background: '#fef9ee', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* 顶部导航 */}
+          <div className="status-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px 10px', background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+            <button onClick={() => { setTopicPage(null); setTopicPosts([]); }}
+              style={{ fontSize: 20, background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1 }}>←</button>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#78350f', flex: 1, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>#{topicPage}#</span>
+            <button onClick={() => { setWeiboPostTopic(topicPage); setShowWeiboPost(true); }}
+              style={{ fontSize: 20, background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1 }}>✍️</button>
+          </div>
+          {/* 帖子列表 */}
+          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+            {displayPosts.map(post => (
+              <div key={post.id} style={{ padding: '12px 16px', borderBottom: '4px solid #f5f5f5', background: '#fff' }}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: post.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{post.avatar}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: post.color }}>{post.name}</span>
+                      {post.verified && <span style={{ fontSize: 9, background: post.color, color: '#fff', padding: '0 4px', borderRadius: 3 }}>V</span>}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#999', marginTop: 1 }}>{post.time}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, lineHeight: 1.6, color: '#333', marginTop: 8, wordBreak: 'break-word' }}>
+                  {post.text.split('#').map((part, i) =>
+                    i % 2 === 1
+                      ? <span key={i} style={{ color: '#f59e0b', fontWeight: 500, cursor: 'pointer' }} onClick={() => { setTopicPage(part); }}>#{part}#</span>
+                      : part
+                  )}
+                </div>
+                {/* 评论 */}
+                {post.comments.length > 0 && (
+                  <div style={{ marginTop: 8, padding: '8px 10px', background: 'rgba(254,243,199,0.2)', borderRadius: 10, border: '1px solid rgba(253,230,138,0.2)' }}>
+                    {post.comments.map(c => (
+                      <div key={c.id} style={{ padding: '4px 0', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#f59e0b' }}>{c.avatar} {c.from}</span>
+                        <span style={{ fontSize: 10, color: '#999', marginLeft: 4 }}>{c.time}</span>
+                        <div style={{ fontSize: 12, color: '#555', marginTop: 1 }}>{c.text}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
 
     // 微博卡片
     const renderWeiboCard = (item: WeiboPost) => {
@@ -2252,8 +2400,13 @@ export default function PhonePage() {
             );
           })}
         </div>
-        {/* 微博时间线 */}
-        {weiboData.map(item => renderWeiboCard(item))}
+        {/* 话题页 */}
+        {topicPage && renderTopicPage()}
+        {/* 微博时间线 - 过滤：只显示公开帖 + 用户自己的cp_only帖 */}
+        {weiboData.filter(item => {
+          if (item.visibility !== 'cp_only') return true; // 公开帖全部可见
+          return item.name === weiboAccount.nickname; // cp_only帖仅作者自己可见
+        }).map(item => renderWeiboCard(item))}
       </div>
     );
 
@@ -3102,20 +3255,42 @@ export default function PhonePage() {
                   🔥 热搜榜管理
                 </div>
                 {weiboHotSearch.map((item, idx) => (
-                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-                    <span style={{ width: 20, fontSize: 12, fontWeight: 800, color: idx < 3 ? '#ef4444' : idx < 5 ? '#f59e0b' : '#bbb', flexShrink: 0, textAlign: 'center' }}>{idx + 1}</span>
-                    <span style={{ flex: 1, fontSize: 10, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
-                      {item.title}
-                      {item.tag && <span style={{ marginLeft: 3, fontSize: 7, background: item.tagColor || '#f97316', color: '#fff', padding: '1px 4px', borderRadius: 3, fontWeight: 600, verticalAlign: 'middle' }}>{item.tag}</span>}
-                    </span>
-                    <button onClick={() => {
-                      setWeiboHotSearch(prev => {
-                        const updated = [item, ...prev.filter(p => p.id !== item.id)];
-                        return updated.map((h, i) => ({ ...h, id: i + 1 }));
-                      });
-                    }} style={{ fontSize: 8, padding: '3px 8px', borderRadius: 8, background: adminHotSearchLocked.includes(item.id) ? 'rgba(254,243,199,0.8)' : 'rgba(0,0,0,0.04)', color: adminHotSearchLocked.includes(item.id) ? '#f59e0b' : '#888', border: 'none', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      {adminHotSearchLocked.includes(item.id) ? '📌 已置顶' : '置顶'}
-                    </button>
+                  <div key={item.id} style={{ display: 'flex', flexDirection: 'column', padding: '6px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ width: 20, fontSize: 12, fontWeight: 800, color: idx < 3 ? '#ef4444' : idx < 5 ? '#f59e0b' : '#bbb', flexShrink: 0, textAlign: 'center' }}>{idx + 1}</span>
+                      <span style={{ flex: 1, fontSize: 10, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
+                        {item.title}
+                        {item.tag && <span style={{ marginLeft: 3, fontSize: 7, background: item.tagColor || '#f97316', color: '#fff', padding: '1px 4px', borderRadius: 3, fontWeight: 600, verticalAlign: 'middle' }}>{item.tag}</span>}
+                      </span>
+                      <button onClick={() => {
+                        setWeiboHotSearch(prev => {
+                          const updated = [item, ...prev.filter(p => p.id !== item.id)];
+                          return updated.map((h, i) => ({ ...h, id: i + 1 }));
+                        });
+                      }} style={{ fontSize: 8, padding: '3px 8px', borderRadius: 8, background: adminHotSearchLocked.includes(item.id) ? 'rgba(254,243,199,0.8)' : 'rgba(0,0,0,0.04)', color: adminHotSearchLocked.includes(item.id) ? '#f59e0b' : '#888', border: 'none', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {adminHotSearchLocked.includes(item.id) ? '📌 已置顶' : '置顶'}
+                      </button>
+                      <button onClick={() => {
+                        const title = prompt('修改标题:', item.title);
+                        if (title !== null) {
+                          setWeiboHotSearch(prev => prev.map(h => h.id === item.id ? { ...h, title } : h));
+                        }
+                      }} style={{ fontSize: 8, padding: '3px 6px', borderRadius: 8, background: 'rgba(0,0,0,0.04)', color: '#888', border: 'none', cursor: 'pointer' }}>✏️</button>
+                      <button onClick={() => {
+                        const detail = prompt('修改详情内容:', item.detail || '');
+                        if (detail !== null) {
+                          setWeiboHotSearch(prev => prev.map(h => h.id === item.id ? { ...h, detail } : h));
+                        }
+                      }} style={{ fontSize: 8, padding: '3px 6px', borderRadius: 8, background: 'rgba(0,0,0,0.04)', color: '#888', border: 'none', cursor: 'pointer' }}>📝</button>
+                      <button onClick={() => {
+                        const imgUrl = prompt('添加图片URL（留空则清除）:', item.detailImage || '');
+                        if (imgUrl !== null) {
+                          setWeiboHotSearch(prev => prev.map(h => h.id === item.id ? { ...h, detailImage: imgUrl || undefined } : h));
+                        }
+                      }} style={{ fontSize: 8, padding: '3px 6px', borderRadius: 8, background: item.detailImage ? 'rgba(16,185,129,0.1)' : 'rgba(0,0,0,0.04)', color: item.detailImage ? '#10b981' : '#888', border: 'none', cursor: 'pointer' }}>{item.detailImage ? '🖼️' : '🖼️+'}</button>
+                    </div>
+                    {item.detail && <div style={{ fontSize: 8, color: '#888', marginTop: 3, marginLeft: 28, lineHeight: 1.3, maxHeight: 24, overflow: 'hidden' }}>{item.detail.slice(0, 60)}</div>}
+                    {item.detailImage && <div style={{ marginLeft: 28, marginTop: 4, width: 60, height: 36, borderRadius: 6, background: `url(${item.detailImage}) center/cover`, border: '1px solid rgba(0,0,0,0.06)' }} />}
                   </div>
                 ))}
               </div>
