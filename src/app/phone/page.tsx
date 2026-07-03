@@ -3,13 +3,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   UnlockState, DEFAULT_UNLOCK_STATE, IDENTITY_QUESTIONS,
+} from '@/lib/unlock-config';
+import { DEBUG_ENABLED, DEBUG_LEVELS, parseDebugParams, applyDebugLevel } from '@/lib/debug-config';
+import { loadChatMemory, getMemoryContext, getRecentMemories, addMemoryBatch } from '@/lib/chat-memory';
+import { getPublicMemories, submitPromotionCandidate } from '@/lib/public-memory';
+import {
+  refreshWeiboData, generateSimComments, rollEasterEgg, getSuperTopicData,
+} from '@/lib/weibo-simulator';
+import { needsRefresh as needsNewsRefresh, getLastUpdateDescription } from '@/lib/news-fetcher';
+import {
   checkUnlock, buildIdentityContext, LOCKED_AVAILABLE_APPS, UNLOCK_ONLY_APPS,
   isAdminPassword,
   SECRET_NAMES, DEFAULT_NAMES,
 } from '@/lib/unlock-config';
-import { getRecentMemories, addMemoryBatch, getMemoryContext, clearChatMemory, loadChatMemory } from '@/lib/chat-memory';
-import { DEBUG_ENABLED, DEBUG_LEVELS, parseDebugParams, applyDebugLevel } from '@/lib/debug-config';
-import { getPublicMemories, getPublicMemoryContext, submitPromotionCandidate } from '@/lib/public-memory';
 
 // ========== Types ==========
 interface Message {
@@ -418,6 +424,68 @@ export default function PhonePage() {
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [showDebugPanel]);
+
+  // ========== 微博模拟系统 ==========
+  const [weiboSim, setWeiboSim] = useState({
+    heat: 23000, likes: 18000, comments: 4200, reposts: 6000,
+    currentHashtag: null as { text: string; tier: string; heat: number } | null,
+    subHashtags: [] as { text: string; tier: string; heat: number }[],
+    timeline: '刚刚', simComments: [] as ReturnType<typeof generateSimComments>,
+    easterEgg: null as ReturnType<typeof rollEasterEgg>,
+    superTopic: { name: '田雷梓渝超话', checkInCount: 98000, postCount: 1350000, fansCount: 650000, rank: 2 },
+  });
+  const [weiboRefreshing, setWeiboRefreshing] = useState(false);
+  const [lastNewsUpdate, setLastNewsUpdate] = useState('2025.07 第1周');
+  const weiboRefreshTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // 微博自动刷新（每30秒）
+  useEffect(() => {
+    if (!mounted) return;
+    const doRefresh = async () => {
+      try {
+        const res = await fetch('/api/weibo/refresh');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) {
+            setWeiboSim(prev => ({
+              ...prev,
+              heat: json.data.heat,
+              likes: json.data.likes,
+              comments: json.data.comments,
+              reposts: json.data.reposts,
+              currentHashtag: json.data.currentHashtag,
+              subHashtags: json.data.subHashtags,
+              timeline: json.data.timeline,
+              simComments: json.data.simComments,
+              easterEgg: json.data.easterEgg,
+              superTopic: json.data.superTopic,
+            }));
+          }
+        }
+      } catch { /* 静默失败 */ }
+    };
+    doRefresh();
+    weiboRefreshTimer.current = setInterval(doRefresh, 30000);
+    return () => { if (weiboRefreshTimer.current) clearInterval(weiboRefreshTimer.current); };
+  }, [mounted]);
+
+  // ========== 新闻自动刷新检测 ==========
+  const [newsUpdateInfo, setNewsUpdateInfo] = useState('检测中…');
+  useEffect(() => {
+    if (!mounted) return;
+    const checkNews = async () => {
+      try {
+        const res = await fetch('/api/news/refresh');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) {
+            setNewsUpdateInfo(json.data.lastUpdated);
+          }
+        }
+      } catch { setNewsUpdateInfo('（离线）'); }
+    };
+    checkNews();
+  }, [mounted]);
 
   // ========== 双层记忆系统 ==========
   const [publicMemories, setPublicMemories] = useState<Record<string, string[]>>({});
@@ -2039,6 +2107,29 @@ export default function PhonePage() {
               </div>
             );
           })}
+          {/* 超话数据 & 新闻更新信息 */}
+          {weiboSim && weiboSim.superTopic && (
+            <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(255,255,255,0.55)', borderRadius: 10, border: '1px solid rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 14 }}>💫</span>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: '#666' }}>{weiboSim.superTopic.name}</div>
+                  <div style={{ fontSize: 9, color: '#999' }}>
+                    📝 {formatHeat(weiboSim.superTopic.postCount)}帖子 · 👥 {formatHeat(weiboSim.superTopic.checkInCount)}签到
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => { setTopicPage(weiboSim.superTopic!.name); }}
+                style={{ fontSize: 9, padding: '3px 10px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', color: '#b45309', border: 'none', fontWeight: 600, cursor: 'pointer' }}>
+                进入超话 →
+              </button>
+            </div>
+          )}
+          {lastNewsUpdate && (
+            <div style={{ marginTop: 6, padding: '4px 8px', fontSize: 9, color: '#aaa', textAlign: 'right' }}>
+              📰 社会榜更新于 {lastNewsUpdate}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -2053,11 +2144,23 @@ export default function PhonePage() {
       });
       const tabLabel = hotSearchTab === 'all' ? '总榜' : hotSearchTab === 'entertainment' ? '文娱榜' : '社会榜';
       const tabIcon = hotSearchTab === 'all' ? '🏆' : hotSearchTab === 'entertainment' ? '🎬' : '🤝';
+      // 获取当前榜的模拟数据
+      const simData = weiboSim;
       return (
         <div style={{ padding: '0 12px 12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>{tabIcon} 微博{tabLabel}</span>
-            <span style={{ fontSize: 10, color: '#999' }}>实时更新</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>{tabIcon} 微博{tabLabel}</span>
+              {simData && (
+                <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: '#fef3c7', color: '#b45309', fontWeight: 600 }}>
+                  🔥 {formatHeat(simData.heat)}
+                </span>
+              )}
+            </div>
+            <button onClick={() => refreshWeiboData()}
+              style={{ fontSize: 10, padding: '3px 10px', borderRadius: 10, background: weiboRefreshing ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.7)', color: weiboRefreshing ? '#b45309' : '#999', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer', transition: 'all 0.3s', fontWeight: 500 }}>
+              {weiboRefreshing ? '⏳ 刷新中' : '🔄 刷新'}
+            </button>
           </div>
           {/* Tab切换 */}
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
@@ -2109,6 +2212,32 @@ export default function PhonePage() {
                     {item.detailImage && (
                       <div style={{ marginBottom: 8, borderRadius: 10, overflow: 'hidden' }}>
                         <img src={item.detailImage} alt={item.title} style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10 }} />
+                      </div>
+                    )}
+                    {/* 模拟评论区 — CP粉/路人/毒唯/乐子人 */}
+                    {simData && (
+                      <div style={{ marginBottom: 10, padding: '8px 10px', background: 'rgba(255,255,255,0.5)', borderRadius: 10, border: '1px solid rgba(0,0,0,0.05)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: '#888' }}>💬 精选评论</span>
+                          <span style={{ fontSize: 9, color: '#aaa' }}>
+                            ❤️ {formatHeat(simData.likes)} · 💬 {formatHeat(simData.comments)} · 🔄 {formatHeat(simData.reposts)}
+                          </span>
+                        </div>
+                        {simData.simComments.slice(0, 3).map((c: { avatar: string; persona: string; text: string; time: string }, ci: number) => (
+                          <div key={ci} style={{ display: 'flex', gap: 6, padding: '4px 0', borderBottom: ci < 2 ? '1px solid rgba(0,0,0,0.03)' : 'none' }}>
+                            <span style={{ fontSize: 12, flexShrink: 0 }}>{c.avatar}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 1 }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, color: c.persona === 'CP粉' ? '#dc2626' : c.persona === '毒唯' ? '#6b7280' : c.persona === '乐子人' ? '#b45309' : '#0284c7' }}>{c.persona}</span>
+                                <span style={{ fontSize: 8, padding: '0 4px', borderRadius: 4, background: c.persona === 'CP粉' ? '#fee2e2' : c.persona === '毒唯' ? '#f3f4f6' : c.persona === '乐子人' ? '#fef3c7' : '#e0f2fe', color: c.persona === 'CP粉' ? '#dc2626' : c.persona === '毒唯' ? '#6b7280' : c.persona === '乐子人' ? '#b45309' : '#0284c7', fontWeight: 500 }}>
+                                  {c.persona}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: 11, color: '#555', lineHeight: 1.5 }}>{c.text}</div>
+                              <div style={{ fontSize: 9, color: '#bbb', marginTop: 2 }}>{c.time}</div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                     {/* 操作按钮 */}
