@@ -3327,16 +3327,16 @@ export default function PhonePage() {
   // ========== LPMI 人格测试 ==========
   function renderLpmi() {
     return (
-      <div className="app-screen" style={{ background: '#365314' }}>
-        <div className="app-header" style={{ background: '#365314', color: '#fff' }}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#365314' }}>
+        <div className="app-header" style={{ background: '#365314', color: '#fff', flexShrink: 0 }}>
           <button className="app-back-btn" onClick={() => setCurrentApp(null)}>返回</button>
           <div className="app-title" style={{ color: '#fff' }}>LPMI · 纯爱磕CP</div>
           <div className="app-header-actions" />
         </div>
-        <div style={{ width: '100%', height: 'calc(100% - 56px)', overflow: 'hidden' }}>
+        <div style={{ flex: 1, width: '100%', overflow: 'hidden', position: 'relative' }}>
           <iframe
             src="/lpmi/index.html"
-            style={{ width: '100%', height: '100%', border: 'none' }}
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
             title="LPMI 人格测试"
           />
         </div>
