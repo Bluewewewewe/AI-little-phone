@@ -209,6 +209,7 @@ const PAGE2_APPS = [
   { id: 'call', emoji: '📞', label: '通话', color: '#06b6d4' },
   { id: 'browser', emoji: '🌐', label: '浏览器', color: '#6366f1' },
   { id: 'shopping', emoji: '🛒', label: '啪多多', color: '#dc2626' },
+  { id: 'lpmi', emoji: '🌽', label: 'LPMI测试', color: '#365314' },
 ];
 const DOCK_APPS = [
   { id: 'call', emoji: '📞', color: '#06b6d4' },
@@ -227,7 +228,7 @@ function getAppLabel(id: string, unlocked: boolean): string {
     family: '家庭群', dad: '爸爸', mom: '妈咪',
     moments: '朋友圈', weibo: '微博', home: '家里',
     pet: '宠物', dressup: '换装', me: '我的',
-    worldbook: '世界书', call: '通话', browser: '浏览器', music: '音乐', shopping: '啪多多',
+    worldbook: '世界书', call: '通话', browser: '浏览器', music: '音乐', shopping: '啪多多', lpmi: 'LPMI测试',
   };
   return map[id] || id;
 }
@@ -3221,6 +3222,26 @@ export default function PhonePage() {
     );
   }
 
+  // ========== LPMI 人格测试 ==========
+  function renderLpmi() {
+    return (
+      <div className="app-screen" style={{ background: '#365314' }}>
+        <div className="app-header" style={{ background: '#365314', color: '#fff' }}>
+          <button className="app-back-btn" onClick={() => setCurrentApp(null)}>返回</button>
+          <div className="app-title" style={{ color: '#fff' }}>LPMI · 纯爱磕CP</div>
+          <div className="app-header-actions" />
+        </div>
+        <div style={{ width: '100%', height: 'calc(100% - 56px)', overflow: 'hidden' }}>
+          <iframe
+            src="/lpmi/index.html"
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            title="LPMI 人格测试"
+          />
+        </div>
+      </div>
+    );
+  }
+
   // ========== 啪多多购物平台渲染 ==========
   function renderShopping() {
     const filteredProducts = shopCategory === '全部'
@@ -3719,6 +3740,7 @@ export default function PhonePage() {
       case 'browser': return renderBrowser();
       case 'music': return renderMusic();
       case 'shopping': return renderShopping();
+      case 'lpmi': return renderLpmi();
       default: return <div className="empty-state"><div className="empty-emoji">📱</div>APP开发中</div>;
     }
   }

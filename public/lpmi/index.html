@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5"
+    />
+    <meta name="theme-color" content="#365314" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>LPMI 人格测试 · 甜玉米版</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <button type="button" class="icon-btn" id="btn-close" aria-label="关闭" title="占位">×</button>
+      <h1 class="app-title">LPMI · 纯爱磕 CP</h1>
+      <button type="button" class="icon-btn" aria-label="更多" title="占位">⋯</button>
+    </header>
+
+    <main class="main">
+      <!-- 介绍（可直接改 #intro-body 内文字） -->
+      <section id="screen-intro" class="screen screen-intro">
+        <div class="intro-hero">
+          <p class="intro-kicker">雷朋向情景题 · 约 3 分钟</p>
+          <h2 class="intro-logo">LPMI</h2>
+          <p class="intro-tagline">甜玉米版</p>
+          <ul class="intro-dims" aria-label="四个维度">
+            <li>
+              <span class="dim-chip">L</span>
+              <span class="dim-name-wrap">
+                <span class="dim-name">考古囤糖</span>
+                <span class="dim-en">Lore</span>
+              </span>
+            </li>
+            <li>
+              <span class="dim-chip">P</span>
+              <span class="dim-name-wrap">
+                <span class="dim-name">脑补剧场</span>
+                <span class="dim-en">Plot</span>
+              </span>
+            </li>
+            <li>
+              <span class="dim-chip">M</span>
+              <span class="dim-name-wrap">
+                <span class="dim-name">显微镜</span>
+                <span class="dim-en">Meticulous</span>
+              </span>
+            </li>
+            <li>
+              <span class="dim-chip">I</span>
+              <span class="dim-name-wrap">
+                <span class="dim-name">情绪烈度</span>
+                <span class="dim-en">Intensity</span>
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <article class="card intro-card">
+          <h3 class="intro-title">
+            <span class="intro-title-icon" aria-hidden="true">✦</span>
+            测试说明
+          </h3>
+          <div id="intro-body" class="intro-body">
+            <p class="intro-dims-expl">
+              <strong>LPMI</strong> 四个字母对应英文与含义如下：
+            </p>
+            <p class="intro-dims-expl">
+              <strong>L · Lore</strong><br />
+              考古倾向：挖旧糖、恋旧、囤糖<br />
+              <span class="dim-poles-line">「考古·囤糖」↔ 「当下」</span>
+              <span class="dim-poles-en">（Lore / Present）</span>
+            </p>
+            <p class="intro-dims-expl">
+              <strong>P · Plot</strong><br />
+              脑补功率：空气编剧、甜向脑洞、日常小剧场<br />
+              <span class="dim-poles-line">「脑补·剧场」↔ 「所见即所得」</span>
+              <span class="dim-poles-en">（Plot / Literal）</span>
+            </p>
+            <p class="intro-dims-expl">
+              <strong>M · Meticulous</strong><br />
+              证据门槛：显微镜、讲证据、理糖点<br />
+              <span class="dim-poles-line">「显微镜·证据」↔ 「同框即婚」</span>
+              <span class="dim-poles-en">（Evidence / Ship）</span>
+            </p>
+            <p class="intro-dims-expl">
+              <strong>I · Intensity</strong><br />
+              情绪烈度：尖叫、分享欲 ↔ 冷静、佛系<br />
+              <span class="dim-poles-line">「发癫·分享」↔ 「冷静佛系」</span>
+              <span class="dim-poles-en">（Intensity / Calm）</span>
+            </p>
+            <p>
+              共 <strong>20</strong> 道雷朋向情景题，选最贴近的一项即可；无标准答案，测出来仅供嗷呜嗷呜。
+            </p>
+          </div>
+        </article>
+
+        <div class="intro-actions">
+          <button type="button" class="btn primary btn-start-glow" id="btn-start">开始测试</button>
+        </div>
+      </section>
+
+      <!-- 答题 -->
+      <section id="screen-quiz" class="screen hidden">
+        <p class="quiz-intro">
+          共 <span id="total-q">20</span> 题，请选择最贴近的一项。
+        </p>
+        <div class="progress-wrap">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <article class="card question-card">
+          <p class="q-meta">第 <span id="q-index">1</span> 题</p>
+          <h2 class="q-text" id="q-text"></h2>
+          <div class="options" id="options"></div>
+          <p class="q-whisper">wf身体冷冷的，多半是……</p>
+        </article>
+      </section>
+
+      <!-- 结果 -->
+      <section id="screen-result" class="screen hidden" aria-live="polite">
+        <div class="result-hero card">
+          <p class="eyebrow">你的人格类型是：</p>
+          <h2 class="type-name-cn" id="res-name-cn">——</h2>
+          <div id="res-char-portrait" class="res-char-portrait" hidden></div>
+          <p class="type-code" id="res-code">????</p>
+          <p class="type-tagline" id="res-tagline">——</p>
+        </div>
+
+        <div class="card task-card" id="res-task-card" aria-label="随机搞笑小任务">
+          <p class="task-kicker">所有米米拿出智能手机做任务！</p>
+          <p class="task-body" id="res-task-body"></p>
+          
+        </div>
+
+        <div class="card">
+          <h3 class="section-title-sm">类型解读</h3>
+          <div id="res-essay" class="res-essay" aria-live="polite"></div>
+        </div>
+
+        <article class="card credits-card">
+          <h3 class="intro-title">
+            <span class="intro-title-icon" aria-hidden="true">◇</span>
+            网页制作
+          </h3>
+          <p class="credits-body">
+            本网页由 <strong>米米宇宙研发组</strong> 制作，供米米同好自测娱乐。
+          </p>
+        </article>
+
+        <article class="card official-card">
+          <h3 class="intro-title">
+            <span class="intro-title-icon" aria-hidden="true">✦</span>
+            关注官号 · 全平台
+          </h3>
+          <p class="official-intro">
+            我们是米老师运营团队，带大家主动汲取知识，成长成为更好的自己。<br /><br />
+            我们的口号是：<br />
+            学成归来当大佬，<br />
+            雷朋道上米米保！
+          </p>
+          <p class="muted small official-intro-hint">
+            点击下图前往各平台账号；本测试仅供娱乐，请理性交流。
+          </p>
+          <div class="social-grid" aria-label="官号入口">
+            <a
+              class="social-tile"
+              href="https://v.douyin.com/_4U-5XvKwxM/"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="抖音 · 米米宇宙｜0715"
+            >
+              <div class="social-tile-frame">
+                <img src="assets/social/douyin.png" alt="抖音官号截图" width="360" height="200" loading="lazy" decoding="async" />
+              </div>
+              <span class="social-tile-label">抖音 · 米米宇宙｜0715</span>
+            </a>
+            <a
+              class="social-tile"
+              href="https://xhslink.com/m/3VnfTEAVOeo"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="小红书 · 米米宇宙｜0715"
+            >
+              <div class="social-tile-frame">
+                <img src="assets/social/xiaohongshu.png" alt="小红书官号截图" width="360" height="200" loading="lazy" decoding="async" />
+              </div>
+              <span class="social-tile-label">小红书 · 米米宇宙｜0715</span>
+            </a>
+            <a
+              class="social-tile"
+              href="https://s.weibo.com/weibo?q=%E7%B1%B3%E7%B1%B3%E5%AE%87%E5%AE%990715"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="微博 · 米米宇宙｜0715（搜索页，可替换为个人主页直链）"
+            >
+              <div class="social-tile-frame">
+                <img src="assets/social/weibo.png" alt="微博官号截图" width="360" height="200" loading="lazy" decoding="async" />
+              </div>
+              <span class="social-tile-label">微博 · 米米宇宙｜0715</span>
+            </a>
+            <a
+              class="social-tile"
+              href="https://b23.tv/mPHnC7v"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="哔哩哔哩 · 米米宇宙丨0715 个人空间"
+            >
+              <div class="social-tile-frame">
+                <img src="assets/social/bilibili.png" alt="哔哩哔哩官号截图" width="360" height="200" loading="lazy" decoding="async" />
+              </div>
+              <span class="social-tile-label">哔哩哔哩 · 米米宇宙｜0715</span>
+            </a>
+          </div>
+        </article>
+
+        <article class="card recruit-poster-card">
+          <h3 class="intro-title">
+            <span class="intro-title-icon" aria-hidden="true">◇</span>
+            米米宇宙 · 招聘
+          </h3>
+          <div class="recruit-poster-frame">
+            <img
+              class="recruit-poster-img"
+              src="assets/recruit-poster.png"
+              alt="米米宇宙招聘海报"
+              loading="lazy"
+              decoding="async"
+              width="800"
+              height="1200"
+            />
+          </div>
+          <div class="recruit-template-box">
+            <p class="recruit-template-tip">
+              <strong>投递提醒：</strong>请下载简历模板，按说明填写后投递；邮件以海报内为准，注意格式要求。
+            </p>
+            <a
+              class="btn-template"
+              href="assets/米米宇宙招聘.doc?v=3"
+              download="米米宇宙招聘.doc"
+              >下载简历模板（Word / WPS）</a>
+          </div>
+        </article>
+
+        <article class="card artist-thanks-card">
+          <h3 class="intro-title">
+            <span class="intro-title-icon" aria-hidden="true">♡</span>
+            致谢 · 美工
+          </h3>
+          <p class="artist-thanks-text">
+            感谢 <strong>小米米出品老师</strong> 为本项目提供的形象与支持。
+          </p>
+          <a
+            class="artist-thumb-link"
+            href="https://xhslink.com/m/7JBKy60kwGj"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="小lu画呀画 · 小红书"
+          >
+            <img
+              class="artist-thumb-img"
+              src="assets/artist-xhs.png"
+              alt="小lu画呀画 小红书主页预览"
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+          <div class="social-pills social-pills-stack">
+            <a
+              class="social-pill social-pill-primary"
+              href="https://xhslink.com/m/7JBKy60kwGj"
+              target="_blank"
+              rel="noopener noreferrer"
+              >小lu画呀画 · 小红书</a>
+          </div>
+        </article>
+
+        <div class="card">
+          <h3 class="section-title-sm">四维倾向</h3>
+          <p class="muted small">仅供参考，帮助你理解自己的大致倾向（各维度独立）。</p>
+          <div id="dim-bars" class="dim-bars"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="section-title-sm">各维度一句</h3>
+          <div id="dim-detail-cards" class="detail-grid"></div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn primary" id="btn-retry">重新测试</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="personas.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
