@@ -1321,14 +1321,9 @@ export default function PhonePage() {
         className={`app-icon ${isDragging ? 'dragging' : ''} ${isDragOver ? 'drag-over' : ''} ${isEditing && !isDock ? 'editing' : ''}`}
         style={{ 
           '--app-color': app.color,
-          ...(isDragging && dragPosition ? {
-            position: 'fixed' as const,
-            left: dragPosition.x - 30,
-            top: dragPosition.y - 30,
-            zIndex: 9999,
-            pointerEvents: 'none' as const,
-            transform: 'scale(1.15)',
-            opacity: 0.9,
+          ...(isDragging ? {
+            opacity: 0.3,
+            transform: 'scale(0.9)',
           } : {}),
         } as React.CSSProperties}
         data-index={index}
@@ -1586,6 +1581,7 @@ export default function PhonePage() {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragStartPosRef = useRef<{ x: number; y: number } | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
+  const [dragItem, setDragItem] = useState<number | null>(null);
 
   // 添加商品到购物车
   const handleShopAddToCart = (product: ShopProduct) => {
@@ -4857,6 +4853,39 @@ export default function PhonePage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Dragged icon overlay */}
+                  {dragItem !== null && dragPosition && (() => {
+                    const allApps = [...PAGE1_APPS, ...PAGE2_APPS];
+                    const app = allApps[dragItem];
+                    if (!app) return null;
+                    return (
+                      <div
+                        className="app-icon-dragged"
+                        style={{
+                          position: 'fixed',
+                          left: dragPosition.x - 30,
+                          top: dragPosition.y - 30,
+                          width: 60,
+                          height: 60,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 28,
+                          background: 'rgba(255,255,255,0.35)',
+                          backdropFilter: 'blur(28px)',
+                          WebkitBackdropFilter: 'blur(28px)',
+                          borderRadius: 15,
+                          border: '1px solid rgba(255,255,255,0.5)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                          zIndex: 9999,
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        {app.emoji}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Dock */}
