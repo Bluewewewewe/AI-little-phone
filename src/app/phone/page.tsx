@@ -2082,6 +2082,42 @@ export default function PhonePage() {
     );
   }
 
+  // 社会榜正能量评论（按热搜ID匹配）
+  const getSocialComments = (itemId: number): { avatar: string; role: string; text: string; time: string }[] => {
+    const socialComments: Record<number, { avatar: string; role: string; text: string; time: string }[]> = {
+      1: [ // 北海8岁男童银滩走失
+        { avatar: '🙏', role: '北海本地人', text: '已经转发到所有北海的群了，希望孩子平安回家！有线索的请尽快联系警方。', time: '12分钟前' },
+        { avatar: '👮', role: '蓝天救援队志愿者', text: '我们队已经出发支援了，请大家帮忙扩散信息，不要占用救援资源。孩子穿深蓝泳裤灰拖鞋，大家留意一下。', time: '8分钟前' },
+        { avatar: '❤️', role: '热心网友', text: '看到这个消息好心疼，孩子才8岁啊。已经帮忙转发了，希望奇迹发生，一家人能团圆。', time: '5分钟前' },
+      ],
+      2: [ // 山东救援队长公益寻人牺牲
+        { avatar: '🕯️', role: '寿光市民', text: '李队长是我们当地的英雄，这些年帮了太多家庭了。愿天堂没有车祸，一路走好。', time: '1小时前' },
+        { avatar: '😢', role: '公益同行者', text: '做公益寻人这么多年，深知其中的艰辛和危险。李队长用生命诠释了什么是大爱，向英雄致敬。', time: '45分钟前' },
+        { avatar: '🌹', role: '被帮助过的家属', text: '我儿子就是李队长帮忙找回来的，他从来不要回报。好人一生平安，愿您的家人得到妥善照顾。', time: '30分钟前' },
+      ],
+      3: [ // 抖音寻人累计助2.37万家庭团圆
+        { avatar: '👍', role: '科技向善关注者', text: '科技向善不是口号，是实实在在帮到了2万多个家庭。为这个公益项目点赞！', time: '2小时前' },
+        { avatar: '🎉', role: '曾被帮助的家庭', text: '我们就是这2.37万分之一，感谢抖音寻人让我们一家团圆。这份恩情永远记在心里。', time: '1小时前' },
+        { avatar: '📱', role: '互联网从业者', text: '用技术做公益是最有效的，地理位置精准弹窗这个思路太棒了。希望更多平台加入。', time: '50分钟前' },
+      ],
+      4: [ // 益禾堂五城流浪动物饱喂计划
+        { avatar: '🐱', role: '动物保护志愿者', text: '成都启明基地我去过，每天1700斤粮食真的不够。益禾堂这个长期帮扶太及时了！', time: '3小时前' },
+        { avatar: '🐶', role: '基地负责人', text: '感谢益禾堂的长期支持，不是做一次性的秀，而是真正持续帮扶。毛孩子们有救了。', time: '2小时前' },
+        { avatar: '❤️', role: '爱心网友', text: '不做一次性公益，建立长期回访机制——这才是真正的公益态度。已领养两只，继续支持。', time: '1小时前' },
+      ],
+      5: [ // 四川2岁男童家中走失近90天
+        { avatar: '🔍', role: '寻人志愿者', text: '已经90天了，孩子右手腕有脚印胎记是重要特征。请大家帮忙扩散，不要放弃希望。', time: '4小时前' },
+        { avatar: '💪', role: '四川当地人', text: '叙永县的朋友帮忙留意一下，孩子才2岁啊，太可怜了。已经转发到所有当地群。', time: '3小时前' },
+        { avatar: '🙏', role: '宝妈', text: '同为母亲，看到这个消息心都碎了。单亲妈妈太不容易了，愿孩子平安，早日回家。', time: '2小时前' },
+      ],
+    };
+    return socialComments[itemId] || [
+      { avatar: '❤️', role: '热心网友', text: '希望事情能有好结果，大家一起加油。', time: '刚刚' },
+      { avatar: '🙏', role: '普通市民', text: '已转发，希望能帮到更多人。', time: '5分钟前' },
+      { avatar: '👍', role: '正能量博主', text: '社会需要更多这样的正能量，为所有付出的人点赞。', time: '10分钟前' },
+    ];
+  };
+
   function renderWeibo() {
     const formatCount = (n: number) => n >= 10000 ? (n / 10000).toFixed(1) + '万' : n >= 1000 ? (n / 1000).toFixed(1) + '千' : String(n);
     const formatHeat = (n: number) => n >= 100000000 ? (n / 100000000).toFixed(1) + '亿' : n >= 10000 ? (n / 10000).toFixed(0) + '万' : String(n);
@@ -2314,8 +2350,29 @@ export default function PhonePage() {
                         <img src={item.detailImage} alt={item.title} style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10 }} />
                       </div>
                     )}
-                    {/* 模拟评论区 — CP粉/路人/毒唯/乐子人 */}
-                    {simData && (
+                    {/* 模拟评论区 */}
+                    {item.type === 'social' ? (
+                      /* 社会榜 — 正能量评论 */
+                      <div style={{ marginBottom: 10, padding: '8px 10px', background: 'rgba(255,255,255,0.5)', borderRadius: 10, border: '1px solid rgba(34,197,94,0.15)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: '#166534' }}>💬 网友留言</span>
+                          <span style={{ fontSize: 9, color: '#aaa' }}>❤️ {formatHeat(item.heat * 0.3)} · 💬 {formatHeat(item.heat * 0.12)}</span>
+                        </div>
+                        {getSocialComments(item.id).map((c: { avatar: string; role: string; text: string; time: string }, ci: number) => (
+                          <div key={ci} style={{ display: 'flex', gap: 6, padding: '4px 0', borderBottom: ci < 2 ? '1px solid rgba(0,0,0,0.03)' : 'none' }}>
+                            <span style={{ fontSize: 12, flexShrink: 0 }}>{c.avatar}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 1 }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, color: '#166534' }}>{c.role}</span>
+                              </div>
+                              <div style={{ fontSize: 11, color: '#555', lineHeight: 1.5 }}>{c.text}</div>
+                              <div style={{ fontSize: 9, color: '#bbb', marginTop: 2 }}>{c.time}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : simData ? (
+                      /* 文娱榜/总榜 — CP粉/路人/毒唯/乐子人评论 */
                       <div style={{ marginBottom: 10, padding: '8px 10px', background: 'rgba(255,255,255,0.5)', borderRadius: 10, border: '1px solid rgba(0,0,0,0.05)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                           <span style={{ fontSize: 10, fontWeight: 700, color: '#888' }}>💬 精选评论</span>
@@ -2339,7 +2396,7 @@ export default function PhonePage() {
                           </div>
                         ))}
                       </div>
-                    )}
+                    ) : null}
                     {/* 操作按钮 */}
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button onClick={() => { setTopicPage(item.title); }}
