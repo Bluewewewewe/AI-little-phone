@@ -1182,18 +1182,177 @@ export default function PhonePage() {
   }
 
   // ========== Render Helpers ==========
-  function renderAppIcon(app: { id: string; emoji: string; label?: string; color: string }, isDock = false) {
+  function renderAppIcon(app: { id: string; emoji: string; label?: string; color: string }, isDock = false, index?: number) {
     const displayLabel = getAppLabel(app.id, unlockState.unlocked);
+    const isDragging = draggingApp === app.id;
+    const isDragOver = dragOverIndex === index && !isDock;
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+      if (isDock) return;
+      const touch = e.touches[0];
+      dragStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+      longPressTimerRef.current = setTimeout(() => {
+        setIsEditing(true);
+        setDraggingApp(app.id);
+        setDragPosition({ x: touch.clientX, y: touch.clientY });
+      }, 500);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+      if (!draggingApp || isDock) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      setDragPosition({ x: touch.clientX, y: touch.clientY });
+      
+      // 计算目标位置
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (target) {
+        const appIcon = target.closest('.app-icon') as HTMLElement;
+        if (appIcon) {
+          const idx = parseInt(appIcon.dataset.index || '-1');
+          if (idx >= 0) setDragOverIndex(idx);
+        }
+        // 检测是否拖到页面边缘
+        const phoneScreen = target.closest('.phone-screen');
+        if (phoneScreen) {
+          const rect = phoneScreen.getBoundingClientRect();
+          if (touch.clientX < rect.left + 40 && currentPage > 0) {
+            setDragOverPage(currentPage - 1);
+          } else if (touch.clientX > rect.right - 40 && currentPage < totalPages - 1) {
+            setDragOverPage(currentPage + 1);
+          } else {
+            setDragOverPage(null);
+          }
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      if (draggingApp && dragOverIndex !== null && !isDock) {
+        // 执行拖拽排序
+        const allApps = [...PAGE1_APPS];
+        const fromIdx = allApps.findIndex(a => a.id === draggingApp);
+        const toIdx = dragOverIndex;
+        if (fromIdx !== toIdx && fromIdx >= 0 && toIdx >= 0) {
+          const [moved] = allApps.splice(fromIdx, 1);
+          allApps.splice(toIdx, 0, moved);
+          // 更新PAGE1_APPS（这里需要实际更新状态）
+        }
+      }
+      if (dragOverPage !== null) {
+        setCurrentPage(dragOverPage);
+      }
+      setDraggingApp(null);
+      setDragOverIndex(null);
+      setDragOverPage(null);
+      setDragPosition(null);
+      dragStartPosRef.current = null;
+      // 延迟退出编辑模式
+      setTimeout(() => setIsEditing(false), 300);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+      if (isDock) return;
+      dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+      longPressTimerRef.current = setTimeout(() => {
+        setIsEditing(true);
+        setDraggingApp(app.id);
+        setDragPosition({ x: e.clientX, y: e.clientY });
+      }, 500);
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+      if (!draggingApp || isDock) return;
+      setDragPosition({ x: e.clientX, y: e.clientY });
+      
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      if (target) {
+        const appIcon = target.closest('.app-icon') as HTMLElement;
+        if (appIcon) {
+          const idx = parseInt(appIcon.dataset.index || '-1');
+          if (idx >= 0) setDragOverIndex(idx);
+        }
+        const phoneScreen = target.closest('.phone-screen');
+        if (phoneScreen) {
+          const rect = phoneScreen.getBoundingClientRect();
+          if (e.clientX < rect.left + 40 && currentPage > 0) {
+            setDragOverPage(currentPage - 1);
+          } else if (e.clientX > rect.right - 40 && currentPage < totalPages - 1) {
+            setDragOverPage(currentPage + 1);
+          } else {
+            setDragOverPage(null);
+          }
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      if (draggingApp && dragOverIndex !== null && !isDock) {
+        const allApps = [...PAGE1_APPS];
+        const fromIdx = allApps.findIndex(a => a.id === draggingApp);
+        const toIdx = dragOverIndex;
+        if (fromIdx !== toIdx && fromIdx >= 0 && toIdx >= 0) {
+          const [moved] = allApps.splice(fromIdx, 1);
+          allApps.splice(toIdx, 0, moved);
+        }
+      }
+      if (dragOverPage !== null) {
+        setCurrentPage(dragOverPage);
+      }
+      setDraggingApp(null);
+      setDragOverIndex(null);
+      setDragOverPage(null);
+      setDragPosition(null);
+      dragStartPosRef.current = null;
+      setTimeout(() => setIsEditing(false), 300);
+    };
+
     return (
       <div
         key={app.id}
-        className={isDock ? 'dock-icon' : 'app-icon'}
-        style={{ '--app-color': app.color } as React.CSSProperties}
+        className={`app-icon ${isDragging ? 'dragging' : ''} ${isDragOver ? 'drag-over' : ''} ${isEditing && !isDock ? 'editing' : ''}`}
+        style={{ 
+          '--app-color': app.color,
+          ...(isDragging && dragPosition ? {
+            position: 'fixed' as const,
+            left: dragPosition.x - 30,
+            top: dragPosition.y - 30,
+            zIndex: 9999,
+            pointerEvents: 'none' as const,
+            transform: 'scale(1.15)',
+            opacity: 0.9,
+          } : {}),
+        } as React.CSSProperties}
+        data-index={index}
         onClick={() => {
+          if (isEditing) {
+            setIsEditing(false);
+            return;
+          }
           if (!unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id)) {
-            openApp('me'); // 未解锁时点这些APP跳到"我的"页面
+            openApp('me');
           } else {
             openApp(app.id);
+          }
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={() => {
+          if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
           }
         }}
       >
@@ -1416,7 +1575,17 @@ export default function PhonePage() {
 
   // 米信APP状态
   const [mixinTab, setMixinTab] = useState<'chats' | 'contacts' | 'discover' | 'me'>('chats');
+  const totalPages = 2; // PAGE1_APPS + PAGE2_APPS
   const [mixinChatTarget, setMixinChatTarget] = useState<'family' | 'dad' | 'mom' | null>(null);
+
+  // APP拖拽状态
+  const [draggingApp, setDraggingApp] = useState<string | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragOverPage, setDragOverPage] = useState<number | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragStartPosRef = useRef<{ x: number; y: number } | null>(null);
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
 
   // 添加商品到购物车
   const handleShopAddToCart = (product: ShopProduct) => {
@@ -4676,32 +4845,10 @@ export default function PhonePage() {
                   >
                     <div className="app-grid-slider" ref={sliderRef} style={{ transform: `translateX(${-currentPage * 100}%)` }}>
                       <div className="app-page-grid">
-                        {PAGE1_APPS.map(app => {
-                          const locked = !unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id);
-                          return (
-                            <div key={`p1-${app.id}`} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
-                              onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
-                              <div className="app-emoji-box">
-                                {locked ? '🔒' : app.emoji}
-                              </div>
-                              <span className="app-label">{getAppLabel(app.id, unlockState.unlocked)}</span>
-                            </div>
-                          );
-                        })}
+                        {PAGE1_APPS.map((app, idx) => renderAppIcon(app, false, idx))}
                       </div>
                       <div className="app-page-grid">
-                        {PAGE2_APPS.map(app => {
-                          const locked = !unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id);
-                          return (
-                            <div key={`p2-${app.id}`} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
-                              onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
-                              <div className="app-emoji-box">
-                                {locked ? '🔒' : app.emoji}
-                              </div>
-                              <span className="app-label">{getAppLabel(app.id, unlockState.unlocked)}</span>
-                            </div>
-                          );
-                        })}
+                        {PAGE2_APPS.map((app, idx) => renderAppIcon(app, false, idx + PAGE1_APPS.length))}
                       </div>
                     </div>
                     <div className="page-dots">
