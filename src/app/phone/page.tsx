@@ -862,14 +862,25 @@ export default function PhonePage() {
     return () => clearInterval(timer);
   }, [isLoggedIn, isAdmin]);
 
+  // ========== Drag & Drop State ==========
+  const [isEditing, setIsEditing] = useState(false);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragStartPosRef = useRef<{ x: number; y: number } | null>(null);
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
+  const [dragItem, setDragItem] = useState<number | null>(null);
+  const edgeHoverTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // ========== Swipe ==========
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // 如果正在拖拽图标，不触发页面滑动
+    if (dragItem !== null) return;
     touchStartX.current = e.touches[0].clientX;
     isDragging.current = true;
-  }, []);
+  }, [dragItem]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging.current) return;
+    // 如果正在拖拽图标，不触发页面滑动
+    if (dragItem !== null || !isDragging.current) return;
     touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
     if (sliderRef.current) {
       const offset = -currentPage * 100;
@@ -877,9 +888,11 @@ export default function PhonePage() {
       sliderRef.current.style.transition = 'none';
       sliderRef.current.style.transform = `translateX(${offset + pxToPercent}%)`;
     }
-  }, [currentPage]);
+  }, [currentPage, dragItem]);
 
   const handleTouchEnd = useCallback(() => {
+    // 如果正在拖拽图标，不触发页面滑动
+    if (dragItem !== null) return;
     if (!isDragging.current) return;
     isDragging.current = false;
     if (sliderRef.current) {
@@ -892,7 +905,7 @@ export default function PhonePage() {
       sliderRef.current.style.transform = `translateX(${-newPage * 100}%)`;
     }
     touchDeltaX.current = 0;
-  }, [currentPage]);
+  }, [currentPage, dragItem]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     touchStartX.current = e.clientX;
@@ -1527,11 +1540,6 @@ export default function PhonePage() {
   const [draggingApp, setDraggingApp] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragOverPage, setDragOverPage] = useState<number | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dragStartPosRef = useRef<{ x: number; y: number } | null>(null);
-  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
-  const [dragItem, setDragItem] = useState<number | null>(null);
 
   // 窗口级鼠标事件处理（拖拽时）
   useEffect(() => {
@@ -1556,19 +1564,45 @@ export default function PhonePage() {
         setDragOverIndex(null);
       }
 
-      // 检测页面切换
+      // 检测页面切换 - 悬停在边缘时延迟切换
       const container = document.querySelector('.app-grid-wrapper');
       if (container) {
         const containerRect = container.getBoundingClientRect();
-        if (e.clientX < containerRect.left + 40 && currentPage > 0) {
-          setCurrentPage(currentPage - 1);
-        } else if (e.clientX > containerRect.right - 40 && currentPage < totalPages - 1) {
-          setCurrentPage(currentPage + 1);
+        const isLeftEdge = e.clientX < containerRect.left + 40;
+        const isRightEdge = e.clientX > containerRect.right - 40;
+
+        if (isLeftEdge && currentPage > 0) {
+          // 悬停在左边缘，设置定时器延迟切换
+          if (!edgeHoverTimerRef.current) {
+            edgeHoverTimerRef.current = setTimeout(() => {
+              setCurrentPage((prev) => Math.max(0, prev - 1));
+              edgeHoverTimerRef.current = null;
+            }, 500); // 500ms 延迟
+          }
+        } else if (isRightEdge && currentPage < totalPages - 1) {
+          // 悬停在右边缘，设置定时器延迟切换
+          if (!edgeHoverTimerRef.current) {
+            edgeHoverTimerRef.current = setTimeout(() => {
+              setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+              edgeHoverTimerRef.current = null;
+            }, 500); // 500ms 延迟
+          }
+        } else {
+          // 不在边缘，清除定时器
+          if (edgeHoverTimerRef.current) {
+            clearTimeout(edgeHoverTimerRef.current);
+            edgeHoverTimerRef.current = null;
+          }
         }
       }
     };
 
     const handleWindowMouseUp = () => {
+      // 清除边缘悬停定时器
+      if (edgeHoverTimerRef.current) {
+        clearTimeout(edgeHoverTimerRef.current);
+        edgeHoverTimerRef.current = null;
+      }
       if (dragItem !== null && dragOverIndex !== null) {
         const newApps = [...(currentPage === 0 ? PAGE1_APPS : PAGE2_APPS)];
         const [removed] = newApps.splice(dragItem, 1);
@@ -1587,8 +1621,11 @@ export default function PhonePage() {
     return () => {
       window.removeEventListener('mousemove', handleWindowMouseMove);
       window.removeEventListener('mouseup', handleWindowMouseUp);
+      if (edgeHoverTimerRef.current) {
+        clearTimeout(edgeHoverTimerRef.current);
+      }
     };
-  }, [dragItem, dragOverIndex, currentPage]);
+  }, [dragItem, dragOverIndex, currentPage, totalPages]);
 
   // 添加商品到购物车
   const handleShopAddToCart = (product: ShopProduct) => {
