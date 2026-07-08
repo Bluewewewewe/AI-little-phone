@@ -4293,7 +4293,7 @@ export default function PhonePage() {
                           return (
                             <div key={`p1-${app.id}`} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
                               onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
-                              <div className="app-emoji-box" style={{ background: locked ? '#aaa' : app.color }}>
+                              <div className="app-emoji-box">
                                 {locked ? '🔒' : app.emoji}
                               </div>
                               <span className="app-label">{getAppLabel(app.id, unlockState.unlocked)}</span>
@@ -4307,7 +4307,7 @@ export default function PhonePage() {
                           return (
                             <div key={`p2-${app.id}`} className="app-icon" style={{ '--app-color': locked ? '#aaa' : app.color, opacity: locked ? 0.45 : 1 } as React.CSSProperties}
                               onClick={() => { if (locked) { openApp('me'); } else { openApp(app.id); } }}>
-                              <div className="app-emoji-box" style={{ background: locked ? '#aaa' : app.color }}>
+                              <div className="app-emoji-box">
                                 {locked ? '🔒' : app.emoji}
                               </div>
                               <span className="app-label">{getAppLabel(app.id, unlockState.unlocked)}</span>
