@@ -2118,6 +2118,31 @@ export default function PhonePage() {
     ];
   };
 
+  // 总榜普通话题评论（根据话题内容生成）
+  const getGeneralComments = (itemId: number, title: string): { avatar: string; role: string; text: string; time: string }[] => {
+    // 根据话题关键词生成相关评论
+    if (title.includes('考研') || title.includes('考试') || title.includes('教育')) {
+      return [
+        { avatar: '📚', role: '考研人', text: '看到预测了，教育学真的要涨吗？好慌，最后冲刺阶段了稳住心态！', time: '15分钟前' },
+        { avatar: '💪', role: '上岸学长', text: '去年也是这个时候焦虑，现在回头看其实没那么可怕。大家加油，坚持就是胜利！', time: '10分钟前' },
+        { avatar: '🎓', role: '在读研究生', text: '给学弟学妹们打气，考研只是人生的一条路，不管结果如何都值得骄傲。', time: '5分钟前' },
+      ];
+    }
+    if (title.includes('火锅') || title.includes('美食') || title.includes('排队')) {
+      return [
+        { avatar: '🍲', role: '吃货博主', text: '排队5小时也太夸张了吧！有没有去过的说说到底值不值？', time: '20分钟前' },
+        { avatar: '🌶️', role: '本地食客', text: '他家锅底确实不错，但5小时排队真的没必要。建议错峰去，工作日中午人少很多。', time: '12分钟前' },
+        { avatar: '😋', role: '美食爱好者', text: '空运毛肚+三代祖传锅底，这配置听着就香。已经加入打卡清单了！', time: '8分钟前' },
+      ];
+    }
+    // 默认通用评论
+    return [
+      { avatar: '💬', role: '热心网友', text: '这个话题很有意思，大家怎么看？欢迎理性讨论。', time: '15分钟前' },
+      { avatar: '👀', role: '吃瓜群众', text: '刚看到这个消息，了解一下情况。希望能有后续报道。', time: '10分钟前' },
+      { avatar: '🤔', role: '理性思考者', text: '事情没那么简单，建议大家多关注官方信息，不信谣不传谣。', time: '5分钟前' },
+    ];
+  };
+
   function renderWeibo() {
     const formatCount = (n: number) => n >= 10000 ? (n / 10000).toFixed(1) + '万' : n >= 1000 ? (n / 1000).toFixed(1) + '千' : String(n);
     const formatHeat = (n: number) => n >= 100000000 ? (n / 100000000).toFixed(1) + '亿' : n >= 10000 ? (n / 10000).toFixed(0) + '万' : String(n);
@@ -2371,8 +2396,28 @@ export default function PhonePage() {
                           </div>
                         ))}
                       </div>
+                    ) : item.type === 'general' ? (
+                      /* 总榜普通话题 — 网友讨论评论 */
+                      <div style={{ marginBottom: 10, padding: '8px 10px', background: 'rgba(255,255,255,0.5)', borderRadius: 10, border: '1px solid rgba(0,0,0,0.05)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: '#666' }}>💬 网友讨论</span>
+                          <span style={{ fontSize: 9, color: '#aaa' }}>❤️ {formatHeat(item.heat * 0.2)} · 💬 {formatHeat(item.heat * 0.08)}</span>
+                        </div>
+                        {getGeneralComments(item.id, item.title).map((c, ci) => (
+                          <div key={ci} style={{ display: 'flex', gap: 6, padding: '4px 0', borderBottom: ci < 2 ? '1px solid rgba(0,0,0,0.03)' : 'none' }}>
+                            <span style={{ fontSize: 12, flexShrink: 0 }}>{c.avatar}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 1 }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, color: '#555' }}>{c.role}</span>
+                              </div>
+                              <div style={{ fontSize: 11, color: '#555', lineHeight: 1.5 }}>{c.text}</div>
+                              <div style={{ fontSize: 9, color: '#bbb', marginTop: 2 }}>{c.time}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     ) : simData ? (
-                      /* 文娱榜/总榜 — CP粉/路人/毒唯/乐子人评论 */
+                      /* 文娱榜 — CP粉/路人/毒唯/乐子人评论 */
                       <div style={{ marginBottom: 10, padding: '8px 10px', background: 'rgba(255,255,255,0.5)', borderRadius: 10, border: '1px solid rgba(0,0,0,0.05)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                           <span style={{ fontSize: 10, fontWeight: 700, color: '#888' }}>💬 精选评论</span>
