@@ -194,10 +194,7 @@ function nextId() { return ++msgIdCounter; }
 
 // ========== APP Data ==========
 const PAGE1_APPS = [
-  { id: 'family', emoji: '💬', label: '家庭群', color: '#22c55e' },
-  { id: 'dad', emoji: '👨', label: '爸爸', color: '#f59e0b' },
-  { id: 'mom', emoji: '👩', label: '妈妈', color: '#ec4899' },
-  { id: 'moments', emoji: '🌅', label: '朋友圈', color: '#f97316' },
+  { id: 'mixin', emoji: '💬', label: '米信', color: '#07c160' },
   { id: 'weibo', emoji: '📱', label: '微博', color: '#ef4444' },
   { id: 'home', emoji: '🏠', label: '家里', color: '#92400e' },
   { id: 'pet', emoji: '🐾', label: '宠物', color: '#10b981' },
@@ -215,18 +212,12 @@ const DOCK_APPS = [
   { id: 'call', emoji: '📞', color: '#06b6d4' },
   { id: 'browser', emoji: '🌐', color: '#6366f1' },
   { id: 'music', emoji: '🎵', color: '#ec4899' },
-  { id: 'family', emoji: '💬', color: '#22c55e' },
+  { id: 'mixin', emoji: '💬', color: '#07c160' },
 ];
 
 function getAppLabel(id: string, unlocked: boolean): string {
-  if (!unlocked) {
-    if (id === 'dad') return DEFAULT_NAMES.dad1;
-    if (id === 'mom') return DEFAULT_NAMES.dad2;
-    if (id === 'family') return '家庭群';
-  }
   const map: Record<string, string> = {
-    family: '家庭群', dad: '爸爸', mom: '妈咪',
-    moments: '朋友圈', weibo: '微博', home: '家里',
+    mixin: '米信', weibo: '微博', home: '家里',
     pet: '宠物', dressup: '换装', me: '我的',
     worldbook: '世界书', call: '通话', browser: '浏览器', music: '音乐', shopping: '啪多多', lpmi: 'LPMI测试',
   };
@@ -1422,6 +1413,10 @@ export default function PhonePage() {
   const [shopCpMessage, setShopCpMessage] = useState<string | null>(null);
   const [shopNotification, setShopNotification] = useState<string | null>(null);
   const [shopBuyInput, setShopBuyInput] = useState('');
+
+  // 米信APP状态
+  const [mixinTab, setMixinTab] = useState<'chats' | 'contacts' | 'discover' | 'me'>('chats');
+  const [mixinChatTarget, setMixinChatTarget] = useState<'family' | 'dad' | 'mom' | null>(null);
 
   // 添加商品到购物车
   const handleShopAddToCart = (product: ShopProduct) => {
@@ -3344,6 +3339,278 @@ export default function PhonePage() {
     );
   }
 
+  // ========== 米信APP渲染（微信风格） ==========
+  function renderMixin() {
+    // 如果选择了聊天对象，显示聊天详情
+    if (mixinChatTarget) {
+      return (
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#ededed' }}>
+          <div className="app-header" style={{ background: '#ededed', borderBottom: '1px solid #d9d9d9' }}>
+            <button className="app-back-btn" onClick={() => setMixinChatTarget(null)}>返回</button>
+            <div className="app-title">
+              {mixinChatTarget === 'family' ? '家庭群' : mixinChatTarget === 'dad' ? '爸爸' : '妈咪'}
+            </div>
+            <div className="app-header-actions" />
+          </div>
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            {renderChatDetail(mixinChatTarget)}
+          </div>
+        </div>
+      );
+    }
+
+    // 米信主界面 - 微信风格
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#ededed' }}>
+        {/* 顶部标题栏 */}
+        <div style={{
+          height: '56px',
+          background: '#ededed',
+          borderBottom: '1px solid #d9d9d9',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          flexShrink: 0,
+        }}>
+          <span style={{ fontSize: '17px', fontWeight: 600, color: '#000' }}>
+            {mixinTab === 'chats' ? '米信' : mixinTab === 'contacts' ? '通讯录' : mixinTab === 'discover' ? '发现' : '我'}
+          </span>
+          <button
+            onClick={() => setCurrentApp(null)}
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              fontSize: '20px',
+              color: '#000',
+              cursor: 'pointer',
+              padding: '8px',
+            }}
+          >
+            ←
+          </button>
+        </div>
+
+        {/* 内容区域 */}
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          {mixinTab === 'chats' && (
+            <div style={{ background: '#fff' }}>
+              {/* 聊天列表 */}
+              {[
+                { id: 'family' as const, avatar: '💬', name: '家庭群', msg: '爸爸: 今天早点回家吃饭', time: '下午3:20', unread: 2 },
+                { id: 'dad' as const, avatar: '👨', name: '爸爸', msg: '宝贝，周末想吃什么？', time: '下午2:15', unread: 0 },
+                { id: 'mom' as const, avatar: '👩', name: '妈咪', msg: '记得多喝水哦~', time: '上午10:30', unread: 1 },
+              ].map(chat => (
+                <div
+                  key={chat.id}
+                  onClick={() => setMixinChatTarget(chat.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #f0f0f0',
+                    cursor: 'pointer',
+                    background: '#fff',
+                  }}
+                >
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '6px',
+                    background: chat.id === 'family' ? '#22c55e' : chat.id === 'dad' ? '#f59e0b' : '#ec4899',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '24px',
+                    flexShrink: 0,
+                  }}>
+                    {chat.avatar}
+                  </div>
+                  <div style={{ flex: 1, marginLeft: '12px', minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '17px', fontWeight: 500, color: '#000' }}>{chat.name}</span>
+                      <span style={{ fontSize: '12px', color: '#999' }}>{chat.time}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                      <span style={{ fontSize: '14px', color: '#999', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chat.msg}</span>
+                      {chat.unread > 0 && (
+                        <span style={{
+                          background: '#f44336',
+                          color: '#fff',
+                          fontSize: '11px',
+                          borderRadius: '10px',
+                          padding: '2px 6px',
+                          minWidth: '18px',
+                          textAlign: 'center',
+                        }}>
+                          {chat.unread}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {mixinTab === 'contacts' && (
+            <div style={{ background: '#fff' }}>
+              {/* 通讯录列表 */}
+              {[
+                { id: 'dad' as const, avatar: '👨', name: '爸爸', desc: '田雷' },
+                { id: 'mom' as const, avatar: '👩', name: '妈咪', desc: '梓渝' },
+              ].map(contact => (
+                <div
+                  key={contact.id}
+                  onClick={() => { setMixinTab('chats'); setMixinChatTarget(contact.id); }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #f0f0f0',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '6px',
+                    background: contact.id === 'dad' ? '#f59e0b' : '#ec4899',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px',
+                    flexShrink: 0,
+                  }}>
+                    {contact.avatar}
+                  </div>
+                  <div style={{ marginLeft: '12px' }}>
+                    <div style={{ fontSize: '17px', fontWeight: 500, color: '#000' }}>{contact.name}</div>
+                    <div style={{ fontSize: '13px', color: '#999' }}>{contact.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {mixinTab === 'discover' && (
+            <div style={{ background: '#fff' }}>
+              {/* 发现页 - 朋友圈入口 */}
+              <div
+                onClick={() => { setCurrentApp('moments'); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '16px',
+                  borderBottom: '1px solid #f0f0f0',
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '6px',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px',
+                  marginRight: '12px',
+                }}>
+                  🌅
+                </div>
+                <span style={{ fontSize: '17px', color: '#000', flex: 1 }}>朋友圈</span>
+                <span style={{ color: '#999', fontSize: '14px' }}>›</span>
+              </div>
+            </div>
+          )}
+
+          {mixinTab === 'me' && (
+            <div style={{ background: '#fff' }}>
+              {/* 我的页面 */}
+              <div style={{
+                padding: '24px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                borderBottom: '8px solid #f5f5f5',
+              }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '32px',
+                  marginRight: '16px',
+                }}>
+                  👤
+                </div>
+                <div>
+                  <div style={{ fontSize: '20px', fontWeight: 600, color: '#000' }}>米米</div>
+                  <div style={{ fontSize: '14px', color: '#999', marginTop: '4px' }}>ID: mimi_001</div>
+                </div>
+              </div>
+              <div style={{ padding: '16px' }}>
+                <div style={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0', fontSize: '16px', color: '#000' }}>
+                  💰 我的米米币: {shopMembers.find(m => m.id === 'user')?.balance || 0}
+                </div>
+                <div style={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0', fontSize: '16px', color: '#000' }}>
+                  📦 我的订单
+                </div>
+                <div style={{ padding: '12px 0', fontSize: '16px', color: '#000' }}>
+                  ⚙️ 设置
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 底部Tab栏 */}
+        <div style={{
+          height: '56px',
+          background: '#f7f7f7',
+          borderTop: '1px solid #d9d9d9',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-around',
+          flexShrink: 0,
+        }}>
+          {[
+            { id: 'chats' as const, icon: '💬', label: '聊天' },
+            { id: 'contacts' as const, icon: '👥', label: '通讯录' },
+            { id: 'discover' as const, icon: '🔍', label: '发现' },
+            { id: 'me' as const, icon: '👤', label: '我' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setMixinTab(tab.id)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px 12px',
+                color: mixinTab === tab.id ? '#07c160' : '#999',
+              }}
+            >
+              <span style={{ fontSize: '22px' }}>{tab.icon}</span>
+              <span style={{ fontSize: '11px', marginTop: '2px' }}>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // ========== 啪多多购物平台渲染 ==========
   function renderShopping() {
     const filteredProducts = shopCategory === '全部'
@@ -3828,10 +4095,7 @@ export default function PhonePage() {
   function renderAppContent() {
     if (!currentApp) return null;
     switch (currentApp) {
-      case 'family': return renderChatDetail('family');
-      case 'dad': return renderChatDetail('dad');
-      case 'mom': return renderChatDetail('mom');
-      case 'moments': return renderMoments();
+      case 'mixin': return renderMixin();
       case 'weibo': return renderWeibo();
       case 'home': return renderHome();
       case 'pet': return renderPet();
