@@ -1256,64 +1256,16 @@ export default function PhonePage() {
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
-      if (isDock) return;
+      if (isDock || (index !== undefined && UNLOCK_ONLY_APPS.includes(app.id) && !unlockState.unlocked)) return;
       dragStartPosRef.current = { x: e.clientX, y: e.clientY };
       longPressTimerRef.current = setTimeout(() => {
         setIsEditing(true);
-        setDraggingApp(app.id);
+        setDragItem(index ?? null);
         setDragPosition({ x: e.clientX, y: e.clientY });
       }, 500);
     };
 
-    const handleMouseMove = (e: React.MouseEvent) => {
-      if (!draggingApp || isDock) return;
-      setDragPosition({ x: e.clientX, y: e.clientY });
-      
-      const target = document.elementFromPoint(e.clientX, e.clientY);
-      if (target) {
-        const appIcon = target.closest('.app-icon') as HTMLElement;
-        if (appIcon) {
-          const idx = parseInt(appIcon.dataset.index || '-1');
-          if (idx >= 0) setDragOverIndex(idx);
-        }
-        const phoneScreen = target.closest('.phone-screen');
-        if (phoneScreen) {
-          const rect = phoneScreen.getBoundingClientRect();
-          if (e.clientX < rect.left + 40 && currentPage > 0) {
-            setDragOverPage(currentPage - 1);
-          } else if (e.clientX > rect.right - 40 && currentPage < totalPages - 1) {
-            setDragOverPage(currentPage + 1);
-          } else {
-            setDragOverPage(null);
-          }
-        }
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
-      if (draggingApp && dragOverIndex !== null && !isDock) {
-        const allApps = [...PAGE1_APPS];
-        const fromIdx = allApps.findIndex(a => a.id === draggingApp);
-        const toIdx = dragOverIndex;
-        if (fromIdx !== toIdx && fromIdx >= 0 && toIdx >= 0) {
-          const [moved] = allApps.splice(fromIdx, 1);
-          allApps.splice(toIdx, 0, moved);
-        }
-      }
-      if (dragOverPage !== null) {
-        setCurrentPage(dragOverPage);
-      }
-      setDraggingApp(null);
-      setDragOverIndex(null);
-      setDragOverPage(null);
-      setDragPosition(null);
-      dragStartPosRef.current = null;
-      setTimeout(() => setIsEditing(false), 300);
-    };
+    // 鼠标事件现在由窗口级事件处理（useEffect）
 
     return (
       <div
@@ -1342,8 +1294,6 @@ export default function PhonePage() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
         onMouseLeave={() => {
           if (longPressTimerRef.current) {
             clearTimeout(longPressTimerRef.current);
@@ -1582,6 +1532,63 @@ export default function PhonePage() {
   const dragStartPosRef = useRef<{ x: number; y: number } | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [dragItem, setDragItem] = useState<number | null>(null);
+
+  // 窗口级鼠标事件处理（拖拽时）
+  useEffect(() => {
+    if (dragItem === null) return;
+
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      if (dragItem === null) return;
+      const rect = (e.target as HTMLElement).closest('.app-icon')?.getBoundingClientRect();
+      const offsetX = rect ? rect.width / 2 : 32;
+      const offsetY = rect ? rect.height / 2 : 40;
+      setDragPosition({ x: e.clientX - offsetX, y: e.clientY - offsetY });
+
+      // 检测目标位置
+      const elem = document.elementFromPoint(e.clientX, e.clientY);
+      const target = elem?.closest('.app-icon') as HTMLElement;
+      if (target && target.dataset.index) {
+        const targetIndex = parseInt(target.dataset.index);
+        if (targetIndex !== dragItem) {
+          setDragOverIndex(targetIndex);
+        }
+      } else {
+        setDragOverIndex(null);
+      }
+
+      // 检测页面切换
+      const container = document.querySelector('.app-grid-wrapper');
+      if (container) {
+        const containerRect = container.getBoundingClientRect();
+        if (e.clientX < containerRect.left + 40 && currentPage > 0) {
+          setCurrentPage(currentPage - 1);
+        } else if (e.clientX > containerRect.right - 40 && currentPage < totalPages - 1) {
+          setCurrentPage(currentPage + 1);
+        }
+      }
+    };
+
+    const handleWindowMouseUp = () => {
+      if (dragItem !== null && dragOverIndex !== null) {
+        const newApps = [...(currentPage === 0 ? PAGE1_APPS : PAGE2_APPS)];
+        const [removed] = newApps.splice(dragItem, 1);
+        newApps.splice(dragOverIndex, 0, removed);
+        // 这里可以添加保存逻辑
+      }
+      setDragItem(null);
+      setDragPosition(null);
+      setDragOverIndex(null);
+      setDragOverPage(null);
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+    };
+  }, [dragItem, dragOverIndex, currentPage]);
 
   // 添加商品到购物车
   const handleShopAddToCart = (product: ShopProduct) => {
