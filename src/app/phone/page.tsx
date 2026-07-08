@@ -1205,7 +1205,7 @@ export default function PhonePage() {
           }
         }}
       >
-        <div className={isDock ? '' : 'app-emoji-box'} style={isDock ? { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, fontSize: 24, background: app.color, borderRadius: 12, position: 'relative', boxShadow: '0 2px 6px rgba(0,0,0,0.08)' } : {}}>
+        <div className={isDock ? '' : 'app-emoji-box'} style={isDock ? { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, fontSize: 24, background: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderRadius: 14, position: 'relative', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6)' } : {}}>
           {app.emoji}
         </div>
         {!isDock && <span className="app-label">{displayLabel}</span>}
@@ -3726,84 +3726,84 @@ export default function PhonePage() {
   // ========== 验证通登录界面 ==========
   function renderLoginScreen() {
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(170deg, #fffbeb 0%, #fef3c7 35%, #fde68a 75%, #fcd34d 100%)', position: 'relative', overflow: 'hidden', padding: '16px 20px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(170deg, #f0faf0 0%, #dcf0dc 35%, #c8e6c9 75%, #a5d6a7 100%)', position: 'relative', overflow: 'hidden', padding: '16px 20px' }}>
         {/* 装饰光晕 */}
-        <div style={{ position: 'absolute', top: '-12%', right: '-8%', width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.28) 0%, rgba(251,191,36,0.06) 40%, transparent 70%)', pointerEvents: 'none' as const, animation: 'float-glow 6s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', bottom: '-5%', left: '-10%', width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.13) 0%, rgba(236,72,153,0.03) 40%, transparent 70%)', pointerEvents: 'none' as const, animation: 'float-glow 8s ease-in-out infinite 2s' }} />
-        <div style={{ position: 'absolute', top: '40%', left: '3%', width: 60, height: 60, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
+        <div style={{ position: 'absolute', top: '-12%', right: '-8%', width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(76,175,80,0.2) 0%, rgba(76,175,80,0.04) 40%, transparent 70%)', pointerEvents: 'none' as const, animation: 'float-glow 6s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', bottom: '-5%', left: '-10%', width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(129,199,132,0.15) 0%, rgba(129,199,132,0.03) 40%, transparent 70%)', pointerEvents: 'none' as const, animation: 'float-glow 8s ease-in-out infinite 2s' }} />
+        <div style={{ position: 'absolute', top: '40%', left: '3%', width: 60, height: 60, borderRadius: '50%', background: 'radial-gradient(circle, rgba(165,214,167,0.12) 0%, transparent 70%)', pointerEvents: 'none' as const }} />
 
         <div style={{ width: '100%', position: 'relative', zIndex: 1 }}>
           {/* 品牌区域 */}
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
             {/* Logo圆形底座 */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 72, height: 72, borderRadius: 22, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(146,64,0,0.1), 0 2px 6px rgba(146,64,0,0.05), inset 0 1px 0 rgba(255,255,255,0.9)', marginBottom: 12, transition: 'transform 0.3s ease' }}>
-              <span style={{ fontSize: 34, filter: 'drop-shadow(0 2px 4px rgba(146,64,0,0.1))' }}>📱</span>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 72, height: 72, borderRadius: 22, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(46,125,50,0.1), 0 2px 6px rgba(46,125,50,0.05), inset 0 1px 0 rgba(255,255,255,0.9)', marginBottom: 12, transition: 'transform 0.3s ease' }}>
+              <span style={{ fontSize: 34, filter: 'drop-shadow(0 2px 4px rgba(46,125,50,0.1))' }}>📱</span>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: '#78350f', letterSpacing: 2.5, textShadow: '0 2px 4px rgba(146,64,0,0.06)' }}>
+            <div style={{ fontSize: 24, fontWeight: 900, color: '#2e5c33', letterSpacing: 2.5, textShadow: '0 2px 4px rgba(46,125,50,0.06)' }}>
               AI小手机
             </div>
-            <div style={{ fontSize: 11, color: '#b45309', marginTop: 4, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase' as const }}>
+            <div style={{ fontSize: 11, color: '#4a7c50', marginTop: 4, fontWeight: 500, letterSpacing: 4, textTransform: 'uppercase' as const }}>
               CP社交平台
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10 }}>
-              <span style={{ display: 'inline-block', width: 20, height: 1, background: 'linear-gradient(90deg, transparent, #d97706)', borderRadius: 1 }} />
-              <span style={{ fontSize: 10, color: '#d97706', letterSpacing: 3, fontWeight: 600 }}>验证通</span>
-              <span style={{ display: 'inline-block', width: 20, height: 1, background: 'linear-gradient(90deg, #d97706, transparent)', borderRadius: 1 }} />
+              <span style={{ display: 'inline-block', width: 20, height: 1, background: 'linear-gradient(90deg, transparent, #5a9e6a)', borderRadius: 1 }} />
+              <span style={{ fontSize: 10, color: '#5a9e6a', letterSpacing: 3, fontWeight: 600 }}>验证通</span>
+              <span style={{ display: 'inline-block', width: 20, height: 1, background: 'linear-gradient(90deg, #5a9e6a, transparent)', borderRadius: 1 }} />
             </div>
           </div>
 
           {/* 登录卡片 */}
-          <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', borderRadius: 24, padding: '22px 20px', boxShadow: '0 12px 40px rgba(146,64,0,0.08), 0 2px 8px rgba(146,64,0,0.04), inset 0 1px 0 rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.5)' }}>
+          <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', borderRadius: 24, padding: '22px 20px', boxShadow: '0 12px 40px rgba(46,125,50,0.08), 0 2px 8px rgba(46,125,50,0.04), inset 0 1px 0 rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.5)' }}>
             {/* 输入区 */}
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, color: '#92400e', fontWeight: 700, marginBottom: 6, letterSpacing: 1.5 }}>账 号</div>
-              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.8)', borderRadius: 14, border: '1.5px solid rgba(253,230,138,0.5)', overflow: 'hidden', transition: 'border-color 0.2s, box-shadow 0.2s' }}
-                onFocusCapture={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.6)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.08)'; }}
-                onBlurCapture={e => { e.currentTarget.style.borderColor = 'rgba(253,230,138,0.5)'; e.currentTarget.style.boxShadow = 'none'; }}>
+              <div style={{ fontSize: 11, color: '#3d5c45', fontWeight: 700, marginBottom: 6, letterSpacing: 1.5 }}>账 号</div>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.8)', borderRadius: 14, border: '1.5px solid rgba(165,214,167,0.5)', overflow: 'hidden', transition: 'border-color 0.2s, box-shadow 0.2s' }}
+                onFocusCapture={e => { e.currentTarget.style.borderColor = 'rgba(90,158,106,0.6)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(90,158,106,0.08)'; }}
+                onBlurCapture={e => { e.currentTarget.style.borderColor = 'rgba(165,214,167,0.5)'; e.currentTarget.style.boxShadow = 'none'; }}>
                 <span style={{ padding: '0 0 0 14px', fontSize: 16, opacity: 0.7 }}>👤</span>
                 <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleLogin()}
                   placeholder="输入你的账号" maxLength={20}
-                  style={{ flex: 1, padding: '12px 14px 12px 8px', border: 'none', fontSize: 14, outline: 'none', background: 'transparent', color: '#78350f', fontWeight: 500 }} />
+                  style={{ flex: 1, padding: '12px 14px 12px 8px', border: 'none', fontSize: 14, outline: 'none', background: 'transparent', color: '#2e5c33', fontWeight: 500 }} />
               </div>
             </div>
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, color: '#92400e', fontWeight: 700, marginBottom: 6, letterSpacing: 1.5 }}>密 码</div>
-              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.8)', borderRadius: 14, border: '1.5px solid rgba(253,230,138,0.5)', overflow: 'hidden', transition: 'border-color 0.2s, box-shadow 0.2s' }}
-                onFocusCapture={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.6)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.08)'; }}
-                onBlurCapture={e => { e.currentTarget.style.borderColor = 'rgba(253,230,138,0.5)'; e.currentTarget.style.boxShadow = 'none'; }}>
+              <div style={{ fontSize: 11, color: '#3d5c45', fontWeight: 700, marginBottom: 6, letterSpacing: 1.5 }}>密 码</div>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.8)', borderRadius: 14, border: '1.5px solid rgba(165,214,167,0.5)', overflow: 'hidden', transition: 'border-color 0.2s, box-shadow 0.2s' }}
+                onFocusCapture={e => { e.currentTarget.style.borderColor = 'rgba(90,158,106,0.6)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(90,158,106,0.08)'; }}
+                onBlurCapture={e => { e.currentTarget.style.borderColor = 'rgba(165,214,167,0.5)'; e.currentTarget.style.boxShadow = 'none'; }}>
                 <span style={{ padding: '0 0 0 14px', fontSize: 16, opacity: 0.7 }}>🔒</span>
                 <input value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleLogin()}
                   placeholder="输入你的密码" type="password" maxLength={30}
-                  style={{ flex: 1, padding: '12px 14px 12px 8px', border: 'none', fontSize: 14, outline: 'none', background: 'transparent', color: '#78350f', fontWeight: 500 }} />
+                  style={{ flex: 1, padding: '12px 14px 12px 8px', border: 'none', fontSize: 14, outline: 'none', background: 'transparent', color: '#2e5c33', fontWeight: 500 }} />
               </div>
             </div>
 
             {/* 登录按钮 */}
             <button onClick={handleLogin}
-              style={{ width: '100%', padding: '13px 0', borderRadius: 14, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 6px 20px rgba(245,158,11,0.35), 0 2px 4px rgba(245,158,11,0.15)', transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)', letterSpacing: 5 }}
-              onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.96)', e.currentTarget.style.boxShadow = '0 2px 8px rgba(245,158,11,0.2)')}
-              onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 6px 20px rgba(245,158,11,0.35), 0 2px 4px rgba(245,158,11,0.15)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 6px 20px rgba(245,158,11,0.35), 0 2px 4px rgba(245,158,11,0.15)')}>
+              style={{ width: '100%', padding: '13px 0', borderRadius: 14, background: 'linear-gradient(135deg, #5a9e6a 0%, #3d8b5a 100%)', color: '#fff', fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 6px 20px rgba(90,158,106,0.35), 0 2px 4px rgba(90,158,106,0.15)', transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)', letterSpacing: 5 }}
+              onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.96)', e.currentTarget.style.boxShadow = '0 2px 8px rgba(90,158,106,0.2)')}
+              onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 6px 20px rgba(90,158,106,0.35), 0 2px 4px rgba(90,158,106,0.15)')}
+              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)', e.currentTarget.style.boxShadow = '0 6px 20px rgba(90,158,106,0.35), 0 2px 4px rgba(90,158,106,0.15)')}>
               登 录
             </button>
 
             {/* 协议 */}
-            <div style={{ textAlign: 'center', marginTop: 12, fontSize: 10, color: '#a16207', lineHeight: 1.6 }}>
-              登录即代表同意 <span style={{ color: '#d97706', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500 }}>用户协议</span> 和 <span style={{ color: '#d97706', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500 }}>隐私政策</span>
+            <div style={{ textAlign: 'center', marginTop: 12, fontSize: 10, color: '#4a7c50', lineHeight: 1.6 }}>
+              登录即代表同意 <span style={{ color: '#3d8b5a', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500 }}>用户协议</span> 和 <span style={{ color: '#3d8b5a', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500 }}>隐私政策</span>
             </div>
           </div>
 
           {/* 底部信息 */}
           <div style={{ textAlign: 'center', marginTop: 18 }}>
-            <div style={{ fontSize: 10, color: '#b45309', opacity: 0.65, marginBottom: 4, fontWeight: 500 }}>
+            <div style={{ fontSize: 10, color: '#4a7c50', opacity: 0.65, marginBottom: 4, fontWeight: 500 }}>
               💡 管理员账号：admin / manager_lin / cp_official
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-              <span style={{ fontSize: 10, color: '#d97706', opacity: 0.45 }}>v1.0.0</span>
-              <span style={{ width: 1, height: 10, background: '#d97706', opacity: 0.2, borderRadius: 1 }} />
-              <span style={{ fontSize: 10, color: '#d97706', opacity: 0.45 }}>AI小手机团队</span>
+              <span style={{ fontSize: 10, color: '#5a9e6a', opacity: 0.45 }}>v1.0.0</span>
+              <span style={{ width: 1, height: 10, background: '#5a9e6a', opacity: 0.2, borderRadius: 1 }} />
+              <span style={{ fontSize: 10, color: '#5a9e6a', opacity: 0.45 }}>AI小手机团队</span>
             </div>
           </div>
         </div>
@@ -4214,7 +4214,7 @@ export default function PhonePage() {
         <div className="phone-screen">
           {/* ===== 未登录 → 登录界面（在手机框内） ===== */}
           {!isLoggedIn ? (
-            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg, #fef9ee 0%, #fef3c7 40%, #fde68a 100%)', borderRadius: '48px', overflow: 'hidden' }}>
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 40%, #a5d6a7 100%)', borderRadius: '48px', overflow: 'hidden' }}>
               {/* Status Bar */}
               <div className="status-bar">
                 <span>{time}</span>
@@ -4248,7 +4248,7 @@ export default function PhonePage() {
                   <div className="big-clock" onClick={handleDebugTitleClick}>
                     <div className="big-time">{time}</div>
                     <div className="big-date">{dateStr}</div>
-                    <div style={{ fontSize: 10, color: '#b45309', marginTop: 2, opacity: 0.8 }}>💎 {tokenBalance} Token · Lv.{userLevel}</div>
+                    <div style={{ fontSize: 10, color: '#4a7c50', marginTop: 2, opacity: 0.8 }}>💎 {tokenBalance} Token · Lv.{userLevel}</div>
                   </div>
 
                   {/* Parent Widgets */}
