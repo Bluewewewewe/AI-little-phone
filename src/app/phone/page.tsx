@@ -1564,12 +1564,12 @@ export default function PhonePage() {
         setDragOverIndex(null);
       }
 
-      // 检测页面切换 - 悬停在边缘时延迟切换
-      const container = document.querySelector('.app-grid-wrapper');
-      if (container) {
-        const containerRect = container.getBoundingClientRect();
-        const isLeftEdge = e.clientX < containerRect.left + 40;
-        const isRightEdge = e.clientX > containerRect.right - 40;
+      // 检测页面切换 - 悬停在手机屏幕边缘时延迟切换
+      const phoneScreen = document.querySelector('.phone-screen');
+      if (phoneScreen) {
+        const screenRect = phoneScreen.getBoundingClientRect();
+        const isLeftEdge = e.clientX < screenRect.left + 40;
+        const isRightEdge = e.clientX > screenRect.right - 40;
 
         if (isLeftEdge && currentPage > 0) {
           // 悬停在左边缘，设置定时器延迟切换
