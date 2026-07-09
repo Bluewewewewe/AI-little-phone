@@ -2557,7 +2557,7 @@ export default function PhonePage() {
             if (dragItem === null)
                 return;
 
-            const rect = e.target as HTMLElement.closest(".app-icon")?.getBoundingClientRect();
+            const rect = (e.target as HTMLElement).closest(".app-icon")?.getBoundingClientRect();
             const offsetX = rect ? rect.width / 2 : 32;
             const offsetY = rect ? rect.height / 2 : 40;
 
@@ -4168,7 +4168,7 @@ export default function PhonePage() {
                     display: "flex",
                     borderBottom: "1px solid rgba(0,0,0,0.04)"
                 }}>
-                {["home", "discover", "messages", "me"] as const.map(tab => {
+                {(["home", "discover", "messages", "me"] as const).map(tab => {
                     const labels = {
                         home: "首页",
                         discover: "发现",
@@ -4347,7 +4347,7 @@ export default function PhonePage() {
                             gap: 6,
                             marginBottom: 8
                         }}>
-                        {["all", "entertainment", "social"] as const.map(tab => {
+                        {(["all", "entertainment", "social"] as const).map(tab => {
                             const labels = {
                                 all: "🏆 总榜",
                                 entertainment: "🎬 文娱榜",
@@ -7703,7 +7703,7 @@ export default function PhonePage() {
                             paddingBottom: 8,
                             flexShrink: 0
                         }}>
-                        {["全部", "服装", "家居", "数码", "食品", "礼物", "其他"] as const.map(cat => <button
+                        {(["全部", "服装", "家居", "数码", "食品", "礼物", "其他"] as const).map(cat => <button
                             key={cat}
                             onClick={() => setShopCategory(cat)}
                             style={{
