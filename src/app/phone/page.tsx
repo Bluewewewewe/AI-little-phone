@@ -8076,6 +8076,8 @@ export default function PhonePage() {
         switch (currentApp) {
         case "mixin":
             return renderMixin();
+        case "moments":
+            return renderMoments();
         case "weibo":
             return renderWeibo();
         case "home":
