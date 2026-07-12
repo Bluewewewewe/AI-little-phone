@@ -582,6 +582,213 @@ function getAppLabel(id: string, unlocked: boolean): string {
     return map[id] || id;
 }
 
+// Weibo Verification Admin Panel Component
+function WeiboVerifyAdmin() {
+    const [verifications, setVerifications] = useState<Array<{
+        id: string;
+        user_id: string;
+        weibo_uid: string;
+        weibo_name: string;
+        verification_code: string;
+        step1_dm_sent: boolean;
+        step1_passed: boolean;
+        step2_passed: boolean;
+        step2_chaohua_level: number;
+        status: string;
+        admin_note: string;
+        created_at: string;
+    }>>([]);
+    const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState<"pending" | "verified" | "rejected" | "all">("pending");
+
+    const fetchVerifications = async () => {
+        try {
+            const res = await fetch("/api/weibo-verify?list=true&status=" + filter);
+            const result = await res.json();
+            if (result.data) {
+                setVerifications(result.data);
+            }
+        } catch (e) {
+            console.error("Fetch verifications failed:", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAction = async (username: string, action: string, note?: string) => {
+        try {
+            await fetch("/api/weibo-verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action,
+                    username,
+                    adminNote: note || `Admin ${action}`
+                })
+            });
+            fetchVerifications();
+        } catch (e) {
+            console.error("Admin action failed:", e);
+        }
+    };
+
+    // Fetch on mount and when filter changes
+    useState(() => {
+        fetchVerifications();
+    });
+
+    return (
+        <div style={{ padding: "0 4px" }}>
+            <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12
+            }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#92400e" }}>🔐 微博验证审核</span>
+                <button
+                    onClick={fetchVerifications}
+                    style={{
+                        background: "rgba(245,158,11,0.1)",
+                        border: "1px solid rgba(245,158,11,0.3)",
+                        borderRadius: 8,
+                        padding: "4px 10px",
+                        fontSize: 11,
+                        color: "#92400e",
+                        cursor: "pointer"
+                    }}>🔄 刷新</button>
+            </div>
+
+            {/* Filter tabs */}
+            <div style={{
+                display: "flex",
+                gap: 6,
+                marginBottom: 12
+            }}>
+                {([
+                    { key: "pending" as const, label: "待审核" },
+                    { key: "verified" as const, label: "已通过" },
+                    { key: "rejected" as const, label: "已拒绝" },
+                    { key: "all" as const, label: "全部" }
+                ]).map(f => (
+                    <button
+                        key={f.key}
+                        onClick={() => { setFilter(f.key); setLoading(true); fetchVerifications(); }}
+                        style={{
+                            padding: "4px 10px",
+                            borderRadius: 8,
+                            border: "none",
+                            fontSize: 11,
+                            fontWeight: filter === f.key ? 600 : 400,
+                            background: filter === f.key ? "#f59e0b" : "rgba(255,255,255,0.5)",
+                            color: filter === f.key ? "#fff" : "#92400e",
+                            cursor: "pointer"
+                        }}>{f.label}</button>
+                ))}
+            </div>
+
+            {loading ? (
+                <div style={{ textAlign: "center", padding: 30, color: "#bbb", fontSize: 13 }}>加载中...</div>
+            ) : verifications.length === 0 ? (
+                <div style={{ textAlign: "center", padding: 30, color: "#bbb", fontSize: 13 }}>暂无验证记录</div>
+            ) : (
+                verifications.map(v => (
+                    <div key={v.id} style={{
+                        background: "rgba(255,255,255,0.7)",
+                        borderRadius: 12,
+                        padding: 12,
+                        marginBottom: 8,
+                        border: "1px solid rgba(255,255,255,0.6)"
+                    }}>
+                        <div style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: 8
+                        }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: "#92400e" }}>
+                                @{v.user_id}
+                            </span>
+                            <span style={{
+                                fontSize: 10,
+                                padding: "2px 8px",
+                                borderRadius: 6,
+                                background: v.status === "verified" ? "#dcfce7" : v.status === "rejected" ? "#fee2e2" : "#fef3c7",
+                                color: v.status === "verified" ? "#166534" : v.status === "rejected" ? "#991b1b" : "#92400e"
+                            }}>{v.status === "verified" ? "已通过" : v.status === "rejected" ? "已拒绝" : "待审核"}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: "#666", marginBottom: 6 }}>
+                            微博UID: {v.weibo_uid || "未填"} | 昵称: {v.weibo_name || "未填"}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#666", marginBottom: 6 }}>
+                            验证码: <span style={{ fontFamily: "monospace", fontWeight: 600, color: "#2e7d32" }}>{v.verification_code}</span>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                            <span style={{
+                                fontSize: 10,
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                                background: v.step1_passed ? "#dcfce7" : "#f5f5f5",
+                                color: v.step1_passed ? "#166534" : "#999"
+                            }}>① 私信 {v.step1_passed ? "✓" : "✗"}</span>
+                            <span style={{
+                                fontSize: 10,
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                                background: v.step2_passed ? "#dcfce7" : "#f5f5f5",
+                                color: v.step2_passed ? "#166534" : "#999"
+                            }}>② 超话 {v.step2_passed ? "✓" : "✗"}</span>
+                        </div>
+                        {v.status === "pending" && (
+                            <div style={{ display: "flex", gap: 6 }}>
+                                <button
+                                    onClick={() => handleAction(v.user_id, "admin_approve_step1")}
+                                    style={{
+                                        flex: 1,
+                                        padding: "6px",
+                                        borderRadius: 8,
+                                        border: "1px solid #86efac",
+                                        background: "#f0fdf4",
+                                        color: "#166534",
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        cursor: "pointer"
+                                    }}>✅ 通过私信</button>
+                                <button
+                                    onClick={() => handleAction(v.user_id, "admin_approve_all")}
+                                    style={{
+                                        flex: 1,
+                                        padding: "6px",
+                                        borderRadius: 8,
+                                        border: "1px solid #86efac",
+                                        background: "#dcfce7",
+                                        color: "#166534",
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        cursor: "pointer"
+                                    }}>✅ 全部通过</button>
+                                <button
+                                    onClick={() => handleAction(v.user_id, "admin_reject")}
+                                    style={{
+                                        flex: 1,
+                                        padding: "6px",
+                                        borderRadius: 8,
+                                        border: "1px solid #fca5a5",
+                                        background: "#fef2f2",
+                                        color: "#991b1b",
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        cursor: "pointer"
+                                    }}>❌ 拒绝</button>
+                            </div>
+                        )}
+                    </div>
+                ))
+            )}
+        </div>
+    );
+}
+
 export default function PhonePage() {
     const [time, setTime] = useState("--:--");
     const [dateStr, setDateStr] = useState("");
@@ -621,7 +828,17 @@ export default function PhonePage() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [adminViewMode, setAdminViewMode] = useState<"admin" | "user">("admin");
-    const [adminTab, setAdminTab] = useState<"dashboard" | "cpchat" | "content" | "token" | "god">("dashboard");
+
+    // Weibo verification state
+    const [showWeiboVerify, setShowWeiboVerify] = useState(false);
+    const [wbVerifyStep, setWbVerifyStep] = useState<"input" | "waiting" | "verified">("input");
+    const [wbVerifyCode, setWbVerifyCode] = useState("");
+    const [wbVerifyUid, setWbVerifyUid] = useState("");
+    const [wbVerifyName, setWbVerifyName] = useState("");
+    const [wbStep1Passed, setWbStep1Passed] = useState(false);
+    const [wbStep2Passed, setWbStep2Passed] = useState(false);
+    const [wbVerifyStatus, setWbVerifyStatus] = useState<"none" | "pending" | "verified" | "rejected">("none");
+    const [adminTab, setAdminTab] = useState<"dashboard" | "cpchat" | "content" | "token" | "god" | "weibo">("dashboard");
     const [tokenBalance, setTokenBalance] = useState(100);
 
     const [tokenPricing, setTokenPricing] = useState({
@@ -1321,7 +1538,7 @@ export default function PhonePage() {
         }
     }
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
         if (!loginUsername.trim())
             return;
 
@@ -1336,7 +1553,111 @@ export default function PhonePage() {
             isSet: true
         }));
 
+        // For non-admin users, check Weibo verification status
+        if (!isAdminUser) {
+            try {
+                const res = await fetch(`/api/weibo-verify?username=${encodeURIComponent(loginUsername.trim())}`);
+                const result = await res.json();
+                if (result.data && result.data.status === "verified") {
+                    // Already verified, go directly to app
+                    setWbVerifyStatus("verified");
+                    setWbStep1Passed(true);
+                    setWbStep2Passed(true);
+                    setShowWeiboVerify(false);
+                } else if (result.data && result.data.status === "pending") {
+                    // Has pending verification, show waiting screen
+                    setWbVerifyCode(result.data.verification_code);
+                    setWbVerifyUid(result.data.weibo_uid || "");
+                    setWbVerifyName(result.data.weibo_name || "");
+                    setWbStep1Passed(result.data.step1_passed);
+                    setWbStep2Passed(result.data.step2_passed);
+                    setWbVerifyStep("waiting");
+                    setWbVerifyStatus("pending");
+                    setShowWeiboVerify(true);
+                } else {
+                    // No verification record, show input screen
+                    setWbVerifyStep("input");
+                    setWbVerifyStatus("none");
+                    setShowWeiboVerify(true);
+                }
+            } catch {
+                // If API fails, skip verification for now
+                setShowWeiboVerify(false);
+            }
+        }
+
         setLoginPassword("");
+    };
+
+    // Weibo verification functions
+    const initWeiboVerify = async () => {
+        try {
+            const res = await fetch("/api/weibo-verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "init",
+                    username: loginUsername.trim(),
+                    weiboUid: wbVerifyUid,
+                    weiboName: wbVerifyName
+                })
+            });
+            const result = await res.json();
+            if (result.data) {
+                setWbVerifyCode(result.data.verification_code);
+                setWbVerifyStep("waiting");
+                setWbVerifyStatus("pending");
+            }
+        } catch (e) {
+            console.error("Init weibo verify failed:", e);
+        }
+    };
+
+    const checkWeiboVerifyStatus = async () => {
+        try {
+            const res = await fetch(`/api/weibo-verify?username=${encodeURIComponent(loginUsername.trim())}`);
+            const result = await res.json();
+            if (result.data) {
+                setWbStep1Passed(result.data.step1_passed);
+                setWbStep2Passed(result.data.step2_passed);
+                setWbVerifyCode(result.data.verification_code);
+                if (result.data.status === "verified") {
+                    setWbVerifyStep("verified");
+                    setWbVerifyStatus("verified");
+                    setShowWeiboVerify(false);
+                } else if (result.data.status === "rejected") {
+                    setWbVerifyStatus("rejected");
+                } else {
+                    setWbVerifyStep("waiting");
+                    setWbVerifyStatus("pending");
+                }
+            }
+        } catch (e) {
+            console.error("Check weibo verify status failed:", e);
+        }
+    };
+
+    const submitWeiboInfo = async () => {
+        if (!wbVerifyUid.trim()) return;
+        try {
+            const res = await fetch("/api/weibo-verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "submit_code",
+                    username: loginUsername.trim(),
+                    weiboUid: wbVerifyUid.trim(),
+                    weiboName: wbVerifyName.trim()
+                })
+            });
+            const result = await res.json();
+            if (result.data) {
+                setWbVerifyStep("waiting");
+                setWbVerifyStatus("pending");
+            }
+        } catch (e) {
+            console.error("Submit weibo info failed:", e);
+        }
     };
 
     const consumeToken = (amount: number, reason: string): boolean => {
@@ -8105,6 +8426,311 @@ export default function PhonePage() {
         }
     }
 
+    function renderWeiboVerifyScreen() {
+        return (
+            <div style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                padding: "20px",
+                overflow: "auto"
+            }}>
+                {/* Header */}
+                <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: 24
+                }}>
+                    <button
+                        onClick={() => {
+                            setShowWeiboVerify(false);
+                            setIsLoggedIn(false);
+                        }}
+                        style={{
+                            background: "none",
+                            border: "none",
+                            fontSize: 20,
+                            cursor: "pointer",
+                            color: "#2e5c33",
+                            padding: "8px"
+                        }}>←</button>
+                    <span style={{
+                        fontSize: 18,
+                        fontWeight: 700,
+                        color: "#2e5c33",
+                        marginLeft: 8
+                    }}>微博身份验证</span>
+                </div>
+
+                {wbVerifyStep === "input" && <>
+                    {/* Step 1: Input Weibo info */}
+                    <div style={{
+                        background: "rgba(255,255,255,0.7)",
+                        backdropFilter: "blur(20px)",
+                        borderRadius: 16,
+                        padding: 20,
+                        marginBottom: 16
+                    }}>
+                        <div style={{
+                            fontSize: 15,
+                            fontWeight: 600,
+                            color: "#2e5c33",
+                            marginBottom: 12
+                        }}>📱 绑定微博账号</div>
+                        <div style={{
+                            fontSize: 12,
+                            color: "#4a7c50",
+                            marginBottom: 16,
+                            lineHeight: 1.6
+                        }}>
+                            为了确保社区安全，我们需要验证你的微博身份。请填写你的微博信息：
+                        </div>
+                        <div style={{ marginBottom: 12 }}>
+                            <div style={{
+                                fontSize: 11,
+                                color: "#3d5c45",
+                                fontWeight: 600,
+                                marginBottom: 4
+                            }}>微博UID或主页链接</div>
+                            <input
+                                value={wbVerifyUid}
+                                onChange={e => setWbVerifyUid(e.target.value)}
+                                placeholder="例如：1234567890 或 weibo.com/u/xxx"
+                                style={{
+                                    width: "100%",
+                                    padding: "10px 12px",
+                                    border: "1.5px solid rgba(165,214,167,0.5)",
+                                    borderRadius: 10,
+                                    fontSize: 13,
+                                    outline: "none",
+                                    background: "rgba(255,255,255,0.8)",
+                                    color: "#2e5c33",
+                                    boxSizing: "border-box"
+                                }}
+                            />
+                        </div>
+                        <div style={{ marginBottom: 16 }}>
+                            <div style={{
+                                fontSize: 11,
+                                color: "#3d5c45",
+                                fontWeight: 600,
+                                marginBottom: 4
+                            }}>微博昵称（选填）</div>
+                            <input
+                                value={wbVerifyName}
+                                onChange={e => setWbVerifyName(e.target.value)}
+                                placeholder="你的微博昵称"
+                                style={{
+                                    width: "100%",
+                                    padding: "10px 12px",
+                                    border: "1.5px solid rgba(165,214,167,0.5)",
+                                    borderRadius: 10,
+                                    fontSize: 13,
+                                    outline: "none",
+                                    background: "rgba(255,255,255,0.8)",
+                                    color: "#2e5c33",
+                                    boxSizing: "border-box"
+                                }}
+                            />
+                        </div>
+                        <button
+                            onClick={() => {
+                                if (!wbVerifyUid.trim()) return;
+                                initWeiboVerify();
+                            }}
+                            disabled={!wbVerifyUid.trim()}
+                            style={{
+                                width: "100%",
+                                padding: "12px",
+                                background: wbVerifyUid.trim() ? "linear-gradient(135deg, #5a9e6a, #2e7d32)" : "#ccc",
+                                border: "none",
+                                borderRadius: 12,
+                                color: "#fff",
+                                fontSize: 15,
+                                fontWeight: 600,
+                                cursor: wbVerifyUid.trim() ? "pointer" : "not-allowed"
+                            }}>提交并开始验证</button>
+                    </div>
+                </>}
+
+                {wbVerifyStep === "waiting" && <>
+                    {/* Step 2: Waiting for verification */}
+                    <div style={{
+                        background: "rgba(255,255,255,0.7)",
+                        backdropFilter: "blur(20px)",
+                        borderRadius: 16,
+                        padding: 20,
+                        marginBottom: 16
+                    }}>
+                        <div style={{
+                            fontSize: 15,
+                            fontWeight: 600,
+                            color: "#2e5c33",
+                            marginBottom: 16
+                        }}>🔐 验证进度</div>
+
+                        {/* Step 1: DM verification */}
+                        <div style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            marginBottom: 20,
+                            padding: 14,
+                            background: wbStep1Passed ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.5)",
+                            borderRadius: 12,
+                            border: wbStep1Passed ? "1.5px solid rgba(34,197,94,0.3)" : "1.5px solid rgba(165,214,167,0.3)"
+                        }}>
+                            <div style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: "50%",
+                                background: wbStep1Passed ? "#22c55e" : "rgba(165,214,167,0.3)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 14,
+                                flexShrink: 0,
+                                marginRight: 12,
+                                color: wbStep1Passed ? "#fff" : "#4a7c50"
+                            }}>{wbStep1Passed ? "✓" : "1"}</div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                    color: wbStep1Passed ? "#16a34a" : "#2e5c33",
+                                    marginBottom: 4
+                                }}>
+                                    {wbStep1Passed ? "✅ 私信验证通过" : "给官方号发验证码"}
+                                </div>
+                                {!wbStep1Passed && <div style={{
+                                    fontSize: 12,
+                                    color: "#4a7c50",
+                                    lineHeight: 1.6
+                                }}>
+                                    请用微博给 <span style={{ fontWeight: 600, color: "#2e7d32" }}>@米米官方号</span> 发一条私信，内容为：<br />
+                                    <div style={{
+                                        background: "rgba(46,125,50,0.08)",
+                                        padding: "8px 12px",
+                                        borderRadius: 8,
+                                        marginTop: 6,
+                                        fontFamily: "monospace",
+                                        fontSize: 14,
+                                        fontWeight: 700,
+                                        color: "#2e7d32",
+                                        letterSpacing: 1
+                                    }}>{wbVerifyCode}</div>
+                                    <div style={{
+                                        marginTop: 8,
+                                        fontSize: 11,
+                                        color: "#81c784"
+                                    }}>管理员确认后将自动通过</div>
+                                </div>}
+                            </div>
+                        </div>
+
+                        {/* Step 2: 超话等级 check */}
+                        <div style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            padding: 14,
+                            background: wbStep2Passed ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.5)",
+                            borderRadius: 12,
+                            border: wbStep2Passed ? "1.5px solid rgba(34,197,94,0.3)" : "1.5px solid rgba(165,214,167,0.3)",
+                            opacity: wbStep1Passed ? 1 : 0.5
+                        }}>
+                            <div style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: "50%",
+                                background: wbStep2Passed ? "#22c55e" : "rgba(165,214,167,0.3)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 14,
+                                flexShrink: 0,
+                                marginRight: 12,
+                                color: wbStep2Passed ? "#fff" : "#4a7c50"
+                            }}>{wbStep2Passed ? "✓" : "2"}</div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                    color: wbStep2Passed ? "#16a34a" : "#2e5c33",
+                                    marginBottom: 4
+                                }}>
+                                    {wbStep2Passed ? "✅ 超话等级验证通过" : "超话等级审核"}
+                                </div>
+                                {!wbStep2Passed && <div style={{
+                                    fontSize: 12,
+                                    color: "#4a7c50",
+                                    lineHeight: 1.6
+                                }}>
+                                    {wbStep1Passed
+                                        ? "管理员正在检查你的超话等级，请稍候..."
+                                        : "完成第一步后自动开始"}
+                                </div>}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Status hint */}
+                    <div style={{
+                        textAlign: "center",
+                        padding: "12px",
+                        fontSize: 12,
+                        color: "#4a7c50",
+                        background: "rgba(255,255,255,0.4)",
+                        borderRadius: 12
+                    }}>
+                        {wbVerifyStatus === "rejected"
+                            ? "❌ 验证未通过，请联系客服"
+                            : wbStep1Passed && wbStep2Passed
+                                ? "🎉 验证全部通过！正在进入..."
+                                : "⏳ 等待管理员审核中，你可以退出页面稍后再来查看"}
+                    </div>
+
+                    {/* Refresh button */}
+                    <button
+                        onClick={checkWeiboVerifyStatus}
+                        style={{
+                            width: "100%",
+                            padding: "12px",
+                            marginTop: 12,
+                            background: "rgba(255,255,255,0.6)",
+                            border: "1.5px solid rgba(165,214,167,0.5)",
+                            borderRadius: 12,
+                            color: "#2e7d32",
+                            fontSize: 14,
+                            fontWeight: 600,
+                            cursor: "pointer"
+                        }}>🔄 刷新状态</button>
+                </>}
+
+                {wbVerifyStep === "verified" && <>
+                    <div style={{
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        textAlign: "center"
+                    }}>
+                        <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
+                        <div style={{
+                            fontSize: 18,
+                            fontWeight: 700,
+                            color: "#2e7d32",
+                            marginBottom: 8
+                        }}>验证通过！</div>
+                        <div style={{
+                            fontSize: 13,
+                            color: "#4a7c50"
+                        }}>正在进入小手机...</div>
+                    </div>
+                </>}
+            </div>
+        );
+    }
+
     function renderLoginScreen() {
         return (
             <div
@@ -8592,6 +9218,10 @@ export default function PhonePage() {
                         key: "token" as const,
                         icon: "💰",
                         label: "定价"
+                    }, {
+                        key: "weibo" as const,
+                        icon: "🔐",
+                        label: "验证"
                     }, {
                         key: "god" as const,
                         icon: "👁️",
@@ -9443,6 +10073,7 @@ export default function PhonePage() {
                         </div>
                     </div>}
                     {}
+                    {adminTab === "weibo" && <WeiboVerifyAdmin />}
                     {adminTab === "god" && <div>
                         <div
                             style={{
@@ -9813,6 +10444,20 @@ export default function PhonePage() {
                             <span className="status-right">📶 🔋 100%</span>
                         </div>
                         {renderLoginScreen()}
+                    </div> : showWeiboVerify ? <div
+                        style={{
+                            height: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                            background: "linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 40%, #a5d6a7 100%)",
+                            borderRadius: "48px",
+                            overflow: "hidden"
+                        }}>
+                        <div className="status-bar">
+                            <span>{time}</span>
+                            <span className="status-right">📶 🔋 100%</span>
+                        </div>
+                        {renderWeiboVerifyScreen()}
                     </div> : isAdmin && adminViewMode === "admin" ? <div
                         style={{
                             height: "100%",
