@@ -603,13 +603,26 @@ function AdminManagePanel({ currentUsername }: { currentUsername: string }) {
         approved_at: string;
         created_at: string;
     }>>([]);
+    const [allUsers, setAllUsers] = useState<Array<{
+        id: string;
+        username: string;
+        display_name: string;
+        level: number;
+        is_admin: boolean;
+        admin_approved: boolean;
+        weibo_verified: boolean;
+        weibo_uid: string;
+        weibo_name: string;
+        created_at: string;
+    }>>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [showUserList, setShowUserList] = useState(false);
 
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [pendingRes, allRes] = await Promise.all([
+            const [pendingRes, allRes, usersRes] = await Promise.all([
                 fetch("/api/auth", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -619,12 +632,19 @@ function AdminManagePanel({ currentUsername }: { currentUsername: string }) {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ action: "list_admins" })
+                }),
+                fetch("/api/auth", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "list_users" })
                 })
             ]);
             const pendingResult = await pendingRes.json();
             const allResult = await allRes.json();
+            const usersResult = await usersRes.json();
             if (pendingResult.success) setPendingAdmins(pendingResult.data);
             if (allResult.success) setAllAdmins(allResult.data);
+            if (usersResult.success) setAllUsers(usersResult.data);
         } catch (e) {
             console.error("Fetch admin data failed:", e);
         } finally {
@@ -840,6 +860,114 @@ function AdminManagePanel({ currentUsername }: { currentUsername: string }) {
                                 </div>
                             </div>
                         ))}
+                    </div>
+
+                    {/* 用户列表（含微博ID） */}
+                    <div style={{
+                        background: "rgba(255,255,255,0.5)",
+                        borderRadius: 12,
+                        padding: 12,
+                        marginTop: 12,
+                        border: "1px solid rgba(255,255,255,0.4)"
+                    }}>
+                        <div style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: 10
+                        }}>
+                            <span style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: "#92400e"
+                            }}>👥 用户列表 ({allUsers.length})</span>
+                            <button
+                                onClick={() => setShowUserList(!showUserList)}
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    fontSize: 11,
+                                    color: "#5a9e6a",
+                                    cursor: "pointer",
+                                    textDecoration: "underline"
+                                }}
+                            >{showUserList ? "收起" : "展开"}</button>
+                        </div>
+
+                        {showUserList && (
+                            <div>
+                                {allUsers.length === 0 ? (
+                                    <div style={{ fontSize: 12, color: "#bbb", textAlign: "center", padding: 10 }}>
+                                        暂无用户
+                                    </div>
+                                ) : (
+                                    allUsers.map(user => (
+                                        <div key={user.id} style={{
+                                            padding: "10px 12px",
+                                            background: "rgba(255,255,255,0.7)",
+                                            borderRadius: 10,
+                                            marginBottom: 6,
+                                            border: "1px solid rgba(255,255,255,0.5)"
+                                        }}>
+                                            <div style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center"
+                                            }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                    <span style={{ fontSize: 16 }}>
+                                                        {user.is_admin && user.admin_approved ? "👑" : "👤"}
+                                                    </span>
+                                                    <div>
+                                                        <div style={{ fontSize: 13, fontWeight: 600, color: "#2e5c33" }}>
+                                                            {user.display_name || user.username}
+                                                        </div>
+                                                        <div style={{ fontSize: 11, color: "#999", marginTop: 2 }}>
+                                                            @{user.username} · Lv.{user.level}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div style={{
+                                                    fontSize: 10,
+                                                    fontWeight: 600,
+                                                    padding: "3px 8px",
+                                                    borderRadius: 6,
+                                                    background: user.weibo_verified ? "rgba(34,197,94,0.1)" : "rgba(156,163,175,0.1)",
+                                                    color: user.weibo_verified ? "#16a34a" : "#6b7280"
+                                                }}>
+                                                    {user.weibo_verified ? "✓ 已验证" : "未验证"}
+                                                </div>
+                                            </div>
+                                            {/* 微博信息 */}
+                                            {(user.weibo_uid || user.weibo_name) && (
+                                                <div style={{
+                                                    marginTop: 8,
+                                                    padding: "8px 10px",
+                                                    background: "rgba(245,158,11,0.05)",
+                                                    borderRadius: 8,
+                                                    border: "1px solid rgba(245,158,11,0.15)"
+                                                }}>
+                                                    <div style={{
+                                                        fontSize: 10,
+                                                        fontWeight: 600,
+                                                        color: "#92400e",
+                                                        marginBottom: 4
+                                                    }}>🔗 绑定微博</div>
+                                                    <div style={{ fontSize: 12, color: "#2e5c33" }}>
+                                                        {user.weibo_name && <span style={{ fontWeight: 600 }}>{user.weibo_name}</span>}
+                                                        {user.weibo_uid && (
+                                                            <span style={{ color: "#666", marginLeft: 8 }}>
+                                                                UID: {user.weibo_uid}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
                     </div>
                 </>
             )}

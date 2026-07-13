@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
 
     if (!username && !token && !targetUserId) {
       // 部分 action 不需要 username
-      const noUsernameActions = ["list_pending_admins", "list_admins", "validate", "logout"];
+      const noUsernameActions = ["list_pending_admins", "list_admins", "list_users", "validate", "logout"];
       if (!noUsernameActions.includes(action)) {
         return NextResponse.json(
           { error: "缺少必要参数" },
@@ -271,6 +271,20 @@ export async function POST(request: NextRequest) {
         .select("id, username, display_name, level, is_admin, admin_approved, admin_pending, approved_by, approved_at, created_at")
         .eq("is_admin", true)
         .order("admin_approved", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, data: data || [] });
+    }
+
+    // ========== 获取所有用户列表（含微博信息） ==========
+    if (action === "list_users") {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, username, display_name, level, is_admin, admin_approved, weibo_verified, weibo_uid, weibo_name, created_at")
         .order("created_at", { ascending: false });
 
       if (error) {
