@@ -953,12 +953,22 @@ function AdminManagePanel({ currentUsername }: { currentUsername: string }) {
                                                         color: "#92400e",
                                                         marginBottom: 4
                                                     }}>🔗 绑定微博</div>
-                                                    <div style={{ fontSize: 12, color: "#2e5c33" }}>
+                                                    <div style={{ fontSize: 12, color: "#2e5c33", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                                                         {user.weibo_name && <span style={{ fontWeight: 600 }}>{user.weibo_name}</span>}
                                                         {user.weibo_uid && (
-                                                            <span style={{ color: "#666", marginLeft: 8 }}>
-                                                                UID: {user.weibo_uid}
-                                                            </span>
+                                                            <a
+                                                                href={`https://weibo.com/u/${user.weibo_uid}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{
+                                                                    color: "#2e7d32",
+                                                                    textDecoration: "underline",
+                                                                    fontSize: 11,
+                                                                    fontWeight: 500
+                                                                }}
+                                                            >
+                                                                查看微博主页 ↗
+                                                            </a>
                                                         )}
                                                     </div>
                                                 </div>
