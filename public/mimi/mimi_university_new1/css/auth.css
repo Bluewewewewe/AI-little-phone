@@ -1,7 +1,8 @@
 /* ==================== 粉丝门禁系统样式 — 黄绿蓝渐变主题 ==================== */
 
+/* 默认隐藏登录页，只有没 token 时才显示 */
 .auth-page {
-    display: flex;
+    display: none !important;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
@@ -12,6 +13,11 @@
         linear-gradient(168deg, #fff9c4 0%, #e8f5e9 32%, #e3f2fd 68%, #bbdefb 100%);
     background-attachment: fixed;
     padding: 20px;
+}
+
+/* 需要显示登录页时添加此类 */
+.auth-page.show-login {
+    display: flex !important;
 }
 
 .auth-card {
