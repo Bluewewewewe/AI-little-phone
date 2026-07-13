@@ -378,10 +378,21 @@ async function saveUserToSupabase(uid, tokenData, username, password) {
 // ==================== 进入主页 ====================
 function enterMainPage() {
     var tokenData = getTokenData();
-    if (!tokenData) return;
+    if (!tokenData) {
+        // 如果 token 格式不对，尝试直接使用
+        var authPage = document.getElementById('authPage');
+        var mainPage = document.getElementById('mainPage');
+        if (authPage) authPage.style.display = 'none';
+        if (mainPage) mainPage.style.display = 'block';
+        return;
+    }
+
+    // 兼容 AI小手机 token 格式 (username/displayName) 和原格式 (weiboUid/weiboName)
+    var userName = tokenData.weiboName || tokenData.displayName || tokenData.username || '用户';
+    var userUid = tokenData.weiboUid || tokenData.username || 'unknown';
 
     // 设置全局用户信息（兼容现有系统）
-    currentUser = { name: tokenData.weiboName || tokenData.weiboUid, type: 'student', uid: tokenData.weiboUid };
+    currentUser = { name: userName, type: 'student', uid: userUid };
     isAdmin = false;
     isSuper = false;
     sessionStorage.setItem('mimi_current_user', JSON.stringify(currentUser));
@@ -393,7 +404,7 @@ function enterMainPage() {
 
     // 显示用户信息
     var userDisp = document.getElementById('userDisp');
-    if (userDisp) userDisp.innerText = (tokenData.weiboName || tokenData.weiboUid) + ' (UID:' + tokenData.weiboUid + ')';
+    if (userDisp) userDisp.innerText = userName + ' (' + userUid + ')';
 
     // 隐藏管理员按钮
     var adminEls = ['passBtn', 'adminManageBtn', 'adminDateSet', 'adminBtnS', 'adminBtnT', 'adminCatBtn'];
