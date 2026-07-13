@@ -17,6 +17,17 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initGate() {
+    // 检查 URL 参数是否有 token（从 AI小手机 传递）
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    
+    if (urlToken) {
+        // 保存 token 到 localStorage
+        localStorage.setItem(TOKEN_KEY, urlToken);
+        // 清除 URL 参数
+        window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+    }
+    
     const token = localStorage.getItem(TOKEN_KEY);
     // 如果有 token（从 AI小手机 共享），直接进入主页面
     if (token) {

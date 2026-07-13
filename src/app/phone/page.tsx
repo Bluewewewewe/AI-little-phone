@@ -8327,6 +8327,10 @@ export default function PhonePage() {
 
     // 渲染外部应用（iframe 加载）
     function renderExternalApp(id: string, name: string, url: string) {
+        // 获取当前用户的 token，通过 URL 参数传递
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const fullUrl = token ? `${url}${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}` : url;
+        
         return (
             <div style={{
                 height: "100%",
@@ -8367,7 +8371,7 @@ export default function PhonePage() {
                 </div>
                 {/* iframe */}
                 <iframe
-                    src={url}
+                    src={fullUrl}
                     style={{
                         flex: 1,
                         width: "100%",
