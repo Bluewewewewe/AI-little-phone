@@ -985,6 +985,439 @@ function AdminManagePanel({ currentUsername }: { currentUsername: string }) {
     );
 }
 
+function InviteAdminPanel({ currentUsername }: { currentUsername: string }) {
+    const [inviteCodes, setInviteCodes] = useState<Array<{
+        id: string;
+        code: string;
+        created_by: string;
+        used_by: string | null;
+        use_count: number;
+        max_uses: number;
+        is_active: boolean;
+        expires_at: string | null;
+        created_at: string;
+        note: string;
+    }>>([]);
+    const [inviteTree, setInviteTree] = useState<{
+        invited: Array<{
+            username: string;
+            display_name: string;
+            invited_by: string;
+            created_at: string;
+        }>;
+        admins: Array<{
+            username: string;
+            display_name: string;
+            created_at: string;
+        }>;
+    }>({ invited: [], admins: [] });
+    const [loading, setLoading] = useState(true);
+    const [generating, setGenerating] = useState(false);
+    const [maxUses, setMaxUses] = useState(1);
+    const [expiresDays, setExpiresDays] = useState(0);
+    const [inviteRequired, setInviteRequired] = useState(false);
+    const [copiedCode, setCopiedCode] = useState("");
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const [codesRes, treeRes, settingsRes] = await Promise.all([
+                fetch("/api/invite", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "list" })
+                }),
+                fetch("/api/invite", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "tree" })
+                }),
+                fetch("/api/auth", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "get_invite_settings" })
+                })
+            ]);
+            const codesResult = await codesRes.json();
+            const treeResult = await treeRes.json();
+            const settingsResult = await settingsRes.json();
+            if (codesResult.success) setInviteCodes(codesResult.data);
+            if (treeResult.success) setInviteTree(treeResult.data);
+            if (settingsResult.success) setInviteRequired(settingsResult.data?.invite_required === "true");
+        } catch (e) {
+            console.error("Fetch invite data failed:", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGenerate = async () => {
+        setGenerating(true);
+        try {
+            await fetch("/api/invite", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "generate",
+                    username: currentUsername,
+                    maxUses,
+                    expiresInDays: expiresDays || undefined,
+                })
+            });
+            fetchData();
+        } catch (e) {
+            console.error("Generate failed:", e);
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    const handleDeactivate = async (code: string) => {
+        await fetch("/api/invite", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "deactivate", code })
+        });
+        fetchData();
+    };
+
+    const handleToggleInviteRequired = async () => {
+        await fetch("/api/auth", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "get_invite_settings"
+            })
+        });
+        const newValue = !inviteRequired;
+        await fetch("/api/invite", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "update_settings",
+                username: currentUsername,
+                key: "invite_required",
+                value: String(newValue),
+            })
+        });
+        setInviteRequired(newValue);
+    };
+
+    const copyCode = (code: string) => {
+        navigator.clipboard.writeText(code);
+        setCopiedCode(code);
+        setTimeout(() => setCopiedCode(""), 2000);
+    };
+
+    useState(() => {
+        fetchData();
+    });
+
+    // 构建邀请树
+    const buildTree = () => {
+        const tree: Record<string, Array<{ username: string; display_name: string; created_at: string }>> = {};
+        inviteTree.invited.forEach(u => {
+            if (!tree[u.invited_by]) tree[u.invited_by] = [];
+            tree[u.invited_by].push({ username: u.username, display_name: u.display_name, created_at: u.created_at });
+        });
+        return tree;
+    };
+
+    const tree = buildTree();
+
+    return (
+        <div style={{ padding: "0 4px" }}>
+            <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12
+            }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#92400e" }}>🎟️ 邀请码管理</span>
+                <button
+                    onClick={fetchData}
+                    style={{
+                        background: "rgba(245,158,11,0.1)",
+                        border: "1px solid rgba(245,158,11,0.3)",
+                        borderRadius: 8,
+                        padding: "4px 10px",
+                        fontSize: 11,
+                        color: "#92400e",
+                        cursor: "pointer"
+                    }}>🔄 刷新</button>
+            </div>
+
+            {/* 邀请码开关 */}
+            <div style={{
+                background: inviteRequired ? "rgba(239,68,68,0.06)" : "rgba(34,197,94,0.06)",
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 12,
+                border: `1px solid ${inviteRequired ? "rgba(239,68,68,0.2)" : "rgba(34,197,94,0.2)"}`
+            }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: inviteRequired ? "#dc2626" : "#16a34a" }}>
+                            {inviteRequired ? "🔒 邀请码模式：已开启" : "🔓 邀请码模式：已关闭"}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
+                            {inviteRequired ? "新用户注册必须填写邀请码" : "新用户注册无需邀请码"}
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleToggleInviteRequired}
+                        style={{
+                            padding: "6px 14px",
+                            borderRadius: 8,
+                            border: "none",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            background: inviteRequired ? "#ef4444" : "#22c55e",
+                            color: "#fff",
+                            cursor: "pointer"
+                        }}>
+                        {inviteRequired ? "关闭" : "开启"}
+                    </button>
+                </div>
+            </div>
+
+            {/* 生成邀请码 */}
+            <div style={{
+                background: "rgba(255,255,255,0.6)",
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 12,
+                border: "1px solid rgba(255,255,255,0.5)"
+            }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 10 }}>✨ 生成邀请码</div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 11, color: "#666" }}>可用次数:</div>
+                    <input
+                        type="number"
+                        value={maxUses}
+                        onChange={(e) => setMaxUses(Number(e.target.value) || 1)}
+                        min={1}
+                        max={999}
+                        style={{
+                            width: 60,
+                            padding: "4px 8px",
+                            borderRadius: 6,
+                            border: "1px solid #ddd",
+                            fontSize: 12,
+                            textAlign: "center"
+                        }}
+                    />
+                    <div style={{ fontSize: 11, color: "#666" }}>有效期(天):</div>
+                    <input
+                        type="number"
+                        value={expiresDays}
+                        onChange={(e) => setExpiresDays(Number(e.target.value) || 0)}
+                        min={0}
+                        placeholder="不限"
+                        style={{
+                            width: 60,
+                            padding: "4px 8px",
+                            borderRadius: 6,
+                            border: "1px solid #ddd",
+                            fontSize: 12,
+                            textAlign: "center"
+                        }}
+                    />
+                    <button
+                        onClick={handleGenerate}
+                        disabled={generating}
+                        style={{
+                            padding: "5px 14px",
+                            borderRadius: 8,
+                            border: "none",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            background: "#f59e0b",
+                            color: "#fff",
+                            cursor: generating ? "not-allowed" : "pointer",
+                            opacity: generating ? 0.5 : 1
+                        }}>
+                        {generating ? "生成中..." : "生成"}
+                    </button>
+                </div>
+            </div>
+
+            {loading ? (
+                <div style={{ textAlign: "center", padding: 30, color: "#bbb", fontSize: 13 }}>加载中...</div>
+            ) : (
+                <>
+                    {/* 邀请码列表 */}
+                    <div style={{
+                        background: "rgba(255,255,255,0.5)",
+                        borderRadius: 12,
+                        padding: 12,
+                        marginBottom: 12,
+                        border: "1px solid rgba(255,255,255,0.4)"
+                    }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 10 }}>
+                            📋 邀请码列表 ({inviteCodes.length})
+                        </div>
+                        {inviteCodes.length === 0 ? (
+                            <div style={{ fontSize: 12, color: "#bbb", textAlign: "center", padding: 10 }}>暂无邀请码</div>
+                        ) : (
+                            inviteCodes.map(ic => (
+                                <div key={ic.id} style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    padding: "8px 10px",
+                                    background: "rgba(255,255,255,0.7)",
+                                    borderRadius: 8,
+                                    marginBottom: 6,
+                                    border: "1px solid rgba(255,255,255,0.5)"
+                                }}>
+                                    <div>
+                                        <div style={{
+                                            fontSize: 13,
+                                            fontWeight: 700,
+                                            fontFamily: "monospace",
+                                            color: ic.is_active ? "#2e7d32" : "#999"
+                                        }}>
+                                            {ic.code}
+                                        </div>
+                                        <div style={{ fontSize: 10, color: "#999", marginTop: 2 }}>
+                                            创建者: {ic.created_by} · {ic.use_count}/{ic.max_uses}次
+                                            {ic.used_by && ` · 被 ${ic.used_by} 使用`}
+                                            {!ic.is_active && " · 已停用"}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "flex", gap: 4 }}>
+                                        <button
+                                            onClick={() => copyCode(ic.code)}
+                                            style={{
+                                                padding: "3px 8px",
+                                                borderRadius: 6,
+                                                border: "none",
+                                                fontSize: 10,
+                                                background: copiedCode === ic.code ? "#22c55e" : "#e5e7eb",
+                                                color: copiedCode === ic.code ? "#fff" : "#666",
+                                                cursor: "pointer"
+                                            }}>
+                                            {copiedCode === ic.code ? "已复制" : "复制"}
+                                        </button>
+                                        {ic.is_active && (
+                                            <button
+                                                onClick={() => handleDeactivate(ic.code)}
+                                                style={{
+                                                    padding: "3px 8px",
+                                                    borderRadius: 6,
+                                                    border: "none",
+                                                    fontSize: 10,
+                                                    background: "rgba(239,68,68,0.1)",
+                                                    color: "#ef4444",
+                                                    cursor: "pointer"
+                                                }}>停用</button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {/* 邀请关系树 */}
+                    <div style={{
+                        background: "rgba(255,255,255,0.5)",
+                        borderRadius: 12,
+                        padding: 12,
+                        border: "1px solid rgba(255,255,255,0.4)"
+                    }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 10 }}>
+                            🌳 邀请关系树
+                        </div>
+
+                        {/* 根节点：管理员 */}
+                        {inviteTree.admins.map(admin => (
+                            <div key={admin.username} style={{ marginBottom: 8 }}>
+                                <div style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "6px 10px",
+                                    background: "rgba(245,158,11,0.1)",
+                                    borderRadius: 8,
+                                    border: "1px solid rgba(245,158,11,0.2)"
+                                }}>
+                                    <span>👑</span>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: "#92400e" }}>
+                                        {admin.display_name || admin.username}
+                                    </span>
+                                    <span style={{ fontSize: 10, color: "#999" }}>@{admin.username}</span>
+                                    {tree[admin.username] && (
+                                        <span style={{
+                                            fontSize: 10,
+                                            background: "#f59e0b",
+                                            color: "#fff",
+                                            borderRadius: 8,
+                                            padding: "1px 6px",
+                                            fontWeight: 600
+                                        }}>邀请了 {tree[admin.username].length} 人</span>
+                                    )}
+                                </div>
+                                {/* 子节点 */}
+                                {tree[admin.username] && (
+                                    <div style={{ marginLeft: 20, marginTop: 4 }}>
+                                        {tree[admin.username].map(u => (
+                                            <div key={u.username}>
+                                                <div style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 6,
+                                                    padding: "4px 10px",
+                                                    fontSize: 11,
+                                                    color: "#2e5c33"
+                                                }}>
+                                                    <span>└─</span>
+                                                    <span>👤</span>
+                                                    <span style={{ fontWeight: 600 }}>{u.display_name || u.username}</span>
+                                                    <span style={{ color: "#999" }}>@{u.username}</span>
+                                                    <span style={{ color: "#bbb", fontSize: 10 }}>
+                                                        {new Date(u.created_at).toLocaleDateString("zh-CN")}
+                                                    </span>
+                                                </div>
+                                                {/* 二级子节点 */}
+                                                {tree[u.username] && (
+                                                    <div style={{ marginLeft: 20 }}>
+                                                        {tree[u.username].map(u2 => (
+                                                            <div key={u2.username} style={{
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                gap: 6,
+                                                                padding: "3px 10px",
+                                                                fontSize: 10,
+                                                                color: "#666"
+                                                            }}>
+                                                                <span>└─</span>
+                                                                <span>👤</span>
+                                                                <span>{u2.display_name || u2.username}</span>
+                                                                <span style={{ color: "#bbb" }}>@{u2.username}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
+                        {inviteTree.invited.length === 0 && inviteTree.admins.length === 0 && (
+                            <div style={{ fontSize: 12, color: "#bbb", textAlign: "center", padding: 10 }}>
+                                暂无邀请关系
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
 function WeiboVerifyAdmin() {
     const [verifications, setVerifications] = useState<Array<{
         id: string;
@@ -1232,6 +1665,8 @@ export default function PhonePage() {
     const [loginLoading, setLoginLoading] = useState(false);
     const [requestAdmin, setRequestAdmin] = useState(false);
     const [adminPendingMsg, setAdminPendingMsg] = useState("");
+    const [invitationCode, setInvitationCode] = useState("");
+    const [inviteRequired, setInviteRequired] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [adminViewMode, setAdminViewMode] = useState<"admin" | "user">("admin");
@@ -1247,7 +1682,7 @@ export default function PhonePage() {
     const [wbStep1Passed, setWbStep1Passed] = useState(false);
     const [wbStep2Passed, setWbStep2Passed] = useState(false);
     const [wbVerifyStatus, setWbVerifyStatus] = useState<"none" | "pending" | "verified" | "rejected">("none");
-    const [adminTab, setAdminTab] = useState<"dashboard" | "cpchat" | "content" | "token" | "god" | "weibo" | "admins">("dashboard");
+    const [adminTab, setAdminTab] = useState<"dashboard" | "cpchat" | "content" | "token" | "god" | "weibo" | "admins" | "invite">("dashboard");
     const [tokenBalance, setTokenBalance] = useState(100);
 
     const [tokenPricing, setTokenPricing] = useState({
@@ -1394,6 +1829,20 @@ export default function PhonePage() {
         } catch {}
 
         setMounted(true);
+
+        // 检查是否需要邀请码
+        fetch("/api/auth", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "get_invite_settings" })
+        })
+        .then(r => r.json())
+        .then(result => {
+            if (result.success && result.data?.invite_required === "true") {
+                setInviteRequired(true);
+            }
+        })
+        .catch(() => {});
 
         // 自动登录：检查是否有有效的 token
         const savedToken = localStorage.getItem("auth_token");
@@ -2010,6 +2459,7 @@ export default function PhonePage() {
                     username,
                     password,
                     requestAdmin: loginMode === "register" ? requestAdmin : undefined,
+                    invitationCode: loginMode === "register" ? invitationCode : undefined,
                 })
             });
             const result = await res.json();
@@ -9514,6 +9964,40 @@ export default function PhonePage() {
                                     transition: "all 0.2s"
                                 }}>注册</button>
                         </div>
+                        {/* 邀请码输入框（注册时且需要邀请码时显示） */}
+                        {loginMode === "register" && inviteRequired && (
+                            <div style={{
+                                marginBottom: 14,
+                                background: "rgba(255,255,255,0.65)",
+                                backdropFilter: "blur(20px)",
+                                borderRadius: 14,
+                                border: "1px solid rgba(255,255,255,0.5)",
+                                overflow: "hidden"
+                            }}>
+                                <div style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    padding: "0 14px"
+                                }}>
+                                    <span style={{ fontSize: 16, marginRight: 8 }}>🎟️</span>
+                                    <input
+                                        value={invitationCode}
+                                        onChange={(e) => setInvitationCode(e.target.value)}
+                                        placeholder="输入邀请码"
+                                        maxLength={30}
+                                        style={{
+                                            flex: 1,
+                                            padding: "12px 0",
+                                            border: "none",
+                                            fontSize: 14,
+                                            outline: "none",
+                                            background: "transparent",
+                                            color: "#2e5c33",
+                                            fontWeight: 500
+                                        }} />
+                                </div>
+                            </div>
+                        )}
                         {/* 申请管理员复选框（仅注册时显示） */}
                         {loginMode === "register" && (
                             <label style={{
@@ -9846,6 +10330,10 @@ export default function PhonePage() {
                         key: "admins" as const,
                         icon: "👑",
                         label: "管理"
+                    }, {
+                        key: "invite" as const,
+                        icon: "🎟️",
+                        label: "邀请"
                     }, {
                         key: "god" as const,
                         icon: "👁️",
@@ -10699,6 +11187,7 @@ export default function PhonePage() {
                     {}
                     {adminTab === "weibo" && <WeiboVerifyAdmin />}
                     {adminTab === "admins" && <AdminManagePanel currentUsername={weiboAccount.nickname || loginUsername} />}
+                    {adminTab === "invite" && <InviteAdminPanel currentUsername={weiboAccount.nickname || loginUsername} />}
                     {adminTab === "god" && <div>
                         <div
                             style={{

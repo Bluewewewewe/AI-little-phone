@@ -13,6 +13,42 @@ function generateCode(): string {
   return code;
 }
 
+// Generate random invitation code
+function generateInviteCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "INV-";
+  for (let i = 0; i < 8; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+// 验证通过后自动生成 5 个邀请码
+async function generateUserInviteCodes(username: string, userId: string) {
+  const codes = [];
+  for (let i = 0; i < 5; i++) {
+    const code = generateInviteCode();
+    codes.push({
+      code,
+      created_by: username,
+      created_by_id: userId,
+      max_uses: 1,
+      is_active: true,
+      note: `${username} 验证通过后获得`,
+    });
+  }
+  
+  const { error } = await supabase
+    .from("invitation_codes")
+    .insert(codes);
+  
+  if (error) {
+    console.error("生成邀请码失败:", error);
+  }
+  
+  return codes;
+}
+
 // GET: Check verification status for a user
 export async function GET(request: NextRequest) {
   try {
@@ -179,6 +215,25 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
+      // 验证通过，自动生成 5 个邀请码
+      if (data) {
+        // 获取用户ID
+        const { data: userData } = await supabase
+          .from("users")
+          .select("id")
+          .eq("username", username)
+          .single();
+        
+        if (userData) {
+          await generateUserInviteCodes(username, userData.id);
+          // 标记用户微博已验证
+          await supabase
+            .from("users")
+            .update({ weibo_verified: true })
+            .eq("username", username);
+        }
+      }
+
       return NextResponse.json({ data });
     }
 
@@ -223,6 +278,23 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      // 验证通过，自动生成 5 个邀请码
+      if (data) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("id")
+          .eq("username", username)
+          .single();
+        
+        if (userData) {
+          await generateUserInviteCodes(username, userData.id);
+          await supabase
+            .from("users")
+            .update({ weibo_verified: true })
+            .eq("username", username);
+        }
       }
 
       return NextResponse.json({ data });

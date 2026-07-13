@@ -5,11 +5,11 @@ import { randomUUID } from "crypto";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, username, password, displayName, deviceInfo, token, targetUserId, requestAdmin } = body;
+    const { action, username, password, displayName, deviceInfo, token, targetUserId, requestAdmin, invitationCode } = body;
 
     if (!username && !token && !targetUserId) {
       // 部分 action 不需要 username
-      const noUsernameActions = ["list_pending_admins", "list_admins", "list_users", "validate", "logout"];
+      const noUsernameActions = ["list_pending_admins", "list_admins", "list_users", "validate", "logout", "get_invite_settings"];
       if (!noUsernameActions.includes(action)) {
         return NextResponse.json(
           { error: "缺少必要参数" },
@@ -43,11 +43,67 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // 检查是否需要邀请码
+      const { data: setting } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "invite_required")
+        .single();
+
+      const inviteRequired = setting?.value === "true";
+
+      let invitedBy: string | null = null;
+
+      if (inviteRequired) {
+        if (!invitationCode) {
+          return NextResponse.json(
+            { error: "当前需要邀请码才能注册，请联系管理员或已有用户获取邀请码" },
+            { status: 400 }
+          );
+        }
+
+        // 验证邀请码
+        const { data: invite } = await supabase
+          .from("invitation_codes")
+          .select("*")
+          .eq("code", invitationCode.toUpperCase().trim())
+          .eq("is_active", true)
+          .single();
+
+        if (!invite) {
+          return NextResponse.json(
+            { error: "邀请码无效" },
+            { status: 400 }
+          );
+        }
+
+        if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+          return NextResponse.json(
+            { error: "邀请码已过期" },
+            { status: 400 }
+          );
+        }
+
+        if (invite.use_count >= invite.max_uses) {
+          return NextResponse.json(
+            { error: "邀请码已达到使用上限" },
+            { status: 400 }
+          );
+        }
+
+        invitedBy = invite.created_by;
+      }
+
       const insertData: Record<string, unknown> = {
         username,
         password,
         display_name: displayName || username,
       };
+
+      // 记录邀请关系
+      if (invitedBy) {
+        insertData.invited_by = invitedBy;
+      }
 
       // 如果申请管理员，设置为待审批状态
       if (requestAdmin) {
@@ -69,6 +125,29 @@ export async function POST(request: NextRequest) {
           { error: "注册失败: " + error.message },
           { status: 500 }
         );
+      }
+
+      // 使用邀请码：更新使用次数
+      if (invitedBy && invitationCode) {
+        const { data: invite } = await supabase
+          .from("invitation_codes")
+          .select("*")
+          .eq("code", invitationCode.toUpperCase().trim())
+          .single();
+
+        if (invite) {
+          const newCount = invite.use_count + 1;
+          await supabase
+            .from("invitation_codes")
+            .update({
+              use_count: newCount,
+              used_by: username,
+              used_by_id: data.id,
+              used_at: new Date().toISOString(),
+              is_active: newCount < invite.max_uses,
+            })
+            .eq("id", invite.id);
+        }
       }
 
       return NextResponse.json({
@@ -300,6 +379,22 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ success: true, data: data || [] });
+    }
+
+    // ========== 获取邀请码设置 ==========
+    if (action === "get_invite_settings") {
+      const { data } = await supabase
+        .from("system_settings")
+        .select("*");
+
+      const settings: Record<string, string> = {};
+      if (data) {
+        data.forEach((item: { key: string; value: string }) => {
+          settings[item.key] = item.value;
+        });
+      }
+
+      return NextResponse.json({ success: true, data: settings });
     }
 
     return NextResponse.json(
