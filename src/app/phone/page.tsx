@@ -543,6 +543,16 @@ const PAGE2_APPS = [{
     emoji: "🌽",
     label: "LPMI测试",
     color: "#365314"
+}, {
+    id: "mimicosmo",
+    emoji: "🎮",
+    label: "迷你Cosmo",
+    color: "#7c3aed"
+}, {
+    id: "miniworkshop",
+    emoji: "📚",
+    label: "迷你小作坊",
+    color: "#059669"
 }];
 
 const DOCK_APPS = [{
@@ -8315,6 +8325,62 @@ export default function PhonePage() {
         );
     }
 
+    // 渲染外部应用（iframe 加载）
+    function renderExternalApp(id: string, name: string, url: string) {
+        return (
+            <div style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                background: "#fff"
+            }}>
+                {/* Header */}
+                <div style={{
+                    padding: "12px 16px",
+                    background: "rgba(255,255,255,0.8)",
+                    backdropFilter: "blur(20px)",
+                    borderBottom: "1px solid rgba(0,0,0,0.05)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative"
+                }}>
+                    <button
+                        onClick={() => setCurrentApp(null)}
+                        style={{
+                            position: "absolute",
+                            left: "16px",
+                            background: "none",
+                            border: "none",
+                            fontSize: "16px",
+                            color: "#7c3aed",
+                            cursor: "pointer",
+                            padding: "4px 8px"
+                        }}>
+                        ← 返回
+                    </button>
+                    <span style={{
+                        fontSize: "15px",
+                        fontWeight: 600,
+                        color: "#1a1a1a"
+                    }}>{name}</span>
+                </div>
+                {/* iframe */}
+                <iframe
+                    src={url}
+                    style={{
+                        flex: 1,
+                        width: "100%",
+                        border: "none",
+                        background: "#fff"
+                    }}
+                    title={name}
+                    allow="camera; microphone; geolocation"
+                />
+            </div>
+        );
+    }
+
     function renderLpmi() {
         return (
             <div
@@ -9451,6 +9517,10 @@ export default function PhonePage() {
             return renderShopping();
         case "lpmi":
             return renderLpmi();
+        case "mimicosmo":
+            return renderExternalApp("mimicosmo", "迷你Cosmo", "https://your-username.github.io/mimicosmo");
+        case "miniworkshop":
+            return renderExternalApp("miniworkshop", "迷你小作坊", "https://your-username.github.io/mini-workshop");
         default:
             return <div className="empty-state"><div className="empty-emoji">📱</div>APP开发中</div>;
         }
