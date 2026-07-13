@@ -30,8 +30,16 @@ export async function POST(request: NextRequest) {
 
       if (existing) {
         return NextResponse.json(
-          { error: "用户名已存在" },
+          { error: "用户名已存在，请换一个" },
           { status: 409 }
+        );
+      }
+
+      // 密码不能和用户名相同
+      if (password.toLowerCase() === username.toLowerCase()) {
+        return NextResponse.json(
+          { error: "密码不能和用户名相同，请设置一个不同的密码" },
+          { status: 400 }
         );
       }
 
