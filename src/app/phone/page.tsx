@@ -1584,6 +1584,9 @@ export default function PhonePage() {
                 // If API fails, skip verification for now
                 setShowWeiboVerify(false);
             }
+        } else {
+            // Admin users skip Weibo verification
+            setShowWeiboVerify(false);
         }
 
         setLoginPassword("");
