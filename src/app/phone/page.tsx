@@ -1667,6 +1667,7 @@ export default function PhonePage() {
     const [adminPendingMsg, setAdminPendingMsg] = useState("");
     const [invitationCode, setInvitationCode] = useState("");
     const [inviteRequired, setInviteRequired] = useState(false);
+    const [myInviteCodes, setMyInviteCodes] = useState<Array<{ code: string; use_count: number; max_uses: number; is_active: boolean; used_by?: string }>>([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [adminViewMode, setAdminViewMode] = useState<"admin" | "user">("admin");
@@ -1861,6 +1862,19 @@ export default function PhonePage() {
                     setIsLoggedIn(true);
                     setAuthToken(savedToken);
                     setAdminViewMode(isAdminUser ? "admin" : "user");
+                    // 获取用户的邀请码
+                    fetch("/api/invite", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "my_codes", username: userData.username })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            setMyInviteCodes(res.data || []);
+                        }
+                    })
+                    .catch(() => {});
                     setWeiboAccount(prev => ({
                         ...prev,
                         nickname: userData.username || userData.displayName,
@@ -1891,7 +1905,7 @@ export default function PhonePage() {
         }
     }, [unlockState, mounted]);
 
-    const [meSubPage, setMeSubPage] = useState<"main" | "settings" | "identity" | "unlock" | "about">("main");
+    const [meSubPage, setMeSubPage] = useState<"main" | "settings" | "identity" | "unlock" | "about" | "invite">("main");
     const [identityStep, setIdentityStep] = useState(0);
     const [debugMode, setDebugMode] = useState(false);
     const [debugLevel, setDebugLevel] = useState<number | "all" | null>(null);
@@ -8124,6 +8138,70 @@ export default function PhonePage() {
             );
         }
 
+        if (meSubPage === "invite") {
+            return (
+                <div style={{ padding: 16 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#92400e", marginBottom: 16 }}>🎟️ 我的邀请码</div>
+                    <div style={{ padding: 12, borderRadius: 12, background: "rgba(254,243,199,0.8)", fontSize: 11, color: "#92400e", textAlign: "center", lineHeight: 1.5, marginBottom: 16 }}>
+                        微博验证通过后获得 5 个邀请码<br/>每个邀请码只能使用 1 次
+                    </div>
+                    {myInviteCodes.length === 0 ? (
+                        <div style={{ textAlign: "center", padding: "30px 0", color: "#a16207", fontSize: 13 }}>
+                            <div style={{ fontSize: 36, marginBottom: 8 }}>🎟️</div>
+                            暂无邀请码<br/>
+                            <span style={{ fontSize: 11, color: "#d97706" }}>完成微博验证后自动获得</span>
+                        </div>
+                    ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            {myInviteCodes.map((c: { code: string; use_count: number; max_uses: number; is_active: boolean; used_by?: string }, idx: number) => (
+                                <div key={idx} style={{
+                                    padding: "10px 12px",
+                                    borderRadius: 10,
+                                    background: c.is_active && c.use_count < c.max_uses ? "rgba(255,255,255,0.8)" : "rgba(200,200,200,0.5)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between"
+                                }}>
+                                    <div>
+                                        <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "monospace", color: c.is_active && c.use_count < c.max_uses ? "#92400e" : "#999" }}>
+                                            {c.code}
+                                        </div>
+                                        <div style={{ fontSize: 10, color: "#a16207", marginTop: 2 }}>
+                                            {c.use_count >= c.max_uses ? "已使用" : c.is_active ? `可使用 ${c.max_uses - c.use_count} 次` : "已停用"}
+                                            {c.used_by && ` → @${c.used_by}`}
+                                        </div>
+                                    </div>
+                                    {c.is_active && c.use_count < c.max_uses && (
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(c.code);
+                                                alert("邀请码已复制：" + c.code);
+                                            }}
+                                            style={{
+                                                padding: "4px 10px",
+                                                borderRadius: 8,
+                                                background: "#f59e0b",
+                                                color: "#fff",
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                                border: "none",
+                                                cursor: "pointer"
+                                            }}
+                                        >复制</button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <button
+                        className="identity-btn"
+                        onClick={() => setMeSubPage("main")}
+                        style={{ marginTop: 16, width: "100%", background: "#e5e7eb", color: "#78350f" }}>← 返回
+                    </button>
+                </div>
+            );
+        }
+
         const displayName = unlockState.userIdentity.name || "小甜玉米";
         const displayNick = unlockState.userIdentity.nickname;
 
@@ -8151,6 +8229,11 @@ export default function PhonePage() {
                     <div className="me-menu-item" onClick={() => setMeSubPage("unlock")}>
                         <span className="me-menu-icon">{unlockState.unlocked ? "🔓" : "🔒"}</span>
                         <span className="me-menu-label">{unlockState.unlocked ? "身份管理" : "暗号解锁"}</span>
+                        <span className="me-menu-arrow">›</span>
+                    </div>
+                    <div className="me-menu-item" onClick={() => setMeSubPage("invite")}>
+                        <span className="me-menu-icon">🎟️</span>
+                        <span className="me-menu-label">我的邀请码</span>
                         <span className="me-menu-arrow">›</span>
                     </div>
                     <div className="me-menu-item" onClick={() => setMeSubPage("settings")}>
