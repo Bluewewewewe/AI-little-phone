@@ -825,6 +825,9 @@ export default function PhonePage() {
     const ADMIN_ACCOUNTS = ["admin", "manager_lin", "cp_official"];
     const [loginUsername, setLoginUsername] = useState("");
     const [loginPassword, setLoginPassword] = useState("");
+    const [loginMode, setLoginMode] = useState<"login" | "register">("login");
+    const [loginError, setLoginError] = useState("");
+    const [loginLoading, setLoginLoading] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [adminViewMode, setAdminViewMode] = useState<"admin" | "user">("admin");
@@ -1539,57 +1542,89 @@ export default function PhonePage() {
     }
 
     const handleLogin = async () => {
-        if (!loginUsername.trim())
+        const username = loginUsername.trim();
+        const password = loginPassword.trim();
+
+        if (!username) {
+            setLoginError("请输入用户名");
             return;
-
-        const isAdminUser = ADMIN_ACCOUNTS.includes(loginUsername.trim().toLowerCase());
-        setIsAdmin(isAdminUser);
-        setIsLoggedIn(true);
-        setAdminViewMode(isAdminUser ? "admin" : "user");
-
-        setWeiboAccount(prev => ({
-            ...prev,
-            nickname: loginUsername.trim(),
-            isSet: true
-        }));
-
-        // For non-admin users, check Weibo verification status
-        if (!isAdminUser) {
-            try {
-                const res = await fetch(`/api/weibo-verify?username=${encodeURIComponent(loginUsername.trim())}`);
-                const result = await res.json();
-                if (result.data && result.data.status === "verified") {
-                    // Already verified, go directly to app
-                    setWbVerifyStatus("verified");
-                    setWbStep1Passed(true);
-                    setWbStep2Passed(true);
-                    setShowWeiboVerify(false);
-                } else if (result.data && result.data.status === "pending") {
-                    // Has pending verification, show waiting screen
-                    setWbVerifyCode(result.data.verification_code);
-                    setWbVerifyUid(result.data.weibo_uid || "");
-                    setWbVerifyName(result.data.weibo_name || "");
-                    setWbStep1Passed(result.data.step1_passed);
-                    setWbStep2Passed(result.data.step2_passed);
-                    setWbVerifyStep("waiting");
-                    setWbVerifyStatus("pending");
-                    setShowWeiboVerify(true);
-                } else {
-                    // No verification record, show input screen
-                    setWbVerifyStep("input");
-                    setWbVerifyStatus("none");
-                    setShowWeiboVerify(true);
-                }
-            } catch {
-                // If API fails, skip verification for now
-                setShowWeiboVerify(false);
-            }
-        } else {
-            // Admin users skip Weibo verification
-            setShowWeiboVerify(false);
+        }
+        if (!password) {
+            setLoginError("请输入密码");
+            return;
         }
 
-        setLoginPassword("");
+        setLoginError("");
+        setLoginLoading(true);
+
+        try {
+            const res = await fetch("/api/auth", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: loginMode,
+                    username,
+                    password
+                })
+            });
+            const result = await res.json();
+
+            if (!result.success) {
+                setLoginError(result.error || "操作失败");
+                setLoginLoading(false);
+                return;
+            }
+
+            // Login/Register successful
+            const isAdminUser = ADMIN_ACCOUNTS.includes(username.toLowerCase());
+            setIsAdmin(isAdminUser);
+            setIsLoggedIn(true);
+            setAdminViewMode(isAdminUser ? "admin" : "user");
+
+            setWeiboAccount(prev => ({
+                ...prev,
+                nickname: username,
+                isSet: true
+            }));
+
+            // For non-admin users, check Weibo verification status
+            if (!isAdminUser) {
+                try {
+                    const verifyRes = await fetch(`/api/weibo-verify?username=${encodeURIComponent(username)}`);
+                    const verifyResult = await verifyRes.json();
+                    if (verifyResult.data && verifyResult.data.status === "verified") {
+                        setWbVerifyStatus("verified");
+                        setWbStep1Passed(true);
+                        setWbStep2Passed(true);
+                        setShowWeiboVerify(false);
+                    } else if (verifyResult.data && verifyResult.data.status === "pending") {
+                        setWbVerifyCode(verifyResult.data.verification_code);
+                        setWbVerifyUid(verifyResult.data.weibo_uid || "");
+                        setWbVerifyName(verifyResult.data.weibo_name || "");
+                        setWbStep1Passed(verifyResult.data.step1_passed);
+                        setWbStep2Passed(verifyResult.data.step2_passed);
+                        setWbVerifyStep("waiting");
+                        setWbVerifyStatus("pending");
+                        setShowWeiboVerify(true);
+                    } else {
+                        setWbVerifyStep("input");
+                        setWbVerifyStatus("none");
+                        setShowWeiboVerify(true);
+                    }
+                } catch {
+                    setShowWeiboVerify(false);
+                }
+            } else {
+                setShowWeiboVerify(false);
+            }
+
+            setLoginPassword("");
+        } catch (err) {
+            console.error("登录/注册失败:", err);
+            setLoginError("网络错误，请重试");
+        } finally {
+            setLoginLoading(false);
+        }
     };
 
     // Weibo verification functions
@@ -8991,6 +9026,48 @@ export default function PhonePage() {
                             </div>
                         </div>
                         {}
+                        {/* 登录/注册切换 */}
+                        <div style={{ display: "flex", justifyContent: "center", gap: 20, marginBottom: 16 }}>
+                            <button
+                                onClick={() => { setLoginMode("login"); setLoginError(""); }}
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    fontSize: 14,
+                                    fontWeight: loginMode === "login" ? 700 : 400,
+                                    color: loginMode === "login" ? "#2e7d32" : "#4a7c50",
+                                    cursor: "pointer",
+                                    padding: "4px 0",
+                                    borderBottom: loginMode === "login" ? "2px solid #2e7d32" : "2px solid transparent",
+                                    transition: "all 0.2s"
+                                }}>登录</button>
+                            <button
+                                onClick={() => { setLoginMode("register"); setLoginError(""); }}
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    fontSize: 14,
+                                    fontWeight: loginMode === "register" ? 700 : 400,
+                                    color: loginMode === "register" ? "#2e7d32" : "#4a7c50",
+                                    cursor: "pointer",
+                                    padding: "4px 0",
+                                    borderBottom: loginMode === "register" ? "2px solid #2e7d32" : "2px solid transparent",
+                                    transition: "all 0.2s"
+                                }}>注册</button>
+                        </div>
+                        {/* 错误提示 */}
+                        {loginError && (
+                            <div style={{
+                                background: "rgba(239,83,80,0.08)",
+                                border: "1px solid rgba(239,83,80,0.2)",
+                                borderRadius: 10,
+                                padding: "10px 14px",
+                                marginBottom: 14,
+                                fontSize: 13,
+                                color: "#c62828",
+                                textAlign: "center"
+                            }}>{loginError}</div>
+                        )}
                         <button
                             onClick={handleLogin}
                             style={{
@@ -9009,8 +9086,7 @@ export default function PhonePage() {
                             }}
                             onMouseDown={e => (e.currentTarget.style.transform = "scale(0.96)", e.currentTarget.style.boxShadow = "0 2px 8px rgba(90,158,106,0.2)")}
                             onMouseUp={e => (e.currentTarget.style.transform = "scale(1)", e.currentTarget.style.boxShadow = "0 6px 20px rgba(90,158,106,0.35), 0 2px 4px rgba(90,158,106,0.15)")}
-                            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)", e.currentTarget.style.boxShadow = "0 6px 20px rgba(90,158,106,0.35), 0 2px 4px rgba(90,158,106,0.15)")}>登 录
-                                        </button>
+                            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)", e.currentTarget.style.boxShadow = "0 6px 20px rgba(90,158,106,0.35), 0 2px 4px rgba(90,158,106,0.15)")}>{loginMode === "login" ? "登 录" : "注 册"}</button>
                         {}
                         <div
                             style={{
