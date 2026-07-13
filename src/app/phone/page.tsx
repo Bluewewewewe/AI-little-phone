@@ -545,8 +545,8 @@ const PAGE2_APPS = [{
     color: "#365314"
 }, {
     id: "mimicosmo",
-    emoji: "🎮",
-    label: "迷你Cosmo",
+    emoji: "📚",
+    label: "米米课程表",
     color: "#7c3aed"
 }, {
     id: "miniworkshop",
@@ -9518,9 +9518,9 @@ export default function PhonePage() {
         case "lpmi":
             return renderLpmi();
         case "mimicosmo":
-            return renderExternalApp("mimicosmo", "迷你Cosmo", "https://your-username.github.io/mimicosmo");
+            return renderExternalApp("mimicosmo", "米米课程表", "https://bluewewewewe.github.io/MiMi-Cosmos");
         case "miniworkshop":
-            return renderExternalApp("miniworkshop", "迷你小作坊", "https://your-username.github.io/mini-workshop");
+            return renderExternalApp("miniworkshop", "迷你小作坊", "https://bluewewewewe.github.io/MiMi-Cosmos/miniworkshop");
         default:
             return <div className="empty-state"><div className="empty-emoji">📱</div>APP开发中</div>;
         }
