@@ -1907,6 +1907,17 @@ export default function PhonePage() {
         }
     }, []);
 
+    // 监听 iframe 消息（关闭 APP）
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data?.type === "CLOSE_APP") {
+                setCurrentApp(null);
+            }
+        };
+        window.addEventListener("message", handleMessage);
+        return () => window.removeEventListener("message", handleMessage);
+    }, []);
+
     useEffect(() => {
         if (mounted) {
             try {

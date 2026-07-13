@@ -11,12 +11,8 @@ let generatedCode = '';
 let codeGeneratedAt = 0;
 
 // ==================== 初始化 ====================
-// 页面加载时自动检查登录状态
-document.addEventListener('DOMContentLoaded', function() {
-    initGate();
-});
-
-function initGate() {
+// 立即检查登录状态（不等待 DOMContentLoaded）
+(function() {
     // 检查 URL 参数是否有 token（从 AI小手机 传递）
     const urlParams = new URLSearchParams(window.location.search);
     const urlToken = urlParams.get('token');
@@ -27,16 +23,30 @@ function initGate() {
         // 清除 URL 参数
         window.history.replaceState({}, '', window.location.pathname + window.location.hash);
     }
-    
+})();
+
+// 页面加载时再次检查
+document.addEventListener('DOMContentLoaded', function() {
+    initGate();
+});
+
+function initGate() {
     const token = localStorage.getItem(TOKEN_KEY);
     // 如果有 token（从 AI小手机 共享），直接进入主页面
     if (token) {
+        console.log('[MiMi] 检测到 token，进入主页面');
         enterMainPage();
         return;
     }
     // 没有 token，显示提示（不再显示登录页）
-    alert('请先在 AI小手机 中登录');
-    window.history.back();
+    console.log('[MiMi] 未检测到 token，返回 AI小手机');
+    // 不显示 alert，直接返回
+    if (window.parent !== window) {
+        // 在 iframe 中，通知父页面关闭
+        window.parent.postMessage({ type: 'CLOSE_APP' }, '*');
+    } else {
+        window.history.back();
+    }
 }
 
 function isTokenValid(token) {
