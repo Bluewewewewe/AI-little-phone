@@ -5,19 +5,23 @@ import { randomUUID } from "crypto";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, username, password, displayName, deviceInfo } = body;
+    const { action, username, password, displayName, deviceInfo, token, targetUserId, requestAdmin } = body;
 
-    if (!username || !password) {
-      return NextResponse.json(
-        { error: "用户名和密码不能为空" },
-        { status: 400 }
-      );
+    if (!username && !token && !targetUserId) {
+      // 部分 action 不需要 username
+      const noUsernameActions = ["list_pending_admins", "list_admins", "validate", "logout"];
+      if (!noUsernameActions.includes(action)) {
+        return NextResponse.json(
+          { error: "缺少必要参数" },
+          { status: 400 }
+        );
+      }
     }
 
     const supabase = await getSupabaseClient();
 
+    // ========== 注册 ==========
     if (action === "register") {
-      // Check if username already exists
       const { data: existing } = await supabase
         .from("users")
         .select("id")
@@ -31,14 +35,23 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Create new user
+      const insertData: Record<string, unknown> = {
+        username,
+        password,
+        display_name: displayName || username,
+      };
+
+      // 如果申请管理员，设置为待审批状态
+      if (requestAdmin) {
+        insertData.is_admin = true;
+        insertData.admin_pending = true;
+        insertData.admin_approved = false;
+        insertData.level = 99;
+      }
+
       const { data, error } = await supabase
         .from("users")
-        .insert({
-          username,
-          password, // In production, this should be hashed
-          display_name: displayName || username,
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -57,12 +70,13 @@ export async function POST(request: NextRequest) {
           username: data.username,
           displayName: data.display_name,
           level: data.level,
+          adminPending: data.admin_pending || false,
         },
       });
     }
 
+    // ========== 登录 ==========
     if (action === "login") {
-      // Find user by username
       const { data: user, error } = await supabase
         .from("users")
         .select("*")
@@ -76,7 +90,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check password
       if (user.password !== password) {
         return NextResponse.json(
           { error: "密码错误" },
@@ -84,25 +97,31 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // 单设备登录：踢掉该用户的所有旧会话
-      await supabase
-        .from("sessions")
-        .delete()
-        .eq("user_id", user.id);
+      // 如果是申请中的管理员，未审批前不能登录
+      if (user.admin_pending && !user.admin_approved) {
+        return NextResponse.json(
+          { error: "管理员申请正在等待审批，请联系现有管理员同意后登录" },
+          { status: 403 }
+        );
+      }
 
-      // 创建新会话
-      const token = randomUUID();
+      // 单设备登录：踢掉旧会话
+      await supabase.from("sessions").delete().eq("user_id", user.id);
+
+      const newToken = randomUUID();
       const { error: sessionError } = await supabase
         .from("sessions")
         .insert({
           user_id: user.id,
-          token,
+          token: newToken,
           device_info: deviceInfo || "未知设备",
         });
 
       if (sessionError) {
         console.error("创建会话失败:", sessionError);
       }
+
+      const isAdminUser = (user.is_admin && user.admin_approved) || user.level >= 99;
 
       return NextResponse.json({
         success: true,
@@ -113,21 +132,21 @@ export async function POST(request: NextRequest) {
           level: user.level,
           weiboVerified: user.weibo_verified,
           weiboUid: user.weibo_uid,
-          token, // 登录凭证，前端保存
+          isAdmin: isAdminUser,
+          token: newToken,
         },
       });
     }
 
+    // ========== 验证 Token ==========
     if (action === "validate") {
-      // 验证 token 是否有效
-      const { token } = body;
       if (!token) {
         return NextResponse.json({ valid: false, error: "缺少 token" });
       }
 
       const { data: session } = await supabase
         .from("sessions")
-        .select("*, users(username, display_name, level, weibo_verified)")
+        .select("*, users(username, display_name, level, weibo_verified, is_admin, admin_approved)")
         .eq("token", token)
         .gte("expires_at", new Date().toISOString())
         .single();
@@ -136,25 +155,129 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ valid: false, error: "登录已过期，请重新登录" });
       }
 
+      const u = session.users as Record<string, unknown>;
+      const isAdminUser = (u.is_admin && u.admin_approved) || (u.level as number) >= 99;
+
       return NextResponse.json({
         valid: true,
         data: {
           id: session.user_id,
-          username: (session.users as Record<string, unknown>).username,
-          displayName: (session.users as Record<string, unknown>).display_name,
-          level: (session.users as Record<string, unknown>).level,
-          weiboVerified: (session.users as Record<string, unknown>).weibo_verified,
+          username: u.username,
+          displayName: u.display_name,
+          level: u.level,
+          weiboVerified: u.weibo_verified,
+          isAdmin: isAdminUser,
         },
       });
     }
 
+    // ========== 登出 ==========
     if (action === "logout") {
-      // 登出：删除当前 token 的会话
-      const { token } = body;
       if (token) {
         await supabase.from("sessions").delete().eq("token", token);
       }
       return NextResponse.json({ success: true });
+    }
+
+    // ========== 管理员审批 - 通过 ==========
+    if (action === "approve_admin") {
+      if (!targetUserId || !username) {
+        return NextResponse.json({ error: "缺少参数" }, { status: 400 });
+      }
+
+      // 验证操作者是否为已审批的管理员
+      const { data: operator } = await supabase
+        .from("users")
+        .select("id, is_admin, admin_approved, level")
+        .eq("username", username)
+        .single();
+
+      if (!operator || (!(operator.is_admin && operator.admin_approved) && operator.level < 99)) {
+        return NextResponse.json({ error: "无权操作：你不是管理员" }, { status: 403 });
+      }
+
+      // 审批通过
+      const { error } = await supabase
+        .from("users")
+        .update({
+          admin_approved: true,
+          admin_pending: false,
+          approved_by: username,
+          approved_at: new Date().toISOString(),
+        })
+        .eq("id", targetUserId);
+
+      if (error) {
+        return NextResponse.json({ error: "审批失败: " + error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, message: "已通过" });
+    }
+
+    // ========== 管理员审批 - 拒绝 ==========
+    if (action === "reject_admin") {
+      if (!targetUserId || !username) {
+        return NextResponse.json({ error: "缺少参数" }, { status: 400 });
+      }
+
+      const { data: operator } = await supabase
+        .from("users")
+        .select("id, is_admin, admin_approved, level")
+        .eq("username", username)
+        .single();
+
+      if (!operator || (!(operator.is_admin && operator.admin_approved) && operator.level < 99)) {
+        return NextResponse.json({ error: "无权操作：你不是管理员" }, { status: 403 });
+      }
+
+      // 拒绝：取消管理员身份
+      const { error } = await supabase
+        .from("users")
+        .update({
+          is_admin: false,
+          admin_pending: false,
+          admin_approved: false,
+          level: 1,
+        })
+        .eq("id", targetUserId);
+
+      if (error) {
+        return NextResponse.json({ error: "操作失败: " + error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, message: "已拒绝" });
+    }
+
+    // ========== 获取待审批管理员列表 ==========
+    if (action === "list_pending_admins") {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, username, display_name, level, created_at")
+        .eq("admin_pending", true)
+        .eq("admin_approved", false)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, data: data || [] });
+    }
+
+    // ========== 获取所有管理员列表 ==========
+    if (action === "list_admins") {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, username, display_name, level, is_admin, admin_approved, admin_pending, approved_by, approved_at, created_at")
+        .eq("is_admin", true)
+        .order("admin_approved", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, data: data || [] });
     }
 
     return NextResponse.json(

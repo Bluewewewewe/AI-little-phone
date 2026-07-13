@@ -583,6 +583,270 @@ function getAppLabel(id: string, unlocked: boolean): string {
 }
 
 // Weibo Verification Admin Panel Component
+function AdminManagePanel({ currentUsername }: { currentUsername: string }) {
+    const [pendingAdmins, setPendingAdmins] = useState<Array<{
+        id: string;
+        username: string;
+        display_name: string;
+        level: number;
+        created_at: string;
+    }>>([]);
+    const [allAdmins, setAllAdmins] = useState<Array<{
+        id: string;
+        username: string;
+        display_name: string;
+        level: number;
+        is_admin: boolean;
+        admin_approved: boolean;
+        admin_pending: boolean;
+        approved_by: string;
+        approved_at: string;
+        created_at: string;
+    }>>([]);
+    const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const [pendingRes, allRes] = await Promise.all([
+                fetch("/api/auth", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "list_pending_admins" })
+                }),
+                fetch("/api/auth", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "list_admins" })
+                })
+            ]);
+            const pendingResult = await pendingRes.json();
+            const allResult = await allRes.json();
+            if (pendingResult.success) setPendingAdmins(pendingResult.data);
+            if (allResult.success) setAllAdmins(allResult.data);
+        } catch (e) {
+            console.error("Fetch admin data failed:", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleApprove = async (targetUserId: string) => {
+        setActionLoading(targetUserId);
+        try {
+            await fetch("/api/auth", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "approve_admin",
+                    username: currentUsername,
+                    targetUserId
+                })
+            });
+            fetchData();
+        } catch (e) {
+            console.error("Approve failed:", e);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleReject = async (targetUserId: string) => {
+        setActionLoading(targetUserId);
+        try {
+            await fetch("/api/auth", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "reject_admin",
+                    username: currentUsername,
+                    targetUserId
+                })
+            });
+            fetchData();
+        } catch (e) {
+            console.error("Reject failed:", e);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    useState(() => {
+        fetchData();
+    });
+
+    return (
+        <div style={{ padding: "0 4px" }}>
+            <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12
+            }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#92400e" }}>👑 管理员管理</span>
+                <button
+                    onClick={fetchData}
+                    style={{
+                        background: "rgba(245,158,11,0.1)",
+                        border: "1px solid rgba(245,158,11,0.3)",
+                        borderRadius: 8,
+                        padding: "4px 10px",
+                        fontSize: 11,
+                        color: "#92400e",
+                        cursor: "pointer"
+                    }}>🔄 刷新</button>
+            </div>
+
+            {loading ? (
+                <div style={{ textAlign: "center", padding: 30, color: "#bbb", fontSize: 13 }}>加载中...</div>
+            ) : (
+                <>
+                    {/* 待审批 */}
+                    <div style={{
+                        background: "rgba(234,179,8,0.06)",
+                        borderRadius: 12,
+                        padding: 12,
+                        marginBottom: 12,
+                        border: "1px solid rgba(234,179,8,0.15)"
+                    }}>
+                        <div style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#92400e",
+                            marginBottom: 10,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6
+                        }}>
+                            <span>⏳ 待审批</span>
+                            {pendingAdmins.length > 0 && (
+                                <span style={{
+                                    background: "#eab308",
+                                    color: "#fff",
+                                    borderRadius: 10,
+                                    padding: "1px 8px",
+                                    fontSize: 10,
+                                    fontWeight: 700
+                                }}>{pendingAdmins.length}</span>
+                            )}
+                        </div>
+
+                        {pendingAdmins.length === 0 ? (
+                            <div style={{ fontSize: 12, color: "#bbb", textAlign: "center", padding: 10 }}>
+                                暂无待审批申请
+                            </div>
+                        ) : (
+                            pendingAdmins.map(admin => (
+                                <div key={admin.id} style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    padding: "10px 12px",
+                                    background: "rgba(255,255,255,0.7)",
+                                    borderRadius: 10,
+                                    marginBottom: 8,
+                                    border: "1px solid rgba(234,179,8,0.15)"
+                                }}>
+                                    <div>
+                                        <div style={{ fontSize: 13, fontWeight: 600, color: "#2e5c33" }}>
+                                            {admin.display_name || admin.username}
+                                        </div>
+                                        <div style={{ fontSize: 11, color: "#999", marginTop: 2 }}>
+                                            @{admin.username} · 申请时间 {new Date(admin.created_at).toLocaleDateString("zh-CN")}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "flex", gap: 6 }}>
+                                        <button
+                                            onClick={() => handleApprove(admin.id)}
+                                            disabled={actionLoading === admin.id}
+                                            style={{
+                                                padding: "5px 12px",
+                                                borderRadius: 8,
+                                                border: "none",
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                                background: "#22c55e",
+                                                color: "#fff",
+                                                cursor: actionLoading === admin.id ? "not-allowed" : "pointer",
+                                                opacity: actionLoading === admin.id ? 0.5 : 1
+                                            }}>✓ 通过</button>
+                                        <button
+                                            onClick={() => handleReject(admin.id)}
+                                            disabled={actionLoading === admin.id}
+                                            style={{
+                                                padding: "5px 12px",
+                                                borderRadius: 8,
+                                                border: "none",
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                                background: "#ef4444",
+                                                color: "#fff",
+                                                cursor: actionLoading === admin.id ? "not-allowed" : "pointer",
+                                                opacity: actionLoading === admin.id ? 0.5 : 1
+                                            }}>✗ 拒绝</button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {/* 管理员列表 */}
+                    <div style={{
+                        background: "rgba(255,255,255,0.5)",
+                        borderRadius: 12,
+                        padding: 12,
+                        border: "1px solid rgba(255,255,255,0.4)"
+                    }}>
+                        <div style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#92400e",
+                            marginBottom: 10
+                        }}>📋 管理员列表 ({allAdmins.length})</div>
+
+                        {allAdmins.map(admin => (
+                            <div key={admin.id} style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                padding: "10px 12px",
+                                background: "rgba(255,255,255,0.7)",
+                                borderRadius: 10,
+                                marginBottom: 6,
+                                border: "1px solid rgba(255,255,255,0.5)"
+                            }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <span style={{ fontSize: 18 }}>👑</span>
+                                    <div>
+                                        <div style={{ fontSize: 13, fontWeight: 600, color: "#2e5c33" }}>
+                                            {admin.display_name || admin.username}
+                                        </div>
+                                        <div style={{ fontSize: 11, color: "#999", marginTop: 2 }}>
+                                            @{admin.username}
+                                            {admin.approved_by && ` · 由 ${admin.approved_by} 审批`}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style={{
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                    padding: "3px 8px",
+                                    borderRadius: 6,
+                                    background: admin.admin_approved ? "rgba(34,197,94,0.1)" : "rgba(234,179,8,0.1)",
+                                    color: admin.admin_approved ? "#16a34a" : "#ca8a04"
+                                }}>
+                                    {admin.admin_approved ? "已审批" : "待审批"}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
 function WeiboVerifyAdmin() {
     const [verifications, setVerifications] = useState<Array<{
         id: string;
@@ -828,6 +1092,8 @@ export default function PhonePage() {
     const [loginMode, setLoginMode] = useState<"login" | "register">("login");
     const [loginError, setLoginError] = useState("");
     const [loginLoading, setLoginLoading] = useState(false);
+    const [requestAdmin, setRequestAdmin] = useState(false);
+    const [adminPendingMsg, setAdminPendingMsg] = useState("");
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [adminViewMode, setAdminViewMode] = useState<"admin" | "user">("admin");
@@ -843,7 +1109,7 @@ export default function PhonePage() {
     const [wbStep1Passed, setWbStep1Passed] = useState(false);
     const [wbStep2Passed, setWbStep2Passed] = useState(false);
     const [wbVerifyStatus, setWbVerifyStatus] = useState<"none" | "pending" | "verified" | "rejected">("none");
-    const [adminTab, setAdminTab] = useState<"dashboard" | "cpchat" | "content" | "token" | "god" | "weibo">("dashboard");
+    const [adminTab, setAdminTab] = useState<"dashboard" | "cpchat" | "content" | "token" | "god" | "weibo" | "admins">("dashboard");
     const [tokenBalance, setTokenBalance] = useState(100);
 
     const [tokenPricing, setTokenPricing] = useState({
@@ -1604,7 +1870,8 @@ export default function PhonePage() {
                 body: JSON.stringify({
                     action: loginMode,
                     username,
-                    password
+                    password,
+                    requestAdmin: loginMode === "register" ? requestAdmin : undefined,
                 })
             });
             const result = await res.json();
@@ -1615,8 +1882,16 @@ export default function PhonePage() {
                 return;
             }
 
+            // 注册时如果申请管理员，显示等待审批提示
+            if (loginMode === "register" && requestAdmin) {
+                setAdminPendingMsg("管理员申请已提交，请等待现有管理员审批后再登录");
+                setLoginLoading(false);
+                setLoginPassword("");
+                return;
+            }
+
             // Login/Register successful
-            const isAdminUser = ADMIN_ACCOUNTS.includes(username.toLowerCase());
+            const isAdminUser = result.data?.isAdmin || ADMIN_ACCOUNTS.includes(username.toLowerCase());
             setIsAdmin(isAdminUser);
             setIsLoggedIn(true);
             setAdminViewMode(isAdminUser ? "admin" : "user");
@@ -9101,6 +9376,60 @@ export default function PhonePage() {
                                     transition: "all 0.2s"
                                 }}>注册</button>
                         </div>
+                        {/* 申请管理员复选框（仅注册时显示） */}
+                        {loginMode === "register" && (
+                            <label style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                marginBottom: 14,
+                                padding: "10px 14px",
+                                background: "rgba(46,125,50,0.05)",
+                                border: "1px solid rgba(46,125,50,0.15)",
+                                borderRadius: 10,
+                                cursor: "pointer",
+                                fontSize: 13,
+                                color: "#2e5c33"
+                            }}>
+                                <input
+                                    type="checkbox"
+                                    checked={requestAdmin}
+                                    onChange={(e) => setRequestAdmin(e.target.checked)}
+                                    style={{ width: 16, height: 16, accentColor: "#2e7d32" }}
+                                />
+                                <span>申请管理员权限（需现有管理员审批）</span>
+                            </label>
+                        )}
+                        {/* 管理员待审批提示 */}
+                        {adminPendingMsg && (
+                            <div style={{
+                                background: "rgba(46,125,50,0.06)",
+                                border: "1px solid rgba(46,125,50,0.2)",
+                                borderRadius: 10,
+                                padding: "12px 14px",
+                                marginBottom: 14,
+                                fontSize: 13,
+                                color: "#2e5c33",
+                                textAlign: "center",
+                                lineHeight: 1.6
+                            }}>
+                                {adminPendingMsg}
+                                <button
+                                    onClick={() => { setAdminPendingMsg(""); setLoginMode("login"); }}
+                                    style={{
+                                        display: "block",
+                                        margin: "10px auto 0",
+                                        padding: "6px 20px",
+                                        fontSize: 13,
+                                        color: "#fff",
+                                        background: "#2e7d32",
+                                        border: "none",
+                                        borderRadius: 8,
+                                        cursor: "pointer"
+                                    }}
+                                >去登录</button>
+                            </div>
+                        )}
                         {/* 被踢下线提示 */}
                         {kickedMessage && (
                             <div style={{
@@ -9375,6 +9704,10 @@ export default function PhonePage() {
                         key: "weibo" as const,
                         icon: "🔐",
                         label: "验证"
+                    }, {
+                        key: "admins" as const,
+                        icon: "👑",
+                        label: "管理"
                     }, {
                         key: "god" as const,
                         icon: "👁️",
@@ -10227,6 +10560,7 @@ export default function PhonePage() {
                     </div>}
                     {}
                     {adminTab === "weibo" && <WeiboVerifyAdmin />}
+                    {adminTab === "admins" && <AdminManagePanel currentUsername={weiboAccount.nickname || loginUsername} />}
                     {adminTab === "god" && <div>
                         <div
                             style={{
