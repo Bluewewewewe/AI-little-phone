@@ -12,6 +12,44 @@ if (weekSel) {
     for(let i=1; i<=20; i++) weekSel.add(new Option(i, i));
 }
 
+// ==================== 页面模式控制 ====================
+// 检查 URL 参数，决定是否隐藏小作坊
+const urlParams = new URLSearchParams(window.location.search);
+const hideWorkshop = urlParams.get('hideWorkshop') === 'true';
+
+if (hideWorkshop) {
+    // 隐藏小作坊导航
+    const navW = document.getElementById('navW');
+    if (navW) navW.style.display = 'none';
+    // 隐藏小作坊页面
+    const pageW = document.getElementById('pageW');
+    if (pageW) pageW.style.display = 'none';
+}
+
+// 检查是否是单独的小作坊模式
+const workshopOnly = urlParams.get('workshopOnly') === 'true';
+if (workshopOnly) {
+    // 隐藏其他导航，只显示小作坊
+    const navS = document.getElementById('navS');
+    const navT = document.getElementById('navT');
+    const navR = document.getElementById('navR');
+    if (navS) navS.style.display = 'none';
+    if (navT) navT.style.display = 'none';
+    if (navR) navR.style.display = 'none';
+    // 隐藏其他页面，只显示小作坊
+    const pageS = document.getElementById('pageS');
+    const pageT = document.getElementById('pageT');
+    const pageR = document.getElementById('pageR');
+    if (pageS) pageS.style.display = 'none';
+    if (pageT) pageT.style.display = 'none';
+    if (pageR) pageR.style.display = 'none';
+    // 显示小作坊
+    const navW = document.getElementById('navW');
+    const pageW = document.getElementById('pageW');
+    if (navW) { navW.style.display = 'inline'; navW.classList.add('active'); }
+    if (pageW) pageW.style.display = 'block';
+}
+
 // ==================== 音乐与拖拽 ====================
 let isPlaying = false, isExplicitlyPaused = false, isDragging = false, startX, startY;
 const musicCtrl = document.getElementById('musicCtrl'), bgm = document.getElementById('bgm');
@@ -401,6 +439,21 @@ function refreshCurrentPage() {
 }
 
 function changePage(p) {
+    // workshopOnly 模式：只显示小作坊
+    const workshopOnly = new URLSearchParams(window.location.search).get("workshopOnly") === "true";
+    if (workshopOnly) {
+        document.getElementById("pageS").style.display = "none";
+        document.getElementById("pageT").style.display = "none";
+        document.getElementById("pageR").style.display = "none";
+        document.getElementById("pageF").style.display = "none";
+        const pageW = document.getElementById("pageW");
+        if (pageW) pageW.style.display = "block";
+        const navW = document.getElementById("navW");
+        if (navW) navW.className = "active";
+        if (typeof wsEnterPage === "function") wsEnterPage();
+        return;
+    }
+
     if (p !== "W" && typeof wsLeavePage === "function") wsLeavePage();
     currentPage = p;
     document.getElementById("pageS").style.display = p === "S" ? "block" : "none";

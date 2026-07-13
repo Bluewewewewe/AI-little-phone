@@ -9533,9 +9533,9 @@ export default function PhonePage() {
         case "lpmi":
             return renderLpmi();
         case "mimicosmo":
-            return renderExternalApp("mimicosmo", "米米课程表", "/mimi/mimi_university_new1/index.html#schedule");
+            return renderExternalApp("mimicosmo", "米米课程表", "/mimi/mimi_university_new1/index.html?hideWorkshop=true");
         case "miniworkshop":
-            return renderExternalApp("miniworkshop", "迷你小作坊", "/mimi/mimi_university_new1/index.html#workshop");
+            return renderExternalApp("miniworkshop", "迷你小作坊", "/mimi/mimi_university_new1/index.html?workshopOnly=true");
         default:
             return <div className="empty-state"><div className="empty-emoji">📱</div>APP开发中</div>;
         }
