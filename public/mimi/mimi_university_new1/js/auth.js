@@ -11,6 +11,11 @@ let generatedCode = '';
 let codeGeneratedAt = 0;
 
 // ==================== 初始化 ====================
+// 页面加载时自动检查登录状态
+document.addEventListener('DOMContentLoaded', function() {
+    initGate();
+});
+
 function initGate() {
     const token = localStorage.getItem(TOKEN_KEY);
     // 如果有 token（从 AI小手机 共享），直接进入主页面
