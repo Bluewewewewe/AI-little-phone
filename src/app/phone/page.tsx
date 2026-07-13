@@ -831,6 +831,8 @@ export default function PhonePage() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [adminViewMode, setAdminViewMode] = useState<"admin" | "user">("admin");
+    const [authToken, setAuthToken] = useState<string | null>(null);
+    const [kickedMessage, setKickedMessage] = useState<string | null>(null);
 
     // Weibo verification state
     const [showWeiboVerify, setShowWeiboVerify] = useState(false);
@@ -988,6 +990,44 @@ export default function PhonePage() {
         } catch {}
 
         setMounted(true);
+
+        // 自动登录：检查是否有有效的 token
+        const savedToken = localStorage.getItem("auth_token");
+        if (savedToken) {
+            fetch("/api/auth", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "validate", token: savedToken })
+            })
+            .then(r => r.json())
+            .then(result => {
+                if (result.valid) {
+                    const userData = result.data;
+                    const isAdminUser = ADMIN_ACCOUNTS.includes(userData.username?.toLowerCase());
+                    setIsAdmin(isAdminUser);
+                    setIsLoggedIn(true);
+                    setAuthToken(savedToken);
+                    setAdminViewMode(isAdminUser ? "admin" : "user");
+                    setWeiboAccount(prev => ({
+                        ...prev,
+                        nickname: userData.username || userData.displayName,
+                        isSet: true
+                    }));
+                    if (!isAdminUser && !userData.weiboVerified) {
+                        setShowWeiboVerify(true);
+                    }
+                } else {
+                    // Token 无效（可能被其他设备踢下线）
+                    localStorage.removeItem("auth_token");
+                    if (result.error?.includes("过期") || result.error?.includes("登录")) {
+                        setKickedMessage("你的账号已在其他设备登录，当前设备已下线");
+                    }
+                }
+            })
+            .catch(() => {
+                localStorage.removeItem("auth_token");
+            });
+        }
     }, []);
 
     useEffect(() => {
@@ -1580,6 +1620,12 @@ export default function PhonePage() {
             setIsAdmin(isAdminUser);
             setIsLoggedIn(true);
             setAdminViewMode(isAdminUser ? "admin" : "user");
+
+            // 保存登录 token（单设备登录）
+            if (result.data?.token) {
+                setAuthToken(result.data.token);
+                localStorage.setItem("auth_token", result.data.token);
+            }
 
             setWeiboAccount(prev => ({
                 ...prev,
@@ -9055,6 +9101,34 @@ export default function PhonePage() {
                                     transition: "all 0.2s"
                                 }}>注册</button>
                         </div>
+                        {/* 被踢下线提示 */}
+                        {kickedMessage && (
+                            <div style={{
+                                background: "rgba(234,179,8,0.08)",
+                                border: "1px solid rgba(234,179,8,0.25)",
+                                borderRadius: 10,
+                                padding: "10px 14px",
+                                marginBottom: 14,
+                                fontSize: 13,
+                                color: "#92400e",
+                                textAlign: "center"
+                            }}>
+                                {kickedMessage}
+                                <button
+                                    onClick={() => setKickedMessage(null)}
+                                    style={{
+                                        display: "block",
+                                        margin: "8px auto 0",
+                                        fontSize: 12,
+                                        color: "#5a9e6a",
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        textDecoration: "underline"
+                                    }}
+                                >知道了</button>
+                            </div>
+                        )}
                         {/* 错误提示 */}
                         {loginError && (
                             <div style={{

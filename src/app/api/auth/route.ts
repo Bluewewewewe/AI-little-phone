@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
+import { randomUUID } from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, username, password, displayName } = body;
+    const { action, username, password, displayName, deviceInfo } = body;
 
     if (!username || !password) {
       return NextResponse.json(
@@ -83,6 +84,26 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // 单设备登录：踢掉该用户的所有旧会话
+      await supabase
+        .from("sessions")
+        .delete()
+        .eq("user_id", user.id);
+
+      // 创建新会话
+      const token = randomUUID();
+      const { error: sessionError } = await supabase
+        .from("sessions")
+        .insert({
+          user_id: user.id,
+          token,
+          device_info: deviceInfo || "未知设备",
+        });
+
+      if (sessionError) {
+        console.error("创建会话失败:", sessionError);
+      }
+
       return NextResponse.json({
         success: true,
         data: {
@@ -92,16 +113,56 @@ export async function POST(request: NextRequest) {
           level: user.level,
           weiboVerified: user.weibo_verified,
           weiboUid: user.weibo_uid,
+          token, // 登录凭证，前端保存
         },
       });
+    }
+
+    if (action === "validate") {
+      // 验证 token 是否有效
+      const { token } = body;
+      if (!token) {
+        return NextResponse.json({ valid: false, error: "缺少 token" });
+      }
+
+      const { data: session } = await supabase
+        .from("sessions")
+        .select("*, users(username, display_name, level, weibo_verified)")
+        .eq("token", token)
+        .gte("expires_at", new Date().toISOString())
+        .single();
+
+      if (!session) {
+        return NextResponse.json({ valid: false, error: "登录已过期，请重新登录" });
+      }
+
+      return NextResponse.json({
+        valid: true,
+        data: {
+          id: session.user_id,
+          username: (session.users as Record<string, unknown>).username,
+          displayName: (session.users as Record<string, unknown>).display_name,
+          level: (session.users as Record<string, unknown>).level,
+          weiboVerified: (session.users as Record<string, unknown>).weibo_verified,
+        },
+      });
+    }
+
+    if (action === "logout") {
+      // 登出：删除当前 token 的会话
+      const { token } = body;
+      if (token) {
+        await supabase.from("sessions").delete().eq("token", token);
+      }
+      return NextResponse.json({ success: true });
     }
 
     return NextResponse.json(
       { error: "无效的操作" },
       { status: 400 }
     );
-  } catch (error) {
-    console.error("Auth error:", error);
+  } catch (err) {
+    console.error("Auth API error:", err);
     return NextResponse.json(
       { error: "服务器错误" },
       { status: 500 }
