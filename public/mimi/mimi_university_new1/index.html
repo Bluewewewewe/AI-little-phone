@@ -281,16 +281,7 @@
 
     <!-- 4.6 米米小作坊 -->
     <div id="pageW" class="container ws-page" style="display:none;">
-        <div class="ws-page-top-bar">
-            <div class="ws-page-actions">
-                <button type="button" class="btn-ui-secondary ws-toolbar-btn" onclick="wsReShowDisclaimer()">免责声明</button>
-                <button type="button" class="btn-ui-secondary ws-toolbar-btn" onclick="wsOpenLeaderApply()">团长申请</button>
-                <button type="button" id="wsListBtn" class="btn-ui-primary ws-toolbar-btn" style="display:none;" onclick="wsOpenListModal()">我要上架</button>
-                <button type="button" id="wsAdminBtn" class="btn-ui-primary ws-toolbar-btn" style="display:none;" onclick="wsOpenAdmin()">管理后台</button>
-                <button type="button" id="wsCookieBtn" class="btn-ui-secondary ws-toolbar-btn" style="display:none;" onclick="wsOpenCookieMgr()">微博Cookie</button>
-            </div>
-        </div>
-        <!-- 顶部分类栏（横向） -->
+        <!-- 顶部分类栏（只显示大分类） -->
         <div class="ws-cat-top-bar">
             <div id="wsCatTopBar" class="ws-cat-top-tabs"></div>
         </div>
@@ -315,7 +306,18 @@
             </div>
         </section>
         <div class="ws-layout">
-            <div class="ws-main-col-full">
+            <aside class="ws-cat-side">
+                <b class="ws-cat-side-title">小分类</b>
+                <div id="wsCatTree" class="ws-cat-tree"></div>
+                <div class="ws-sidebar-actions">
+                    <button type="button" class="ws-sidebar-btn" onclick="wsReShowDisclaimer()">免责声明</button>
+                    <button type="button" class="ws-sidebar-btn" onclick="wsOpenLeaderApply()">团长申请</button>
+                    <button type="button" id="wsListBtn" class="ws-sidebar-btn ws-sidebar-btn-primary" style="display:none;" onclick="wsOpenListModal()">我要上架</button>
+                    <button type="button" id="wsAdminBtn" class="ws-sidebar-btn ws-sidebar-btn-primary" style="display:none;" onclick="wsOpenAdmin()">管理后台</button>
+                    <button type="button" id="wsCookieBtn" class="ws-sidebar-btn" style="display:none;" onclick="wsOpenCookieMgr()">微博Cookie</button>
+                </div>
+            </aside>
+            <div class="ws-main-col">
                 <div id="wsGroupTabs" class="ws-group-tabs"></div>
                 <div id="wsProductGrid" class="ws-product-grid"></div>
             </div>

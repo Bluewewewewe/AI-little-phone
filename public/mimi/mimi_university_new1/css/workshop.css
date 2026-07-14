@@ -242,17 +242,87 @@
 
 /* 分类与商品 */
 .ws-layout {
-    display: block;
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 16px;
+    align-items: start;
 }
 
-.ws-main-col-full { min-width: 0; }
+.ws-cat-side {
+    background: var(--glass);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 6px 20px rgba(66, 165, 245, 0.08);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    position: sticky;
+    top: 72px;
+    display: flex;
+    flex-direction: column;
+}
 
-/* 顶部分类栏（横向） */
+.ws-sidebar-actions {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid rgba(200, 220, 240, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ws-sidebar-btn {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(200, 220, 240, 0.6);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #5a7f8a;
+    text-align: center;
+}
+
+.ws-sidebar-btn:hover {
+    background: rgba(227, 242, 253, 0.8);
+    border-color: rgba(100, 181, 246, 0.4);
+}
+
+.ws-sidebar-btn-primary {
+    background: var(--gradient-brand-soft);
+    border-color: rgba(100, 181, 246, 0.3);
+    color: #1a5270;
+    font-weight: 600;
+}
+
+.ws-sidebar-btn-primary:hover {
+    background: var(--gradient-brand);
+}
+
+.ws-cat-side-title {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 8px;
+    font-weight: 700;
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-bottom: 8px;
+    border-bottom: 2px solid transparent;
+    border-image: var(--gradient-brand) 1;
+}
+
+.ws-cat-tree { font-size: 13px; }
+
+.ws-main-col { min-width: 0; }
+
+/* 顶部分类栏（横向，只显示大分类） */
 .ws-cat-top-bar {
     background: var(--glass);
     border-radius: 16px;
-    padding: 10px 14px;
-    margin-bottom: 16px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
     box-shadow: 0 6px 20px rgba(66, 165, 245, 0.08);
     border: 1px solid var(--glass-border);
     backdrop-filter: blur(14px);
@@ -269,7 +339,7 @@
 }
 
 .ws-cat-top-item {
-    padding: 8px 16px;
+    padding: 8px 18px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.6);
     border: 1px solid rgba(200, 220, 240, 0.8);
@@ -292,43 +362,6 @@
     color: #1a3a4a;
     font-weight: bold;
     box-shadow: 0 2px 8px rgba(100, 181, 246, 0.2);
-}
-
-/* 子分类展开 */
-.ws-cat-top-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-}
-
-.ws-cat-top-subs {
-    display: flex;
-    gap: 4px;
-    flex-wrap: nowrap;
-}
-
-.ws-cat-top-sub {
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(240, 248, 255, 0.8);
-    border: 1px solid rgba(200, 220, 240, 0.6);
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    color: #5a7f8a;
-}
-
-.ws-cat-top-sub:hover {
-    background: rgba(227, 242, 253, 0.9);
-}
-
-.ws-cat-top-sub.active {
-    background: rgba(100, 181, 246, 0.2);
-    border-color: rgba(100, 181, 246, 0.5);
-    color: #1a5270;
-    font-weight: 600;
 }
 
 .ws-cat-side {
@@ -358,6 +391,20 @@
 }
 
 .ws-cat-tree { font-size: 13px; }
+
+.ws-cat-major-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6a8f9a;
+    padding: 8px 12px 4px;
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ws-cat-major-title:first-child {
+    margin-top: 0;
+}
 
 .ws-cat-item {
     padding: 9px 12px;
@@ -867,6 +914,16 @@
 @media (max-width: 768px) {
     .ws-layout { grid-template-columns: 1fr; }
     .ws-cat-side { position: static; }
+    .ws-cat-tree { display: none; }
+    .ws-cat-side-title { display: none; }
+    .ws-sidebar-actions { 
+        flex-direction: row; 
+        flex-wrap: wrap; 
+        border-top: none; 
+        padding-top: 0;
+        margin-top: 0;
+    }
+    .ws-sidebar-btn { flex: 1; min-width: 80px; }
     .ws-cat-top-bar { border-radius: 12px; padding: 8px 10px; }
     .ws-featured-header { align-items: flex-start; }
     .ws-page-actions { width: 100%; }
