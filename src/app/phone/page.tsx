@@ -623,6 +623,7 @@ function AdminManagePanel({ currentUsername }: { currentUsername: string }) {
         weibo_verified: boolean;
         weibo_uid: string;
         weibo_name: string;
+        role: string;
         created_at: string;
     }>>([]);
     const [loading, setLoading] = useState(true);
@@ -697,6 +698,27 @@ function AdminManagePanel({ currentUsername }: { currentUsername: string }) {
             fetchData();
         } catch (e) {
             console.error("Reject failed:", e);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleSetRole = async (targetUserId: string, role: string) => {
+        setActionLoading(targetUserId);
+        try {
+            await fetch("/api/auth", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "set_role",
+                    username: currentUsername,
+                    targetUserId,
+                    role
+                })
+            });
+            fetchData();
+        } catch (e) {
+            console.error("Set role failed:", e);
         } finally {
             setActionLoading(null);
         }
@@ -983,6 +1005,51 @@ function AdminManagePanel({ currentUsername }: { currentUsername: string }) {
                                                     </div>
                                                 </div>
                                             )}
+                                            {/* 角色管理 */}
+                                            <div style={{
+                                                marginTop: 8,
+                                                padding: "8px 10px",
+                                                background: "rgba(6,182,212,0.05)",
+                                                borderRadius: 8,
+                                                border: "1px solid rgba(6,182,212,0.15)"
+                                            }}>
+                                                <div style={{
+                                                    fontSize: 10,
+                                                    fontWeight: 600,
+                                                    color: "#0e7490",
+                                                    marginBottom: 6
+                                                }}>🎭 角色管理</div>
+                                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                                    {(["user", "teacher", "leader", "admin"] as const).map(role => {
+                                                        const roleInfo: Record<string, { label: string; color: string }> = {
+                                                            user: { label: "用户", color: "#6b7280" },
+                                                            teacher: { label: "老师", color: "#2e7d32" },
+                                                            leader: { label: "团长", color: "#f59e0b" },
+                                                            admin: { label: "管理员", color: "#dc2626" }
+                                                        };
+                                                        const info = roleInfo[role];
+                                                        const isCurrentRole = user.role === role;
+                                                        return (
+                                                            <button
+                                                                key={role}
+                                                                onClick={() => handleSetRole(user.username, role)}
+                                                                style={{
+                                                                    fontSize: 11,
+                                                                    padding: "4px 10px",
+                                                                    borderRadius: 6,
+                                                                    border: isCurrentRole ? `1px solid ${info.color}` : "1px solid rgba(0,0,0,0.1)",
+                                                                    background: isCurrentRole ? info.color : "white",
+                                                                    color: isCurrentRole ? "white" : info.color,
+                                                                    cursor: "pointer",
+                                                                    fontWeight: isCurrentRole ? 600 : 500
+                                                                }}
+                                                            >
+                                                                {info.label}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
                                         </div>
                                     ))
                                 )}

@@ -217,6 +217,7 @@ export async function POST(request: NextRequest) {
           username: user.username,
           displayName: user.display_name,
           level: user.level,
+          role: user.role || 'user',
           weiboVerified: user.weibo_verified,
           weiboUid: user.weibo_uid,
           isAdmin: isAdminUser,
@@ -395,6 +396,42 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ success: true, data: settings });
+    }
+
+    // ========== 角色管理（管理员升级用户） ==========
+    if (action === "set_role") {
+      const { targetUserId, role } = await request.json();
+
+      if (!targetUserId || !role) {
+        return NextResponse.json(
+          { error: "缺少必要参数" },
+          { status: 400 }
+        );
+      }
+
+      // 验证角色值
+      const validRoles = ['user', 'teacher', 'leader', 'admin'];
+      if (!validRoles.includes(role)) {
+        return NextResponse.json(
+          { error: "无效的角色" },
+          { status: 400 }
+        );
+      }
+
+      const { error } = await supabase
+        .from("users")
+        .update({ role: role })
+        .eq("id", targetUserId);
+
+      if (error) {
+        console.error("更新角色失败:", error);
+        return NextResponse.json(
+          { error: "更新角色失败" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ success: true, message: `角色已更新为 ${role}` });
     }
 
     return NextResponse.json(
