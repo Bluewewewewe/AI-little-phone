@@ -439,9 +439,13 @@ function refreshCurrentPage() {
 }
 
 function changePage(p) {
-    // workshopOnly 模式：只显示小作坊
+    // workshopOnly 模式：只显示小作坊，隐藏顶部导航
     const workshopOnly = new URLSearchParams(window.location.search).get("workshopOnly") === "true";
     if (workshopOnly) {
+        // 隐藏顶部导航栏
+        const header = document.getElementById("mainHeader");
+        if (header) header.style.display = "none";
+        
         document.getElementById("pageS").style.display = "none";
         document.getElementById("pageT").style.display = "none";
         document.getElementById("pageR").style.display = "none";
