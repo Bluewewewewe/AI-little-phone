@@ -665,50 +665,28 @@ function wsToggleCatMajor(catId) {
 }
 
 function wsRenderCategoryTree() {
-    // 顶部横向栏：只显示大分类
-    const topBar = document.getElementById("wsCatTopBar");
-    if (topBar) {
-        let html = `<div class="ws-cat-top-item ${!wsFilterMajor ? "active" : ""}" onclick="wsSelectCat('','')">全部分类</div>`;
-        (wsData.categories || []).forEach((cat) => {
-            const majorActive = wsFilterMajor === cat.name;
-            html += `<div class="ws-cat-top-item ${majorActive ? "active" : ""}" onclick="wsSelectCat('${wsEscape(cat.name)}','')">${wsEscape(cat.name)}</div>`;
-        });
-        topBar.innerHTML = html;
-    }
-    
-    // 左侧边栏：只显示当前大分类下的小分类
     const wrap = document.getElementById("wsCatTree");
     if (!wrap) return;
     
-    // 找到当前选中的大分类
-    const currentCat = wsData.categories.find((c) => c.name === wsFilterMajor);
-    const subs = currentCat ? (currentCat.subs || []) : [];
-    
-    let html = "";
-    if (!wsFilterMajor) {
-        // 未选中大分类时，显示所有小分类（按大分类分组）
-        html += `<div class="ws-cat-item active" onclick="wsSelectCat('','')">全部</div>`;
-        (wsData.categories || []).forEach((cat) => {
-            const catSubs = cat.subs || [];
-            if (catSubs.length) {
-                html += `<div class="ws-cat-major-title">${wsEscape(cat.name)}</div>`;
-                catSubs.forEach((sub) => {
-                    const subActive = wsFilterMajor === cat.name && wsFilterMinor === sub;
-                    html += `<div class="ws-cat-item ${subActive ? "active" : ""}" onclick="wsSelectCat('${wsEscape(cat.name)}','${wsEscape(sub)}')">${wsEscape(sub)}</div>`;
-                });
-            }
-        });
-    } else if (subs.length) {
-        // 选中了大分类，显示该大分类下的小分类
-        html += `<div class="ws-cat-item ${!wsFilterMinor ? "active" : ""}" onclick="wsSelectCat('${wsEscape(wsFilterMajor)}','')">全部${wsEscape(wsFilterMajor)}</div>`;
-        subs.forEach((sub) => {
-            const subActive = wsFilterMinor === sub;
-            html += `<div class="ws-cat-item ${subActive ? "active" : ""}" onclick="wsSelectCat('${wsEscape(wsFilterMajor)}','${wsEscape(sub)}')">${wsEscape(sub)}</div>`;
-        });
-    } else {
-        // 该大分类没有小分类
-        html += `<div class="ws-cat-item active">暂无小分类</div>`;
-    }
+    let html = `<div class="ws-cat-item ${!wsFilterMajor && !wsFilterMinor ? "active" : ""}" onclick="wsSelectCat('','')">全部分类</div>`;
+    (wsData.categories || []).forEach((cat) => {
+        const subs = cat.subs || [];
+        const expanded = !!wsCatExpanded[cat.id];
+        const majorActive = wsFilterMajor === cat.name && !wsFilterMinor;
+        html += `<div class="ws-cat-major ${majorActive ? "active" : ""}" onclick="wsToggleCatMajor('${cat.id}')">
+            <span>${wsEscape(cat.name)}</span>
+            ${subs.length ? `<span class="ws-cat-arrow ${expanded ? "open" : ""}">▼</span>` : ""}
+        </div>`;
+        if (subs.length && expanded) {
+            html += `<div class="ws-cat-subs">`;
+            html += `<div class="ws-cat-sub ${wsFilterMajor === cat.name && !wsFilterMinor ? "active" : ""}" onclick="event.stopPropagation();wsSelectCat('${wsEscape(cat.name)}','')">全部${wsEscape(cat.name)}</div>`;
+            subs.forEach((sub) => {
+                const subActive = wsFilterMajor === cat.name && wsFilterMinor === sub;
+                html += `<div class="ws-cat-sub ${subActive ? "active" : ""}" onclick="event.stopPropagation();wsSelectCat('${wsEscape(cat.name)}','${wsEscape(sub)}')">${wsEscape(sub)}</div>`;
+            });
+            html += `</div>`;
+        }
+    });
     wrap.innerHTML = html;
 }
 

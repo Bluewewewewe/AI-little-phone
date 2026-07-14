@@ -317,53 +317,6 @@
 
 .ws-main-col { min-width: 0; }
 
-/* 顶部分类栏（横向，只显示大分类） */
-.ws-cat-top-bar {
-    background: var(--glass);
-    border-radius: 16px;
-    padding: 8px 12px;
-    margin-bottom: 12px;
-    box-shadow: 0 6px 20px rgba(66, 165, 245, 0.08);
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    overflow-x: auto;
-    scrollbar-width: thin;
-}
-
-.ws-cat-top-tabs {
-    display: flex;
-    gap: 8px;
-    flex-wrap: nowrap;
-    min-width: max-content;
-}
-
-.ws-cat-top-item {
-    padding: 8px 18px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(200, 220, 240, 0.8);
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    color: #4a5f6a;
-    flex-shrink: 0;
-}
-
-.ws-cat-top-item:hover {
-    background: rgba(227, 242, 253, 0.8);
-    border-color: rgba(100, 181, 246, 0.5);
-}
-
-.ws-cat-top-item.active {
-    background: var(--gradient-brand);
-    border-color: transparent;
-    color: #1a3a4a;
-    font-weight: bold;
-    box-shadow: 0 2px 8px rgba(100, 181, 246, 0.2);
-}
-
 .ws-cat-side {
     background: var(--glass);
     border-radius: 20px;
@@ -391,20 +344,6 @@
 }
 
 .ws-cat-tree { font-size: 13px; }
-
-.ws-cat-major-title {
-    font-size: 11px;
-    font-weight: 700;
-    color: #6a8f9a;
-    padding: 8px 12px 4px;
-    margin-top: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.ws-cat-major-title:first-child {
-    margin-top: 0;
-}
 
 .ws-cat-item {
     padding: 9px 12px;
@@ -914,8 +853,6 @@
 @media (max-width: 768px) {
     .ws-layout { grid-template-columns: 1fr; }
     .ws-cat-side { position: static; }
-    .ws-cat-tree { display: none; }
-    .ws-cat-side-title { display: none; }
     .ws-sidebar-actions { 
         flex-direction: row; 
         flex-wrap: wrap; 
@@ -924,7 +861,6 @@
         margin-top: 0;
     }
     .ws-sidebar-btn { flex: 1; min-width: 80px; }
-    .ws-cat-top-bar { border-radius: 12px; padding: 8px 10px; }
     .ws-featured-header { align-items: flex-start; }
     .ws-page-actions { width: 100%; }
     .ws-notice-card.ws-notice-has-img {
