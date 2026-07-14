@@ -290,6 +290,10 @@
                 <button type="button" id="wsCookieBtn" class="btn-ui-secondary ws-toolbar-btn" style="display:none;" onclick="wsOpenCookieMgr()">微博Cookie</button>
             </div>
         </div>
+        <!-- 顶部分类栏（横向） -->
+        <div class="ws-cat-top-bar">
+            <div id="wsCatTopBar" class="ws-cat-top-tabs"></div>
+        </div>
         <section class="ws-featured-section">
             <div class="ws-featured-header">
                 <div class="ws-featured-header-left">
@@ -311,11 +315,7 @@
             </div>
         </section>
         <div class="ws-layout">
-            <aside class="ws-cat-side">
-                <b class="ws-cat-side-title">分类</b>
-                <div id="wsCatTree" class="ws-cat-tree"></div>
-            </aside>
-            <div class="ws-main-col">
+            <div class="ws-main-col-full">
                 <div id="wsGroupTabs" class="ws-group-tabs"></div>
                 <div id="wsProductGrid" class="ws-product-grid"></div>
             </div>
@@ -729,6 +729,10 @@
                     <b class="ws-admin-carousel-subtitle">想要榜预览（自动）</b>
                     <div id="wsAdminCarouselWantPreview"></div>
                 </div>
+            </div>
+            <div class="ws-admin-section">
+                <b>待审核制品</b>
+                <div id="wsAdminPendingProducts"></div>
             </div>
             <div class="ws-admin-section">
                 <b>制品管理（下架/变灰/推荐）</b>

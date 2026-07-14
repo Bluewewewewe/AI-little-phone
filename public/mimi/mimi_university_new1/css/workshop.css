@@ -242,10 +242,93 @@
 
 /* 分类与商品 */
 .ws-layout {
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 20px;
-    align-items: start;
+    display: block;
+}
+
+.ws-main-col-full { min-width: 0; }
+
+/* 顶部分类栏（横向） */
+.ws-cat-top-bar {
+    background: var(--glass);
+    border-radius: 16px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 20px rgba(66, 165, 245, 0.08);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.ws-cat-top-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    min-width: max-content;
+}
+
+.ws-cat-top-item {
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(200, 220, 240, 0.8);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    color: #4a5f6a;
+    flex-shrink: 0;
+}
+
+.ws-cat-top-item:hover {
+    background: rgba(227, 242, 253, 0.8);
+    border-color: rgba(100, 181, 246, 0.5);
+}
+
+.ws-cat-top-item.active {
+    background: var(--gradient-brand);
+    border-color: transparent;
+    color: #1a3a4a;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(100, 181, 246, 0.2);
+}
+
+/* 子分类展开 */
+.ws-cat-top-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.ws-cat-top-subs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: nowrap;
+}
+
+.ws-cat-top-sub {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(240, 248, 255, 0.8);
+    border: 1px solid rgba(200, 220, 240, 0.6);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    color: #5a7f8a;
+}
+
+.ws-cat-top-sub:hover {
+    background: rgba(227, 242, 253, 0.9);
+}
+
+.ws-cat-top-sub.active {
+    background: rgba(100, 181, 246, 0.2);
+    border-color: rgba(100, 181, 246, 0.5);
+    color: #1a5270;
+    font-weight: 600;
 }
 
 .ws-cat-side {
@@ -438,6 +521,20 @@
     font-size: 11px;
     box-shadow: 0 2px 10px rgba(255, 193, 7, 0.2);
     backdrop-filter: blur(6px);
+}
+
+.ws-pending-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+    z-index: 2;
 }
 
 .ws-disclaimer-body {
@@ -704,12 +801,73 @@
     gap: 6px;
 }
 
+/* 待审核制品样式 */
+.ws-pending-row {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+    background: rgba(255, 248, 225, 0.4);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 204, 128, 0.3);
+    margin-bottom: 10px;
+}
+
+.ws-pending-info {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.ws-pending-img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.ws-pending-details {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.ws-pending-details b {
+    font-size: 14px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.ws-pending-desc {
+    color: #666;
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.ws-pending-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.ws-pending-actions button {
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+}
+
 .workshop-page { display: none; min-height: 100vh; }
 .workshop-page.active { display: block; }
 
 @media (max-width: 768px) {
     .ws-layout { grid-template-columns: 1fr; }
     .ws-cat-side { position: static; }
+    .ws-cat-top-bar { border-radius: 12px; padding: 8px 10px; }
     .ws-featured-header { align-items: flex-start; }
     .ws-page-actions { width: 100%; }
     .ws-notice-card.ws-notice-has-img {

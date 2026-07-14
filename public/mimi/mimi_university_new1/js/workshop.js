@@ -312,6 +312,10 @@ function wsVisibleProducts() {
     const now = Date.now();
     return wsData.products.filter((p) => {
         if (p.status === "offline") return false;
+        // 待审核制品只对管理员和提交者可见
+        if (p.status === "pending") {
+            if (!wsIsAdmin && wsUser?.name !== p.leaderUser) return false;
+        }
         const g = wsData.groups.find((x) => x.id === p.groupId);
         if (!g || !g.active) return false;
         if (g.startAt && now < g.startAt) return false;
@@ -627,7 +631,9 @@ function wsRenderProductGrid() {
     }
     grid.innerHTML = list.map((p) => {
         const cls = p.status === "gray" ? "grayed" : "";
+        const pendingBadge = p.status === "pending" ? `<span class="ws-pending-badge">待审核</span>` : "";
         return `<div class="ws-product-card ${cls}" onclick="wsOpenProduct('${p.id}')">
+            ${pendingBadge}
             <span class="ws-want-badge">想要 ${wsProductWantCount(p)}</span>
             ${wsProductCodeHtml(p)}
             <img class="ws-product-img" src="${p.image || ""}" alt="">
@@ -659,6 +665,31 @@ function wsToggleCatMajor(catId) {
 }
 
 function wsRenderCategoryTree() {
+    // 渲染到顶部横向分类栏
+    const topBar = document.getElementById("wsCatTopBar");
+    if (topBar) {
+        let html = `<div class="ws-cat-top-item ${!wsFilterMajor && !wsFilterMinor ? "active" : ""}" onclick="wsSelectCat('','')">全部分类</div>`;
+        (wsData.categories || []).forEach((cat) => {
+            const subs = cat.subs || [];
+            const majorActive = wsFilterMajor === cat.name && !wsFilterMinor;
+            const showSubs = wsFilterMajor === cat.name && subs.length > 0;
+            
+            html += `<div class="ws-cat-top-group">`;
+            html += `<div class="ws-cat-top-item ${majorActive ? "active" : ""}" onclick="wsSelectCat('${wsEscape(cat.name)}','')">${wsEscape(cat.name)}</div>`;
+            if (showSubs) {
+                html += `<div class="ws-cat-top-subs">`;
+                subs.forEach((sub) => {
+                    const subActive = wsFilterMajor === cat.name && wsFilterMinor === sub;
+                    html += `<div class="ws-cat-top-sub ${subActive ? "active" : ""}" onclick="wsSelectCat('${wsEscape(cat.name)}','${wsEscape(sub)}')">${wsEscape(sub)}</div>`;
+                });
+                html += `</div>`;
+            }
+            html += `</div>`;
+        });
+        topBar.innerHTML = html;
+    }
+    
+    // 保留原来的侧边栏渲染（兼容）
     const wrap = document.getElementById("wsCatTree");
     if (!wrap) return;
     let html = `<div class="ws-cat-item ${!wsFilterMajor && !wsFilterMinor ? "active" : ""}" onclick="wsSelectCat('','')">全部分类</div>`;
@@ -953,14 +984,19 @@ function wsSubmitList() {
         question: hasQa ? document.getElementById("wsListQuestion").value.trim() : "",
         answer: hasQa ? document.getElementById("wsListAnswer").value.trim() : "",
         wantCount: 0,
-        status: "active",
+        // 团长提交需要审核，管理员直接上架
+        status: wsIsAdmin ? "active" : "pending",
         listedUntil: g?.endAt || null,
         leaderUser: wsUser.name,
         createdAt: Date.now()
     };
     wsData.products.push(p);
     wsSave();
-    alert(`上架成功！\n商品编号：${p.code}\n（仅团长与管理员可见，用于精品推荐配置）`);
+    if (wsIsAdmin) {
+        alert(`上架成功！\n商品编号：${p.code}`);
+    } else {
+        alert(`提交成功！\n商品编号：${p.code}\n\n制品已提交审核，管理员审核通过后将自动上架。`);
+    }
     closeM("modalWsList");
     wsRenderAll();
 }
@@ -996,8 +1032,36 @@ function wsRenderAdmin() {
         <span><button class="btn-ui-secondary" onclick="wsToggleGroup('${g.id}')">${g.active ? "停用" : "启用"}</button></span></div>`
     ).join("") || "<div style='color:#999;'>暂无团</div>";
 
+    // 待审核制品
+    const pendingEl = document.getElementById("wsAdminPendingProducts");
+    if (pendingEl) {
+        const pendingProducts = wsData.products.filter((p) => p.status === "pending");
+        if (!pendingProducts.length) {
+            pendingEl.innerHTML = "<div style='color:#999;'>暂无待审核制品</div>";
+        } else {
+            pendingEl.innerHTML = pendingProducts.map((p) => {
+                const g = wsData.groups.find((x) => x.id === p.groupId);
+                return `<div class="ws-list-row ws-pending-row">
+                    <div class="ws-pending-info">
+                        <img class="ws-pending-img" src="${p.image || ""}" alt="">
+                        <div class="ws-pending-details">
+                            <b>${wsEscape(p.name)}</b>
+                            <div>分类：${wsEscape(p.majorCat)} · ${wsEscape(p.minorCat)}</div>
+                            <div>团长：${wsEscape(p.leaderUser || "—")} · 团：${wsEscape(g?.name || "—")}</div>
+                            <div class="ws-pending-desc">${wsEscape(p.desc || "暂无描述")}</div>
+                        </div>
+                    </div>
+                    <div class="ws-pending-actions">
+                        <button class="btn-ui-primary" onclick="wsApproveProduct('${p.id}')">✓ 通过上架</button>
+                        <button class="btn-ui-tag-del" onclick="wsRejectProduct('${p.id}')">✗ 驳回</button>
+                    </div>
+                </div>`;
+            }).join("");
+        }
+    }
+
     const products = document.getElementById("wsAdminProducts");
-    products.innerHTML = wsData.products.map((p) =>
+    products.innerHTML = wsData.products.filter((p) => p.status !== "pending").map((p) =>
         `<div class="ws-list-row"><span><b>${wsEscape(p.code || "—")}</b> · ${wsEscape(p.name)} (${wsEscape(p.status)})</span>
         <span>
             <button class="btn-ui-secondary" onclick="wsSetProductStatus('${p.id}','active')">上架</button>
@@ -1282,6 +1346,30 @@ function wsSetProductStatus(pid, status) {
     wsSave();
     wsRenderAdmin();
     wsRenderAll();
+}
+
+// 审核通过制品
+function wsApproveProduct(pid) {
+    const p = wsData.products.find((x) => x.id === pid);
+    if (!p) return;
+    if (!confirm(`确认通过「${p.name}」的上架申请？`)) return;
+    p.status = "active";
+    wsSave();
+    wsRenderAdmin();
+    wsRenderAll();
+    alert("已上架！");
+}
+
+// 驳回制品
+function wsRejectProduct(pid) {
+    const p = wsData.products.find((x) => x.id === pid);
+    if (!p) return;
+    if (!confirm(`确认驳回「${p.name}」？制品将被删除。`)) return;
+    wsData.products = wsData.products.filter((x) => x.id !== pid);
+    wsSave();
+    wsRenderAdmin();
+    wsRenderAll();
+    alert("已驳回！");
 }
 
 function wsToggleFeatured(pid) {
