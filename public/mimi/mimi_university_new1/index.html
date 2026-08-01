@@ -125,14 +125,14 @@
             <button id="teacherSelfBtn" class="btn-ui-secondary" style="padding:6px 12px; font-size:11px; margin-right:8px; display:none;" onclick="handleTeacherSelf() ">🎓 我的主页</button>
             <button id="passBtn" class="btn-ui-secondary" style="padding:6px 12px; font-size:11px; margin-right:8px; display:none;" onclick="handlePassModal()">🔒 改密码</button>
             <button id="adminManageBtn" class="btn-ui-secondary" style="padding:6px 12px; font-size:11px; margin-right:8px; display:none;" onclick="handleAdminManage()">🧾 管理员管理</button>
-            <!-- 聊天按钮：点击打开聊天框，显示绿色反馈 -->
-            <button id="chatToggleBtn" onclick="handleChatToggle()" class="btn-ui-secondary" style="padding:6px 12px; font-size:11px; margin-right:8px;">💬 聊天</button>
-            <button id="feedbackBtn" onclick="handleFeedback()" class="btn-ui-secondary" style="padding:6px 12px; font-size:11px; margin-right:8px;">📝 意见箱</button>
+            <!-- 聊天/意见箱/刷新/退出按钮：功能保留，页面隐藏（后续作为独立 APP 或移到其他地方） -->
+            <button id="chatToggleBtn" onclick="handleChatToggle()" class="btn-ui-secondary" style="padding:6px 12px; font-size:11px; margin-right:8px; display:none;">💬 聊天</button>
+            <button id="feedbackBtn" onclick="handleFeedback()" class="btn-ui-secondary" style="padding:6px 12px; font-size:11px; margin-right:8px; display:none;">📝 意见箱</button>
             <span id="userDisp"></span>
             <!-- 刷新按钮：点击刷新当前页面，显示绿色反馈 -->
-            <button id="refreshBtn" onclick="handleRefresh()" class="btn-ui-secondary" style="padding:6px 12px; font-size:11px; margin-left:10px;">🔄 刷新</button>
+            <button id="refreshBtn" onclick="handleRefresh()" class="btn-ui-secondary" style="padding:6px 12px; font-size:11px; margin-left:10px; display:none;">🔄 刷新</button>
             <!-- 退出按钮：点击返回登录界面，显示绿色反馈 -->
-            <button id="logoutBtn" onclick="handleLogout()" class="btn-ui-secondary" style="padding:6px 12px; font-size:11px; margin-left:8px; color:var(--danger)">退出</button>
+            <button id="logoutBtn" onclick="handleLogout()" class="btn-ui-secondary" style="padding:6px 12px; font-size:11px; margin-left:8px; color:var(--danger); display:none;">退出</button>
         </div>
     </div>
 
@@ -743,7 +743,8 @@
 <!-- ========================================
      8. 聊天组件
 ========================================= -->
-<div class="chat-widget" id="chatWidget">
+<!-- 聊天组件：功能保留，默认隐藏（后续作为独立 APP） -->
+<div class="chat-widget" id="chatWidget" style="display:none;">
     <div id="chatMini" class="chat-mini" onclick="toggleChatBox()">
         <span class="chat-mini-icon">💬</span>
         <span>聊天室</span>

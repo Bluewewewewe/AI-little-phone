@@ -41,6 +41,8 @@ import {
     DEFAULT_NAMES,
 } from "@/lib/unlock-config";
 
+import { ForumApp } from "@/components/forum-app";
+
 interface Message {
     from: "me" | "dad" | "mom" | "system";
     text: string;
@@ -553,6 +555,11 @@ const PAGE2_APPS = [{
     emoji: "📚",
     label: "迷你小作坊",
     color: "#059669"
+}, {
+    id: "forum",
+    emoji: "💬",
+    label: "社区论坛",
+    color: "#f97316"
 }];
 
 const DOCK_APPS = [{
@@ -9603,9 +9610,15 @@ export default function PhonePage() {
             return renderExternalApp("mimicosmo", "米米课程表", "/mimi/mimi_university_new1/index.html?hideWorkshop=true");
         case "miniworkshop":
             return renderExternalApp("miniworkshop", "迷你小作坊", "/mimi/mimi_university_new1/index.html?workshopOnly=true");
+        case "forum":
+            return renderForum();
         default:
             return <div className="empty-state"><div className="empty-emoji">📱</div>APP开发中</div>;
         }
+    }
+
+    function renderForum() {
+        return <ForumApp />;
     }
 
     function renderWeiboVerifyScreen() {
