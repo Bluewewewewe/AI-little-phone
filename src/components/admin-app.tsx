@@ -251,6 +251,7 @@ export function AdminApp({ onClose, adminRole }: AdminAppProps) {
     { id: 'blacklist', name: '微博黑名单', icon: '🚫', show: canManageBlacklist },
     { id: 'announcements', name: '公告管理', icon: '📢', show: canManagePosts },
     { id: 'workbench', name: '工作台', icon: '💼', show: canReview },
+    { id: 'forgotPassword', name: '密码重置申请', icon: '🔑', show: true },
     { id: 'logs', name: '操作日志', icon: '📜', show: true },
   ];
 
@@ -277,6 +278,8 @@ export function AdminApp({ onClose, adminRole }: AdminAppProps) {
         return <AnnouncementsModule />;
       case 'workbench':
         return <WorkbenchModule />;
+      case 'forgotPassword':
+        return <ForgotPasswordModule />;
       case 'logs':
         return <LogsModule />;
       default:
@@ -734,6 +737,52 @@ function LogsModule() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// 11. 密码重置申请
+function ForgotPasswordModule() {
+  const [requests, setRequests] = useState<Array<{ id: string; username: string; weiboNickname: string; weiboLink: string; status: "pending" | "processed"; createdAt: string }>>([]);
+
+  const markAsProcessed = (id: string) => {
+    setRequests(requests.map(r => r.id === id ? { ...r, status: "processed" as const } : r));
+  };
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-gray-800">密码重置申请</h2>
+      {requests.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-sm p-8 text-center text-gray-500">
+          暂无密码重置申请
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          {requests.map((req) => (
+            <div key={req.id} className="p-4 border-b border-gray-100 last:border-b-0">
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-bold text-gray-800">{req.username}</div>
+                <span className={`text-xs px-2 py-1 rounded-full ${req.status === "pending" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>
+                  {req.status === "pending" ? "待处理" : "已处理"}
+                </span>
+              </div>
+              <div className="text-sm text-gray-600 space-y-1">
+                <div>微博昵称：{req.weiboNickname}</div>
+                <div>微博链接：{req.weiboLink}</div>
+                <div className="text-xs text-gray-400">申请时间：{req.createdAt}</div>
+              </div>
+              {req.status === "pending" && (
+                <button
+                  onClick={() => markAsProcessed(req.id)}
+                  className="mt-2 px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
+                >
+                  标记为已处理
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

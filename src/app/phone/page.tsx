@@ -1753,6 +1753,10 @@ export default function PhonePage() {
     const [loginMode, setLoginMode] = useState<"login" | "register">("login");
     const [loginError, setLoginError] = useState("");
     const [loginLoading, setLoginLoading] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [forgotPasswordForm, setForgotPasswordForm] = useState({ username: "", weiboNickname: "", weiboLink: "" });
+    const [forgotPasswordSubmitted, setForgotPasswordSubmitted] = useState(false);
+    const [forgotPasswordRequests, setForgotPasswordRequests] = useState<Array<{ id: string; username: string; weiboNickname: string; weiboLink: string; status: "pending" | "processed"; createdAt: string }>>([]);
     const [requestAdmin, setRequestAdmin] = useState(false);
     const [adminPendingMsg, setAdminPendingMsg] = useState("");
     const [invitationCode, setInvitationCode] = useState("");
@@ -10461,6 +10465,20 @@ export default function PhonePage() {
                                 }}>隐私政策</span>
                         </div>
                     </div>
+                    {/* 忘记密码链接 */}
+                    <div style={{ textAlign: "center", marginTop: 12 }}>
+                        <span
+                            onClick={() => setShowForgotPassword(true)}
+                            style={{
+                                fontSize: 12,
+                                color: "#3d8b5a",
+                                textDecoration: "underline",
+                                cursor: "pointer",
+                                fontWeight: 500
+                            }}>
+                            忘记密码？
+                        </span>
+                    </div>
                     {}
                     <div
                         style={{
@@ -10513,6 +10531,150 @@ export default function PhonePage() {
             50% { transform: translateY(-8px) scale(1.05); opacity: 1; }
           }
         `}</style>
+                {/* 忘记密码弹窗 */}
+                {showForgotPassword && (
+                    <div style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "rgba(0,0,0,0.5)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 100,
+                        padding: 20
+                    }}>
+                        <div style={{
+                            background: "white",
+                            borderRadius: 20,
+                            padding: 24,
+                            width: "100%",
+                            maxWidth: 320,
+                            boxShadow: "0 10px 40px rgba(0,0,0,0.2)"
+                        }}>
+                            <div style={{ fontSize: 18, fontWeight: 700, color: "#2e5c33", marginBottom: 16 }}>
+                                {forgotPasswordSubmitted ? "申请已提交" : "忘记密码"}
+                            </div>
+                            {!forgotPasswordSubmitted ? (
+                                <>
+                                    <div style={{ fontSize: 12, color: "#666", marginBottom: 16, lineHeight: 1.5 }}>
+                                        提交申请后，管理员会通过微博私信将新密码发送给您
+                                    </div>
+                                    <div style={{ marginBottom: 12 }}>
+                                        <div style={{ fontSize: 11, color: "#3d5c45", fontWeight: 700, marginBottom: 6 }}>账号 <span style={{color: "#ef4444"}}>*</span></div>
+                                        <input
+                                            value={forgotPasswordForm.username}
+                                            onChange={e => setForgotPasswordForm({...forgotPasswordForm, username: e.target.value})}
+                                            placeholder="请输入账号"
+                                            style={{
+                                                width: "100%",
+                                                padding: "10px 12px",
+                                                border: "1.5px solid rgba(165,214,167,0.5)",
+                                                borderRadius: 10,
+                                                fontSize: 14,
+                                                outline: "none",
+                                                boxSizing: "border-box"
+                                            }} />
+                                    </div>
+                                    <div style={{ marginBottom: 12 }}>
+                                        <div style={{ fontSize: 11, color: "#3d5c45", fontWeight: 700, marginBottom: 6 }}>微博昵称 <span style={{color: "#ef4444"}}>*</span></div>
+                                        <input
+                                            value={forgotPasswordForm.weiboNickname}
+                                            onChange={e => setForgotPasswordForm({...forgotPasswordForm, weiboNickname: e.target.value})}
+                                            placeholder="请输入微博昵称"
+                                            style={{
+                                                width: "100%",
+                                                padding: "10px 12px",
+                                                border: "1.5px solid rgba(165,214,167,0.5)",
+                                                borderRadius: 10,
+                                                fontSize: 14,
+                                                outline: "none",
+                                                boxSizing: "border-box"
+                                            }} />
+                                    </div>
+                                    <div style={{ marginBottom: 16 }}>
+                                        <div style={{ fontSize: 11, color: "#3d5c45", fontWeight: 700, marginBottom: 6 }}>微博主页链接 <span style={{color: "#ef4444"}}>*</span></div>
+                                        <input
+                                            value={forgotPasswordForm.weiboLink}
+                                            onChange={e => setForgotPasswordForm({...forgotPasswordForm, weiboLink: e.target.value})}
+                                            placeholder="请输入微博主页链接"
+                                            style={{
+                                                width: "100%",
+                                                padding: "10px 12px",
+                                                border: "1.5px solid rgba(165,214,167,0.5)",
+                                                borderRadius: 10,
+                                                fontSize: 14,
+                                                outline: "none",
+                                                boxSizing: "border-box"
+                                            }} />
+                                    </div>
+                                    <div style={{ display: "flex", gap: 10 }}>
+                                        <button
+                                            onClick={() => {
+                                                setShowForgotPassword(false);
+                                                setForgotPasswordForm({ username: "", weiboNickname: "", weiboLink: "" });
+                                            }}
+                                            style={{
+                                                flex: 1,
+                                                padding: "10px 0",
+                                                background: "#f0f0f0",
+                                                color: "#666",
+                                                border: "none",
+                                                borderRadius: 10,
+                                                fontSize: 14,
+                                                fontWeight: 600,
+                                                cursor: "pointer"
+                                            }}>
+                                            取消
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (!forgotPasswordForm.username || !forgotPasswordForm.weiboNickname || !forgotPasswordForm.weiboLink) {
+                                                    alert("请填写所有必填项");
+                                                    return;
+                                                }
+                                                const newRequest = {
+                                                    id: "fp_" + Date.now(),
+                                                    username: forgotPasswordForm.username,
+                                                    weiboNickname: forgotPasswordForm.weiboNickname,
+                                                    weiboLink: forgotPasswordForm.weiboLink,
+                                                    status: "pending" as const,
+                                                    createdAt: new Date().toLocaleString("zh-CN")
+                                                };
+                                                setForgotPasswordRequests([...forgotPasswordRequests, newRequest]);
+                                                setForgotPasswordSubmitted(true);
+                                                setTimeout(() => {
+                                                    setShowForgotPassword(false);
+                                                    setForgotPasswordSubmitted(false);
+                                                    setForgotPasswordForm({ username: "", weiboNickname: "", weiboLink: "" });
+                                                }, 3000);
+                                            }}
+                                            style={{
+                                                flex: 1,
+                                                padding: "10px 0",
+                                                background: "linear-gradient(135deg, #5a9e6a 0%, #3d8b5a 100%)",
+                                                color: "white",
+                                                border: "none",
+                                                borderRadius: 10,
+                                                fontSize: 14,
+                                                fontWeight: 600,
+                                                cursor: "pointer"
+                                            }}>
+                                            提交申请
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                                    <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+                                    <div style={{ fontSize: 14, color: "#3d5c45", lineHeight: 1.6 }}>
+                                        申请已提交，请关注您的微博私信<br/>
+                                        管理员会尽快联系您
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
