@@ -1757,6 +1757,13 @@ export default function PhonePage() {
     const [forgotPasswordForm, setForgotPasswordForm] = useState({ username: "", weiboNickname: "", weiboLink: "" });
     const [forgotPasswordSubmitted, setForgotPasswordSubmitted] = useState(false);
     const [forgotPasswordRequests, setForgotPasswordRequests] = useState<Array<{ id: string; username: string; weiboNickname: string; weiboLink: string; status: "pending" | "processed"; createdAt: string }>>([]);
+    const [isPageLoading, setIsPageLoading] = useState(true);
+
+    useEffect(() => {
+        // 页面加载完成后隐藏 Loading
+        const timer = setTimeout(() => setIsPageLoading(false), 500);
+        return () => clearTimeout(timer);
+    }, []);
     const [requestAdmin, setRequestAdmin] = useState(false);
     const [adminPendingMsg, setAdminPendingMsg] = useState("");
     const [invitationCode, setInvitationCode] = useState("");
@@ -2644,7 +2651,6 @@ export default function PhonePage() {
                         setWbStep1Passed(true);
                         setWbStep2Passed(true);
                         setShowWeiboVerify(false);
-                    } else if (verifyResult.data && verifyResult.data.status === "pending") {
                         setWbVerifyCode(verifyResult.data.verification_code);
                         setWbVerifyUid(verifyResult.data.weibo_uid || "");
                         setWbVerifyName(verifyResult.data.weibo_name || "");
@@ -2658,11 +2664,12 @@ export default function PhonePage() {
                         setWbVerifyStatus("none");
                         setShowWeiboVerify(true);
                     }
-                } catch {
-                    setShowWeiboVerify(false);
+                } catch (verifyErr) {
+                    console.error("微博验证失败:", verifyErr);
+                    setWbVerifyStep("input");
+                    setWbVerifyStatus("none");
+                    setShowWeiboVerify(true);
                 }
-            } else {
-                setShowWeiboVerify(false);
             }
 
             setLoginPassword("");
@@ -2717,9 +2724,11 @@ export default function PhonePage() {
                     setWbVerifyStatus("pending");
                 }
             }
-        } catch (e) {
-            console.error("Check weibo verify status failed:", e);
-        }
+        } catch {
+            // 微博验证 API 失败，默认显示验证页面
+            setWbVerifyStep("input");
+            setWbVerifyStatus("none");
+            setShowWeiboVerify(true);
     };
 
     const submitWeiboInfo = async () => {
@@ -12029,7 +12038,14 @@ export default function PhonePage() {
             </div>}
             {}
             {!isLoggedIn && renderLoginScreen()}
+            {isLoggedIn && isPageLoading && (
+                <div style={{ position: "fixed", inset: 0, background: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+                    <div style={{ width: 48, height: 48, border: "4px solid rgba(46,125,50,0.2)", borderTopColor: "#2e7d32", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                    <div style={{ marginTop: 16, fontSize: 14, color: "#2e5c33", fontWeight: 500 }}>加载中...</div>
+                </div>
+            )}
         </div>
     );
 }
 
+}
