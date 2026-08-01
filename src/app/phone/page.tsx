@@ -11840,10 +11840,6 @@ export default function PhonePage() {
                             overflow: "hidden"
                         }}>
                         {}
-                        <div className="status-bar">
-                            <span>{time}</span>
-                            <span className="status-right">📶 🔋 100%</span>
-                        </div>
                         {renderLoginScreen()}
                     </div> : isAdmin && adminViewMode === "admin" ? <div
                         style={{
@@ -11854,10 +11850,6 @@ export default function PhonePage() {
                             overflow: "hidden"
                         }}>
                         {}
-                        <div className="status-bar">
-                            <span>{time}</span>
-                            <span className="status-right">📶 🔋 100%</span>
-                        </div>
                         {renderAdminDashboard()}
                     </div> : showWeiboVerify ? <div
                         style={{
@@ -11867,19 +11859,11 @@ export default function PhonePage() {
                             background: "linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 40%, #a5d6a7 100%)",
                             overflow: "hidden"
                         }}>
-                        <div className="status-bar">
-                            <span>{time}</span>
-                            <span className="status-right">📶 🔋 100%</span>
-                        </div>
                         {renderWeiboVerifyScreen()}
                     </div> : <>
                         {}
                         <div className={`home-screen${currentApp ? " hidden" : ""}`}>
                             {}
-                            <div className="status-bar">
-                                <span>{time}</span>
-                                <span className="status-right">📶 🔋 100%</span>
-                            </div>
                             <div className="home-content">
                                 {}
                                 <div className="big-clock" onClick={handleDebugTitleClick}>

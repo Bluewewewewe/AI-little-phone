@@ -231,9 +231,9 @@ export function AuthSystem({ onLoginSuccess }: AuthSystemProps) {
   // 登录/注册页
   if (authStage === 'auth') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8">
+          <div className="bg-white rounded-3xl shadow-2xl p-8">
             <div className="text-center mb-8">
               <div className="text-6xl mb-4">🌽</div>
               <h1 className="text-3xl font-bold text-green-800">AI 小手机</h1>
@@ -332,9 +332,9 @@ export function AuthSystem({ onLoginSuccess }: AuthSystemProps) {
   // 微博验证页
   if (authStage === 'weibo') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8">
+          <div className="bg-white rounded-3xl shadow-2xl p-8">
             <div className="text-center mb-8">
               <div className="text-5xl mb-4"></div>
               <h2 className="text-2xl font-bold text-green-800">超话验证</h2>
@@ -398,7 +398,7 @@ export function AuthSystem({ onLoginSuccess }: AuthSystemProps) {
   // 等待审核页
   if (authStage === 'waiting') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 text-center">
             <div className="text-6xl mb-6">⏳</div>
