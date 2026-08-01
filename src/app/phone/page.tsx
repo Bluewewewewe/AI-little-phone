@@ -10226,7 +10226,7 @@ export default function PhonePage() {
                                 }}>注册</button>
                         </div>
                         {/* 邀请码输入框（注册时且需要邀请码时显示） */}
-                        {loginMode === "register" && inviteRequired && (
+                        {loginMode === "register" && (
                             <div style={{
                                 marginBottom: 14,
                                 background: "rgba(255,255,255,0.65)",
