@@ -197,53 +197,49 @@ body {
 .pet-item { font-size: 13px; color: #3d5c45; }
 .pet-hp { font-weight: 700; }
 
-/* Phone Frame */
+/* Phone Frame - 操作系统风格 */
 .phone-frame {
   position: relative;
-  width: min(390px, 85vw); height: min(860px, 96vh);
-  border-radius: 48px;
-  background: linear-gradient(160deg, #3a3a3e 0%, #1c1c1e 30%, #0d0d0f 100%);
-  padding: 8px;
-  box-shadow:
-    0 0 0 2px rgba(180,170,150,0.5),
-    0 0 0 3px rgba(20,20,22,0.9),
-    0 30px 80px rgba(0,0,0,0.4),
-    0 10px 30px rgba(0,0,0,0.25),
-    inset 0 1px 0 rgba(255,255,255,0.03);
-  overflow: hidden; flex-shrink: 0;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  flex-shrink: 0;
 }
-.phone-frame::before {
-  content: '';
-  position: absolute; inset: 8px; border-radius: 40px;
-  border: 1px solid rgba(255,255,255,0.06);
-  pointer-events: none; z-index: 99;
-}
-@media (max-width: 767px) {
-  .phone-frame {
-    width: 100vw; height: 100vh; border-radius: 0;
-    padding: 0; background: none;
-    box-shadow: none;
+
+/* 电脑端：平板尺寸居中 */
+@media (min-width: 768px) {
+  body {
+    background: #1a1a1a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
   }
-  .phone-frame::before { display: none; }
+  .phone-frame {
+    width: min(1024px, 100vw);
+    height: 100vh;
+    max-height: 1366px;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+  }
 }
 
 /* Phone Screen */
 .phone-screen {
-  position: absolute; top: 8px; left: 8px; right: 8px; bottom: 8px;
-  border-radius: 40px; overflow: hidden;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
   background: url('/phone-bg.jpeg') center center / cover no-repeat;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
-}
-@media (max-width: 767px) {
-  .phone-screen { top: 0; left: 0; right: 0; bottom: 0; border-radius: 0; box-shadow: none; }
 }
 
 /* Home Screen */
 .home-screen {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
   transition: opacity 0.25s, transform 0.25s;
+  background: url('/phone-bg.jpeg') center center / cover no-repeat;
 }
 .home-screen.hidden { opacity: 0; transform: scale(0.95); pointer-events: none; }
 .home-content { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
@@ -251,12 +247,26 @@ body {
 /* Status Bar */
 .status-bar {
   flex-shrink: 0;
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 24px 6px 24px;
-  font-size: 13px; font-weight: 600; color: #3d5c45;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3d5c45;
   letter-spacing: 0.3px;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 .status-right { font-size: 12px; opacity: 0.7; }
+
+/* 电脑端状态栏 */
+@media (min-width: 768px) {
+  .status-bar {
+    padding: 14px 24px 10px 24px;
+  }
+}
 
 /* Big Clock */
 .big-clock { flex-shrink: 0; text-align: center; padding: 20px 0 6px 0; }
@@ -439,20 +449,31 @@ body {
 }
 
 /* Home Indicator */
-.home-indicator { flex-shrink: 0; display: flex; justify-content: center; padding: 8px 0 10px 0; }
-.home-indicator::after { content: ''; width: 140px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
-@media (max-width: 767px) {
-  .home-indicator::after { background: rgba(0,0,0,0.15); }
+/* Home Indicator */
+.home-indicator {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 10px 0;
+}
+.home-indicator::after {
+  content: '';
+  width: 140px;
+  height: 4px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 2px;
 }
 
 /* App Layer */
 .app-layer {
-  position: absolute; inset: 0; background: #fbfaf8;
-  display: flex; flex-direction: column;
-  border-radius: 40px; overflow: hidden;
+  position: absolute;
+  inset: 0;
+  background: #fbfaf8;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   animation: appOpen 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 20;
-  box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
 }
 .app-layer.closing { animation: appClose 0.22s ease-in forwards; }
 @keyframes appOpen {

@@ -11797,7 +11797,6 @@ export default function PhonePage() {
                             display: "flex",
                             flexDirection: "column",
                             background: "linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 40%, #a5d6a7 100%)",
-                            borderRadius: "48px",
                             overflow: "hidden"
                         }}>
                         {}
@@ -11812,7 +11811,6 @@ export default function PhonePage() {
                             display: "flex",
                             flexDirection: "column",
                             background: "#f8f9fa",
-                            borderRadius: "48px",
                             overflow: "hidden"
                         }}>
                         {}
@@ -11827,7 +11825,6 @@ export default function PhonePage() {
                             display: "flex",
                             flexDirection: "column",
                             background: "linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 40%, #a5d6a7 100%)",
-                            borderRadius: "48px",
                             overflow: "hidden"
                         }}>
                         <div className="status-bar">
