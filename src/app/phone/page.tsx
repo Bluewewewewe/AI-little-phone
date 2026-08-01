@@ -42,7 +42,6 @@ import {
 } from "@/lib/unlock-config";
 
 import { ForumApp } from "@/components/forum-app";
-import { AuthSystem } from "@/components/auth-system";
 import { AdminApp } from "@/components/admin-app";
 
 interface Message {
@@ -1757,6 +1756,7 @@ export default function PhonePage() {
     const [requestAdmin, setRequestAdmin] = useState(false);
     const [adminPendingMsg, setAdminPendingMsg] = useState("");
     const [invitationCode, setInvitationCode] = useState("");
+    const [weiboLink, setWeiboLink] = useState("");
     const [inviteRequired, setInviteRequired] = useState(false);
     const [myInviteCodes, setMyInviteCodes] = useState<Array<{ code: string; use_count: number; max_uses: number; is_active: boolean; used_by?: string }>>([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -1766,8 +1766,6 @@ export default function PhonePage() {
     const [kickedMessage, setKickedMessage] = useState<string | null>(null);
 
     // 新注册系统状态
-    const [showAuthSystem, setShowAuthSystem] = useState(true);
-    const [currentUser, setCurrentUser] = useState<any>(null);
     const [showAdminApp, setShowAdminApp] = useState(false);
     const [adminRole, setAdminRole] = useState<'super_admin' | 'review_admin' | 'ops_admin'>('super_admin');
 
@@ -10261,6 +10259,57 @@ export default function PhonePage() {
                                 </div>
                             </div>
                         )}
+                        {/* 微博主页链接（注册时必填） */}
+                        {loginMode === "register" && (
+                            <div style={{
+                                marginBottom: 14
+                            }}>
+                                <div style={{
+                                    fontSize: 11,
+                                    color: "#3d5c45",
+                                    fontWeight: 700,
+                                    marginBottom: 6,
+                                    letterSpacing: 1.5
+                                }}>微博主页链接 <span style={{color: "#ef4444"}}>*</span></div>
+                                <div style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    background: "rgba(255,255,255,0.8)",
+                                    borderRadius: 14,
+                                    border: "1.5px solid rgba(165,214,167,0.5)",
+                                    overflow: "hidden",
+                                    transition: "border-color 0.2s, box-shadow 0.2s"
+                                }}
+                                onFocusCapture={e => {
+                                    e.currentTarget.style.borderColor = "rgba(90,158,106,0.6)";
+                                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(90,158,106,0.08)";
+                                }}
+                                onBlurCapture={e => {
+                                    e.currentTarget.style.borderColor = "rgba(165,214,167,0.5)";
+                                    e.currentTarget.style.boxShadow = "none";
+                                }}>
+                                    <span style={{
+                                        padding: "0 0 0 14px",
+                                        fontSize: 16,
+                                        opacity: 0.7
+                                    }}></span>
+                                    <input
+                                        value={weiboLink}
+                                        onChange={e => setWeiboLink(e.target.value)}
+                                        placeholder="请输入微博主页链接"
+                                        style={{
+                                            flex: 1,
+                                            padding: "12px 14px 12px 8px",
+                                            border: "none",
+                                            fontSize: 14,
+                                            outline: "none",
+                                            background: "transparent",
+                                            color: "#2e5c33",
+                                            fontWeight: 500
+                                        }} />
+                                </div>
+                            </div>
+                        )}
                         {/* 申请管理员复选框（仅注册时显示） */}
                         {loginMode === "register" && (
                             <label style={{
@@ -11804,488 +11853,7 @@ export default function PhonePage() {
             </div>}
             {}
             {/* 注册/登录系统 */}
-            {showAuthSystem && !currentUser && (
-                <AuthSystem
-                    onLoginSuccess={(user) => {
-                        setCurrentUser(user);
-                        setShowAuthSystem(false);
-                        if (user.nickname === '超级管理员') {
-                            setIsAdmin(true);
-                            setAdminRole('super_admin');
-                        }
-                    }}
-                />
-            )}
-
-            {/* 管理后台 App */}
-            {showAdminApp && (
-                <div className="app-layer active">
-                    <AdminApp
-                        adminRole={adminRole}
-                        onClose={() => setShowAdminApp(false)}
-                    />
-                </div>
-            )}
-
-            {}
-            <div className="phone-frame">
-                <div className="phone-screen">
-                    {}
-                    {!isLoggedIn ? <div
-                        style={{
-                            height: "100%",
-                            display: "flex",
-                            flexDirection: "column",
-                            background: "linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 40%, #a5d6a7 100%)",
-                            overflow: "hidden"
-                        }}>
-                        {}
-                        {renderLoginScreen()}
-                    </div> : isAdmin && adminViewMode === "admin" ? <div
-                        style={{
-                            height: "100%",
-                            display: "flex",
-                            flexDirection: "column",
-                            background: "#f8f9fa",
-                            overflow: "hidden"
-                        }}>
-                        {}
-                        {renderAdminDashboard()}
-                    </div> : showWeiboVerify ? <div
-                        style={{
-                            height: "100%",
-                            display: "flex",
-                            flexDirection: "column",
-                            background: "linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 40%, #a5d6a7 100%)",
-                            overflow: "hidden"
-                        }}>
-                        {renderWeiboVerifyScreen()}
-                    </div> : <>
-                        {}
-                        <div className={`home-screen${currentApp ? " hidden" : ""}`}>
-                            {}
-                            <div className="home-content">
-                                {}
-                                <div className="big-clock" onClick={handleDebugTitleClick}>
-                                    <div className="big-time">{time}</div>
-                                    <div className="big-date">{dateStr}</div>
-                                    <div
-                                        style={{
-                                            fontSize: 10,
-                                            color: "#4a7c50",
-                                            marginTop: 2,
-                                            opacity: 0.8
-                                        }}>💎 {tokenBalance}Token · Lv.{userLevel}</div>
-                                </div>
-                                {}
-                                <div className="parent-widgets">
-                                    <div className="parent-widget">
-                                        <span className="parent-emoji">👨</span>
-                                        <div className="parent-info">
-                                            <span className="parent-name">{unlockState.unlocked ? "爸爸" : DEFAULT_NAMES.dad1}</span>
-                                            <span className="parent-status">{parentStatus.dadStatus}</span>
-                                            <span className="parent-desc-inline">{parentStatus.dadDesc}</span>
-                                        </div>
-                                        <div className="parent-gif-badge" data-anim={parentStatus.dadGif.anim}>
-                                            <span className="gif-emoji">{parentStatus.dadGif.emoji}</span>
-                                            <span className="gif-label">{parentStatus.dadGif.label}</span>
-                                        </div>
-                                    </div>
-                                    <div className="parent-widget">
-                                        <span className="parent-emoji">👩</span>
-                                        <div className="parent-info">
-                                            <span className="parent-name">{unlockState.unlocked ? "妈咪" : DEFAULT_NAMES.dad2}</span>
-                                            <span className="parent-status">{parentStatus.momStatus}</span>
-                                        </div>
-                                        <div className="parent-gif-badge" data-anim={parentStatus.momGif.anim}>
-                                            <span className="gif-emoji">{parentStatus.momGif.emoji}</span>
-                                            <span className="gif-label">{parentStatus.momGif.label || parentStatus.momDesc}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {}
-                                <div
-                                    className="app-grid-wrapper"
-                                    onTouchStart={handleTouchStart}
-                                    onTouchMove={handleTouchMove}
-                                    onTouchEnd={handleTouchEnd}
-                                    onMouseDown={handleMouseDown}>
-                                    <div
-                                        className="app-grid-slider"
-                                        ref={sliderRef}
-                                        style={{
-                                            transform: `translateX(${-currentPage * 100}%)`
-                                        }}>
-                                        <div className="app-page-grid">
-                                            {PAGE1_APPS.map((app, idx) => renderAppIcon(app, false, idx))}
-                                        </div>
-                                        <div className="app-page-grid">
-                                            {PAGE2_APPS.map((app, idx) => renderAppIcon(app, false, idx + PAGE1_APPS.length))}
-                                        </div>
-                                    </div>
-                                    <div className="page-dots">
-                                        {[0, 1].map(
-                                            i => <span key={i} className={`dot${i === currentPage ? " active" : ""}`} />
-                                        )}
-                                    </div>
-                                </div>
-                                {}
-                                {dragItem !== null && dragPosition && (() => {
-                                    const allApps = [...PAGE1_APPS, ...PAGE2_APPS];
-                                    const app = allApps[dragItem];
-
-                                    if (!app)
-                                        return null;
-
-                                    return (
-                                        <div
-                                            className="app-icon-dragged"
-                                            style={{
-                                                position: "fixed",
-                                                left: dragPosition.x - 30,
-                                                top: dragPosition.y - 30,
-                                                width: 60,
-                                                height: 60,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                fontSize: 28,
-                                                background: "rgba(255,255,255,0.35)",
-                                                backdropFilter: "blur(28px)",
-                                                WebkitBackdropFilter: "blur(28px)",
-                                                borderRadius: 15,
-                                                border: "1px solid rgba(255,255,255,0.5)",
-                                                boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-                                                zIndex: 9999,
-                                                pointerEvents: "none"
-                                            }}>
-                                            {app.emoji}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                            {}
-                            <div className="dock">
-                                {DOCK_APPS.map(app => renderAppIcon(app, true))}
-                            </div>
-                            {}
-                            <div
-                                className="home-indicator"
-                                onClick={() => {
-                                    if (currentApp)
-                                        closeApp();
-                                }}></div>
-                        </div>
-                        {}
-                        {currentApp && <div className={`app-layer${appClosing ? " closing" : ""}`}>
-                            <div className="app-header">
-                                <button className="app-back" onClick={closeApp}>← 返回</button>
-                                <span className="app-title">{currentApp === "dad" ? dadLabel : currentApp === "mom" ? momLabel : currentApp === "family" ? "家庭群 (3)" : getAppLabel(currentApp, unlockState.unlocked)}</span>
-                            </div>
-                            <div className="app-content">
-                                {renderAppContent()}
-                            </div>
-                        </div>}
-                    </>}
-                </div>
-            </div>
-            {}
-            {debugMode && <div
-                style={{
-                    position: "fixed",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    zIndex: 9999,
-                    background: "rgba(245, 158, 11, 0.92)",
-                    color: "#fff",
-                    textAlign: "center",
-                    padding: "4px 0",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    backdropFilter: "blur(8px)",
-                    letterSpacing: "0.5px"
-                }}>🔧 调试模式{debugLevel ? ` · ${debugLevel === "all" ? "全部解锁" : `Level ${debugLevel}`}` : ""}
-                <button
-                    onClick={() => setShowDebugPanel(true)}
-                    style={{
-                        marginLeft: 8,
-                        padding: "2px 10px",
-                        borderRadius: 6,
-                        border: "1px solid rgba(255,255,255,0.5)",
-                        background: "rgba(255,255,255,0.2)",
-                        color: "#fff",
-                        fontSize: 10,
-                        cursor: "pointer"
-                    }}>面板
-                              </button>
-            </div>}
-            {}
-            {showDebugPanel && <div
-                style={{
-                    position: "fixed",
-                    inset: 0,
-                    zIndex: 10000,
-                    background: "rgba(0,0,0,0.55)",
-                    backdropFilter: "blur(4px)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                }}
-                onClick={e => {
-                    if (e.target === e.currentTarget)
-                        setShowDebugPanel(false);
-                }}>
-                <div
-                    style={{
-                        background: "rgba(30,30,30,0.95)",
-                        borderRadius: 20,
-                        padding: "28px 24px",
-                        width: "min(380px, 90vw)",
-                        maxHeight: "80vh",
-                        overflowY: "auto",
-                        color: "#e5e5e5",
-                        boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
-                        border: "1px solid rgba(255,255,255,0.12)"
-                    }}
-                    onClick={e => e.stopPropagation()}>
-                    {}
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: 20
-                        }}>
-                        <span
-                            style={{
-                                fontSize: 16,
-                                fontWeight: 700
-                            }}>🔧 开发者面板</span>
-                        <button
-                            onClick={() => setShowDebugPanel(false)}
-                            style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: 10,
-                                border: "none",
-                                background: "rgba(255,255,255,0.1)",
-                                color: "#ccc",
-                                fontSize: 16,
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center"
-                            }}>✕
-                                          </button>
-                    </div>
-                    {}
-                    <div
-                        style={{
-                            marginBottom: 16,
-                            padding: "12px 14px",
-                            borderRadius: 12,
-                            background: "rgba(255,255,255,0.06)",
-                            border: "1px solid rgba(255,255,255,0.08)"
-                        }}>
-                        <div
-                            style={{
-                                fontSize: 11,
-                                color: "#888",
-                                marginBottom: 6
-                            }}>📊 当前状态</div>
-                        <div
-                            style={{
-                                fontSize: 12,
-                                lineHeight: 1.8
-                            }}>
-                            <div>🔑 CP解锁：<span
-                                    style={{
-                                        color: unlockState.unlocked ? "#4ade80" : "#f87171"
-                                    }}>{unlockState.unlocked ? "已解锁" : "未解锁"}</span></div>
-                            <div>👤 管理员：<span
-                                    style={{
-                                        color: isAdmin ? "#4ade80" : "#888"
-                                    }}>{isAdmin ? "是" : "否"}</span></div>
-                            <div>💎 Token余额：{tokenBalance}</div>
-                            <div>⭐ 用户等级：Lv.{userLevel}</div>
-                            <div>📱 可用APP数：{unlockState.unlocked ? 12 : 6}</div>
-                        </div>
-                    </div>
-                    {}
-                    <div
-                        style={{
-                            marginBottom: 12
-                        }}>
-                        <div
-                            style={{
-                                fontSize: 11,
-                                color: "#888",
-                                marginBottom: 6
-                            }}>🎯 跳转关卡</div>
-                        <select
-                            value={debugLevel ?? ""}
-                            onChange={e => {
-                                const val = e.target.value;
-
-                                if (val === "all") {
-                                    setDebugLevel("all");
-
-                                    setUnlockState(prev => ({
-                                        ...prev,
-                                        unlocked: true
-                                    }));
-
-                                    setIsAdmin(true);
-                                    setAdminViewMode("admin");
-                                    setUserLevel(99);
-                                } else if (val) {
-                                    const lv = Number(val);
-                                    setDebugLevel(lv);
-                                    const applied = applyDebugLevel(lv);
-
-                                    setUnlockState(prev => ({
-                                        ...prev,
-                                        unlocked: applied.unlocked
-                                    }));
-
-                                    setUserLevel(applied.userLevel);
-
-                                    if (applied.adminAccess) {
-                                        setIsAdmin(true);
-                                        setAdminViewMode("admin");
-                                    }
-                                }
-                            }}
-                            style={{
-                                width: "100%",
-                                padding: "10px 12px",
-                                borderRadius: 10,
-                                background: "rgba(255,255,255,0.08)",
-                                border: "1px solid rgba(255,255,255,0.15)",
-                                color: "#e5e5e5",
-                                fontSize: 13,
-                                outline: "none"
-                            }}>
-                            <option
-                                value=""
-                                style={{
-                                    color: "#333"
-                                }}>— 选择关卡 —</option>
-                            {DEBUG_LEVELS.map(l => <option
-                                key={l.level}
-                                value={l.level}
-                                style={{
-                                    color: "#333"
-                                }}>Lv.{l.level}· {l.name}
-                            </option>)}
-                            <option
-                                value="all"
-                                style={{
-                                    color: "#f59e0b"
-                                }}>🔓 解锁全部（all）</option>
-                        </select>
-                    </div>
-                    {}
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 8,
-                            marginBottom: 16
-                        }}>
-                        <button
-                            onClick={() => {
-                                setDebugLevel("all");
-
-                                setUnlockState(prev => ({
-                                    ...prev,
-                                    unlocked: true
-                                }));
-
-                                setIsAdmin(true);
-                                setAdminViewMode("admin");
-                                setUserLevel(99);
-                            }}
-                            style={{
-                                ...debugBtnStyle,
-                                background: "#f59e0b",
-                                color: "#1a1a1a"
-                            }}>🔓 解锁全部
-                                          </button>
-                        <button
-                            onClick={() => {
-                                if (confirm("确定要重置所有数据吗？这将清除所有存档。")) {
-                                    localStorage.clear();
-                                    window.location.reload();
-                                }
-                            }}
-                            style={{
-                                ...debugBtnStyle,
-                                background: "rgba(239,68,68,0.2)",
-                                color: "#fca5a5",
-                                border: "1px solid rgba(239,68,68,0.3)"
-                            }}>🗑️ 重置存档
-                                          </button>
-                    </div>
-                    {}
-                    <div
-                        style={{
-                            marginBottom: 12
-                        }}>
-                        <div
-                            style={{
-                                fontSize: 11,
-                                color: "#888",
-                                marginBottom: 6
-                            }}>⚡ 快捷操作</div>
-                        <div
-                            style={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: 6
-                            }}>
-                            <button
-                                onClick={() => {
-                                    setTokenBalance(99999);
-                                }}
-                                style={smallBtnStyle}>💎 +99999 Token</button>
-                            <button
-                                onClick={() => {
-                                    setUserLevel(99);
-                                }}
-                                style={smallBtnStyle}>⭐ Lv.99</button>
-                            <button
-                                onClick={() => {
-                                    setUnlockState(prev => ({
-                                        ...prev,
-                                        unlocked: !prev.unlocked
-                                    }));
-                                }}
-                                style={smallBtnStyle}>🔑 切换CP</button>
-                            <button
-                                onClick={() => {
-                                    setIsAdmin(!isAdmin);
-                                    setAdminViewMode(isAdmin ? "user" : "admin");
-                                }}
-                                style={smallBtnStyle}>👑 切换管理员</button>
-                            <button
-                                onClick={() => {
-                                    setCurrentApp(null);
-                                }}
-                                style={smallBtnStyle}>🏠 回首页</button>
-                        </div>
-                    </div>
-                    <div
-                        style={{
-                            fontSize: 10,
-                            color: "#555",
-                            textAlign: "center",
-                            marginTop: 8
-                        }}>ESC 关闭 · 上线前设 DEBUG_ENABLED=false 即可关闭
-                                    </div>
-                </div>
-            </div>}
         </div>
     );
 }
+
