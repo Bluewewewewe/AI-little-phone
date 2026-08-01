@@ -2568,6 +2568,20 @@ export default function PhonePage() {
         }
 
         setLoginError("");
+        // Mock 管理员账号验证（开发环境）
+        const MOCK_ADMINS: Record<string, string> = {
+            "admin": "admin123",
+            "manager_lin": "admin123",
+            "cp_official": "admin123"
+        };
+        if (MOCK_ADMINS[username.toLowerCase()] === password) {
+            setIsAdmin(true);
+            setIsLoggedIn(true);
+            setAdminViewMode("admin");
+            setAdminRole("super_admin");
+            setLoginLoading(false);
+            return;
+        }
         setLoginLoading(true);
 
         try {
