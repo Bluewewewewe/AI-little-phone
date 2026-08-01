@@ -42,6 +42,8 @@ import {
 } from "@/lib/unlock-config";
 
 import { ForumApp } from "@/components/forum-app";
+import { AuthSystem } from "@/components/auth-system";
+import { AdminApp } from "@/components/admin-app";
 
 interface Message {
     from: "me" | "dad" | "mom" | "system";
@@ -560,6 +562,11 @@ const PAGE2_APPS = [{
     emoji: "💬",
     label: "社区论坛",
     color: "#f97316"
+}, {
+    id: "admin",
+    emoji: "⚙️",
+    label: "管理后台",
+    color: "#8b5cf6"
 }];
 
 const DOCK_APPS = [{
@@ -1757,6 +1764,12 @@ export default function PhonePage() {
     const [adminViewMode, setAdminViewMode] = useState<"admin" | "user">("admin");
     const [authToken, setAuthToken] = useState<string | null>(null);
     const [kickedMessage, setKickedMessage] = useState<string | null>(null);
+
+    // 新注册系统状态
+    const [showAuthSystem, setShowAuthSystem] = useState(true);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [showAdminApp, setShowAdminApp] = useState(false);
+    const [adminRole, setAdminRole] = useState<'super_admin' | 'review_admin' | 'ops_admin'>('super_admin');
 
     // Weibo verification state
     const [showWeiboVerify, setShowWeiboVerify] = useState(false);
@@ -9612,6 +9625,8 @@ export default function PhonePage() {
             return renderExternalApp("miniworkshop", "迷你小作坊", "/mimi/mimi_university_new1/index.html?workshopOnly=true");
         case "forum":
             return renderForum();
+        case "admin":
+            return <AdminApp adminRole={adminRole} onClose={() => setCurrentApp(null)} />;
         default:
             return <div className="empty-state"><div className="empty-emoji">📱</div>APP开发中</div>;
         }
@@ -11787,6 +11802,31 @@ export default function PhonePage() {
                         }}>世界书：src/lib/world-book.ts</div>
                 </div>
             </div>}
+            {}
+            {/* 注册/登录系统 */}
+            {showAuthSystem && !currentUser && (
+                <AuthSystem
+                    onLoginSuccess={(user) => {
+                        setCurrentUser(user);
+                        setShowAuthSystem(false);
+                        if (user.nickname === '超级管理员') {
+                            setIsAdmin(true);
+                            setAdminRole('super_admin');
+                        }
+                    }}
+                />
+            )}
+
+            {/* 管理后台 App */}
+            {showAdminApp && (
+                <div className="app-layer active">
+                    <AdminApp
+                        adminRole={adminRole}
+                        onClose={() => setShowAdminApp(false)}
+                    />
+                </div>
+            )}
+
             {}
             <div className="phone-frame">
                 <div className="phone-screen">
