@@ -11852,7 +11852,7 @@ export default function PhonePage() {
                 </div>
             </div>}
             {}
-            {/* 注册/登录系统 */}
+            {!isLoggedIn && renderLoginScreen()}
         </div>
     );
 }
