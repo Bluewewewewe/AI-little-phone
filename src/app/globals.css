@@ -254,7 +254,7 @@ body {
   background: transparent;
 }
 .home-screen.hidden { opacity: 0; transform: scale(0.95); pointer-events: none; }
-.home-content { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.home-content { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
 
 /* Status Bar */
 .status-bar {
@@ -349,13 +349,13 @@ body {
 
 
 /* App Grid */
-.app-grid-wrapper { flex: 1; overflow: hidden; padding: 8px 20px; position: relative; display: flex; flex-direction: column; min-height: 0; }
-.app-grid-slider { flex: 1; display: flex; transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94); will-change: transform; min-height: 0; }
+.app-grid-wrapper { flex: 0 0 auto; overflow: visible; padding: 8px 20px; position: relative; display: flex; flex-direction: column; }
+.app-grid-slider { display: flex; transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94); will-change: transform; }
 .app-page-grid {
   min-width: 100%; display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(4, 1fr);
-  gap: 10px 0; padding: 4px 0;
+  grid-template-rows: repeat(4, minmax(72px, auto));
+  gap: 8px 0; padding: 4px 0;
   place-items: center center;
 }
 .app-icon {
