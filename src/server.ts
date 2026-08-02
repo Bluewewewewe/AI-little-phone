@@ -4,12 +4,15 @@ import next from 'next';
 
 const dev = process.env.COZE_PROJECT_ENV !== 'PROD';
 const hostname = '0.0.0.0'; // 绑定所有网络接口，允许外部访问
-const port = parseInt(process.env.PORT || '5000', 10);
+
+// 安全解析端口，确保不会出现 NaN
+const parsedPort = parseInt(process.env.PORT || '5000', 10);
+const port = Number.isNaN(parsedPort) ? 5000 : parsedPort;
 
 console.log('=== Server Configuration ===');
 console.log(`Environment: ${dev ? 'development' : 'production'}`);
 console.log(`Hostname: ${hostname}`);
-console.log(`Port: ${port}`);
+console.log(`Port: ${port} (type: ${typeof port}, raw: ${process.env.PORT || 'not set'})`);
 console.log(`SUPABASE_URL: ${process.env.SUPABASE_URL ? 'configured' : 'not set'}`);
 console.log(`SUPABASE_SECRET_KEY: ${process.env.SUPABASE_SECRET_KEY ? 'configured' : 'not set'}`);
 console.log('===========================');
