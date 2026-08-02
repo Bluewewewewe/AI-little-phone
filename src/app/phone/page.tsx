@@ -2931,7 +2931,7 @@ export default function PhonePage() {
             return;
 
         try {
-            localStorage.setItem("phone_app_order", JSON.stringify(homeAppIds));
+            localStorage.setItem("phone_app_order_v2", JSON.stringify(homeAppIds));
         } catch {}
     }, [homeAppIds]);
 
@@ -2968,7 +2968,7 @@ export default function PhonePage() {
             return;
 
         try {
-            const saved = localStorage.getItem("phone_app_order");
+            const saved = localStorage.getItem("phone_app_order_v2");
 
             if (saved) {
                 const order = JSON.parse(saved) as string[];
