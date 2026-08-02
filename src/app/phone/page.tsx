@@ -528,20 +528,10 @@ const PAGE1_APPS = [{
 }];
 
 const ALL_HOME_APPS = [{
-    id: "family",
+    id: "mixin",
     emoji: "💬",
-    label: "家庭群",
-    color: "#22c55e"
-}, {
-    id: "dad",
-    emoji: "👨",
-    label: "爸爸",
-    color: "#f59e0b"
-}, {
-    id: "mom",
-    emoji: "👩",
-    label: "妈妈",
-    color: "#ec4899"
+    label: "米信",
+    color: "#07c160"
 }, {
     id: "moments",
     emoji: "🌅",
@@ -588,6 +578,11 @@ const ALL_HOME_APPS = [{
     label: "音乐",
     color: "#ec4899"
 }, {
+    id: "shopping",
+    emoji: "🛍️",
+    label: "啪多多",
+    color: "#f43f5e"
+}, {
     id: "lpmi",
     emoji: "🌽",
     label: "LPMI测试",
@@ -602,6 +597,11 @@ const ALL_HOME_APPS = [{
     emoji: "🛠️",
     label: "迷你小作坊",
     color: "#059669"
+}, {
+    id: "forum",
+    emoji: "🏘️",
+    label: "社区论坛",
+    color: "#8b5cf6"
 }];
 
 const DOCK_APPS = [{
@@ -637,7 +637,9 @@ function getAppLabel(id: string, unlocked: boolean): string {
         shopping: "啪多多",
         lpmi: "LPMI测试",
         mimicosmo: "米米课程表",
-        miniworkshop: "迷你小作坊"
+        miniworkshop: "迷你小作坊",
+        forum: "社区论坛",
+        profile: "我的"
     };
 
     return map[id] || id;
@@ -12247,23 +12249,25 @@ export default function PhonePage() {
                                 <button className="edit-done-btn" onClick={exitEditMode}>完成</button>
                             </div>
                         )}
-                        <div
-                            id="appGrid"
-                            ref={appGridRef}
-                            className={`app-page-grid ${isEditing ? "edit-mode" : ""}`}
-                            onTouchStart={handleGridTouchStart}
-                            onTouchEnd={handleGridTouchEnd}
-                            onTouchMove={handleGridTouchEnd}
-                            onMouseDown={handleGridMouseDown}
-                            onMouseUp={handleGridTouchEnd}
-                            onMouseLeave={handleGridTouchEnd}
-                        >
-                            {homeAppIds.map((appId, idx) => {
-                                const app = ALL_HOME_APPS.find(a => a.id === appId);
-                                if (!app)
-                                    return null;
-                                return renderAppIcon(app, false, idx);
-                            })}
+                        <div className="app-grid-scroll">
+                            <div
+                                id="appGrid"
+                                ref={appGridRef}
+                                className={`app-page-grid ${isEditing ? "edit-mode" : ""}`}
+                                onTouchStart={handleGridTouchStart}
+                                onTouchEnd={handleGridTouchEnd}
+                                onTouchMove={handleGridTouchEnd}
+                                onMouseDown={handleGridMouseDown}
+                                onMouseUp={handleGridTouchEnd}
+                                onMouseLeave={handleGridTouchEnd}
+                            >
+                                {homeAppIds.map((appId, idx) => {
+                                    const app = ALL_HOME_APPS.find(a => a.id === appId);
+                                    if (!app)
+                                        return null;
+                                    return renderAppIcon(app, false, idx);
+                                })}
+                            </div>
                         </div>
                     </div>
                     <div className="dock">

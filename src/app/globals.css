@@ -139,8 +139,8 @@ body {
 /* ========== Phone Simulator Styles ========== */
 .phone-page {
   width: 100%; height: 100vh; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  gap: 48px; padding: 24px;
+  display: flex; align-items: stretch; justify-content: flex-start;
+  gap: 0; padding: 0;
   background:
     radial-gradient(ellipse 70% 60% at 30% 50%, rgba(187, 222, 194, 0.3) 0%, transparent 60%),
     radial-gradient(ellipse 60% 70% at 70% 40%, rgba(167, 210, 180, 0.15) 0%, transparent 55%),
