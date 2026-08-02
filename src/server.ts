@@ -3,7 +3,7 @@ import { parse } from 'url';
 import next from 'next';
 
 const dev = process.env.COZE_PROJECT_ENV !== 'PROD';
-const hostname = process.env.HOSTNAME || 'localhost';
+const hostname = '0.0.0.0'; // 绑定所有网络接口，允许外部访问
 const port = parseInt(process.env.PORT || '5000', 10);
 
 // Create Next.js app
