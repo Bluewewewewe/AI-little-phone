@@ -533,11 +533,6 @@ const ALL_HOME_APPS = [{
     label: "米信",
     color: "#07c160"
 }, {
-    id: "moments",
-    emoji: "🌅",
-    label: "朋友圈",
-    color: "#f97316"
-}, {
     id: "weibo",
     emoji: "📱",
     label: "微博",
@@ -2931,7 +2926,7 @@ export default function PhonePage() {
             return;
 
         try {
-            localStorage.setItem("phone_app_order_v2", JSON.stringify(homeAppIds));
+            localStorage.setItem("phone_app_order_v3", JSON.stringify(homeAppIds));
         } catch {}
     }, [homeAppIds]);
 
@@ -2968,7 +2963,7 @@ export default function PhonePage() {
             return;
 
         try {
-            const saved = localStorage.getItem("phone_app_order_v2");
+            const saved = localStorage.getItem("phone_app_order_v3");
 
             if (saved) {
                 const order = JSON.parse(saved) as string[];
