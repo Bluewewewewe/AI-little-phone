@@ -206,28 +206,33 @@ body {
   flex-shrink: 0;
 }
 
-/* 电脑端：平板尺寸居中 */
+/* 电脑端：全屏显示，去掉手机外框和状态栏 */
 @media (min-width: 768px) {
   body {
-    background: #1a1a1a;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%);
+    display: block;
     margin: 0;
   }
   .phone-page {
-    width: min(1024px, 100vw);
+    width: 100vw;
     height: 100vh;
-    max-height: 1366px;
+    display: block;
+    padding: 0;
+    gap: 0;
     border-radius: 0;
-    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    box-shadow: none;
+    background: url('/phone-bg.jpeg') center center / cover no-repeat;
   }
   .phone-frame {
-    width: min(1024px, 100vw);
+    width: 100vw;
     height: 100vh;
-    max-height: 1366px;
-    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .status-bar,
+  .home-indicator,
+  .app-header-time {
+    display: none !important;
   }
 }
 
@@ -454,6 +459,48 @@ body {
   background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 100%);
   border-radius: 13px 13px 0 0; pointer-events: none;
 }
+
+/* Edit Mode Bar */
+#editModeBar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  background: rgba(0,0,0,0.1);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+.edit-done-btn {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 18px;
+  padding: 8px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2e5c33;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+.edit-done-btn:active { transform: scale(0.92); }
+
+/* Edit mode shake */
+.edit-mode .app-item {
+  animation: shake 0.3s infinite;
+}
+@keyframes shake {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+
+/* Dragging styles */
+.dragging-ghost { opacity: 0.4; }
+.dragging-chosen { cursor: grabbing; }
+.dragging-drag { opacity: 0.9; transform: scale(1.1); }
 
 /* Home Indicator */
 /* Home Indicator */

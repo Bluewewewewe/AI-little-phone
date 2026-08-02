@@ -44,6 +44,17 @@ import {
 import { ForumApp } from "@/components/forum-app";
 import { AdminApp } from "@/components/admin-app";
 
+interface SortableInstance {
+    option(name: string, value: unknown): void;
+    destroy(): void;
+}
+
+declare global {
+    interface Window {
+        Sortable: new (el: HTMLElement, options: Record<string, unknown>) => SortableInstance;
+    }
+}
+
 interface Message {
     from: "me" | "dad" | "mom" | "system";
     text: string;
@@ -516,16 +527,51 @@ const PAGE1_APPS = [{
     color: "#a855f7"
 }];
 
-const PAGE2_APPS = [{
-    id: "me",
+const ALL_HOME_APPS = [{
+    id: "family",
+    emoji: "💬",
+    label: "家庭群",
+    color: "#22c55e"
+}, {
+    id: "dad",
+    emoji: "👨",
+    label: "爸爸",
+    color: "#f59e0b"
+}, {
+    id: "mom",
+    emoji: "👩",
+    label: "妈妈",
+    color: "#ec4899"
+}, {
+    id: "moments",
+    emoji: "🌅",
+    label: "朋友圈",
+    color: "#f97316"
+}, {
+    id: "weibo",
+    emoji: "📱",
+    label: "微博",
+    color: "#ef4444"
+}, {
+    id: "home",
+    emoji: "🏠",
+    label: "家里",
+    color: "#14b8a6"
+}, {
+    id: "pet",
+    emoji: "🐾",
+    label: "宠物",
+    color: "#10b981"
+}, {
+    id: "dressup",
+    emoji: "👗",
+    label: "换装",
+    color: "#a855f7"
+}, {
+    id: "profile",
     emoji: "👤",
     label: "我的",
-    color: "#3b82f6"
-}, {
-    id: "worldbook",
-    emoji: "📖",
-    label: "世界书",
-    color: "#8b5cf6"
+    color: "#06b6d4"
 }, {
     id: "call",
     emoji: "📞",
@@ -537,35 +583,10 @@ const PAGE2_APPS = [{
     label: "浏览器",
     color: "#6366f1"
 }, {
-    id: "shopping",
-    emoji: "🛒",
-    label: "啪多多",
-    color: "#dc2626"
-}, {
-    id: "lpmi",
-    emoji: "🌽",
-    label: "LPMI测试",
-    color: "#365314"
-}, {
-    id: "mimicosmo",
-    emoji: "📚",
-    label: "米米课程表",
-    color: "#7c3aed"
-}, {
-    id: "miniworkshop",
-    emoji: "📚",
-    label: "迷你小作坊",
-    color: "#059669"
-}, {
-    id: "forum",
-    emoji: "💬",
-    label: "社区论坛",
-    color: "#f97316"
-}, {
-    id: "admin",
-    emoji: "⚙️",
-    label: "管理后台",
-    color: "#8b5cf6"
+    id: "music",
+    emoji: "🎵",
+    label: "音乐",
+    color: "#ec4899"
 }];
 
 const DOCK_APPS = [{
@@ -2743,6 +2764,7 @@ export default function PhonePage() {
             setWbVerifyStep("input");
             setWbVerifyStatus("none");
             setShowWeiboVerify(true);
+        }
     };
 
     const submitWeiboInfo = async () => {
@@ -2867,6 +2889,9 @@ export default function PhonePage() {
     }, [isLoggedIn, isAdmin]);
 
     const [isEditing, setIsEditing] = useState(false);
+    const [homeAppIds, setHomeAppIds] = useState<string[]>(() => ALL_HOME_APPS.map(a => a.id));
+    const appGridRef = useRef<HTMLDivElement | null>(null);
+    const sortableRef = useRef<SortableInstance | null>(null);
     const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const dragStartPosRef = useRef<{
@@ -2881,6 +2906,127 @@ export default function PhonePage() {
 
     const [dragItem, setDragItem] = useState<number | null>(null);
     const edgeHoverTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const saveAppOrder = useCallback(() => {
+        if (typeof window === "undefined")
+            return;
+
+        try {
+            localStorage.setItem("phone_app_order", JSON.stringify(homeAppIds));
+        } catch {}
+    }, [homeAppIds]);
+
+    const enterEditMode = useCallback(() => {
+        if (isEditing)
+            return;
+
+        setIsEditing(true);
+
+        if (sortableRef.current) {
+            sortableRef.current.option("disabled", false);
+        }
+
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+    }, [isEditing]);
+
+    const exitEditMode = useCallback(() => {
+        if (!isEditing)
+            return;
+
+        setIsEditing(false);
+
+        if (sortableRef.current) {
+            sortableRef.current.option("disabled", true);
+        }
+
+        saveAppOrder();
+    }, [isEditing, saveAppOrder]);
+
+    useEffect(() => {
+        if (typeof window === "undefined")
+            return;
+
+        try {
+            const saved = localStorage.getItem("phone_app_order");
+
+            if (saved) {
+                const order = JSON.parse(saved) as string[];
+                const valid = order.filter(id => ALL_HOME_APPS.some(a => a.id === id));
+                const remaining = ALL_HOME_APPS.filter(a => !valid.includes(a.id)).map(a => a.id);
+                setHomeAppIds([...valid, ...remaining]);
+            }
+        } catch {}
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === "undefined" || !appGridRef.current || !window.Sortable)
+            return;
+
+        sortableRef.current = new window.Sortable(appGridRef.current, {
+            animation: 200,
+            disabled: true,
+            ghostClass: "dragging-ghost",
+            chosenClass: "dragging-chosen",
+            dragClass: "dragging-drag",
+            onEnd: (evt: { oldIndex?: number; newIndex?: number }) => {
+                const { oldIndex, newIndex } = evt;
+
+                if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex)
+                    return;
+
+                setHomeAppIds(prev => {
+                    const next = [...prev];
+                    const [moved] = next.splice(oldIndex, 1);
+                    next.splice(newIndex, 0, moved);
+                    return next;
+                });
+            }
+        });
+
+        return () => {
+            if (sortableRef.current) {
+                sortableRef.current.destroy();
+                sortableRef.current = null;
+            }
+        };
+    }, []);
+
+    const handleGridTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+        if (isEditing)
+            return;
+
+        const target = e.target as HTMLElement;
+
+        if (!target.closest(".app-item"))
+            return;
+
+        longPressTimerRef.current = setTimeout(() => {
+            enterEditMode();
+        }, 500);
+    }, [isEditing, enterEditMode]);
+
+    const handleGridTouchEnd = useCallback(() => {
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+    }, []);
+
+    const handleGridMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (isEditing)
+            return;
+
+        const target = e.target as HTMLElement;
+
+        if (!target.closest(".app-item"))
+            return;
+
+        longPressTimerRef.current = setTimeout(() => {
+            enterEditMode();
+        }, 500);
+    }, [isEditing, enterEditMode]);
 
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
         if (dragItem !== null)
@@ -3461,7 +3607,7 @@ export default function PhonePage() {
         return (
             <div
                 key={app.id}
-                className={`app-icon ${isDragging ? "dragging" : ""} ${isDragOver ? "drag-over" : ""} ${isEditing && !isDock ? "editing" : ""}`}
+                className={`app-icon ${isDragging ? "dragging" : ""} ${isDragOver ? "drag-over" : ""} ${isEditing && !isDock ? "editing" : ""} ${!isDock ? "app-item" : ""}`}
                 style={{
                     "--app-color": app.color,
 
@@ -3471,9 +3617,9 @@ export default function PhonePage() {
                     } : {})
                 } as React.CSSProperties}
                 data-index={index}
+                data-app-id={!isDock ? app.id : undefined}
                 onClick={() => {
-                    if (isEditing) {
-                        setIsEditing(false);
+                    if (isEditing && !isDock) {
                         return;
                     }
 
@@ -3483,16 +3629,18 @@ export default function PhonePage() {
                         openApp(app.id);
                     }
                 }}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                onMouseDown={handleMouseDown}
-                onMouseLeave={() => {
-                    if (longPressTimerRef.current) {
-                        clearTimeout(longPressTimerRef.current);
-                        longPressTimerRef.current = null;
+                {...(isDock ? {
+                    onTouchStart: handleTouchStart,
+                    onTouchMove: handleTouchMove,
+                    onTouchEnd: handleTouchEnd,
+                    onMouseDown: handleMouseDown,
+                    onMouseLeave: () => {
+                        if (longPressTimerRef.current) {
+                            clearTimeout(longPressTimerRef.current);
+                            longPressTimerRef.current = null;
+                        }
                     }
-                }}>
+                } : {})}>
                 <div
                     className={isDock ? "" : "app-emoji-box"}
                     style={isDock ? {
@@ -4031,7 +4179,7 @@ export default function PhonePage() {
             }
 
             if (dragItem !== null && dragOverIndex !== null) {
-                const newApps = [...(currentPage === 0 ? PAGE1_APPS : PAGE2_APPS)];
+                const newApps = [...(currentPage === 0 ? PAGE1_APPS : ALL_HOME_APPS)];
                 const [removed] = newApps.splice(dragItem, 1);
                 newApps.splice(dragOverIndex, 0, removed);
             }
@@ -12044,8 +12192,84 @@ export default function PhonePage() {
                     <div style={{ marginTop: 16, fontSize: 14, color: "#2e5c33", fontWeight: 500 }}>加载中...</div>
                 </div>
             )}
+
+            {isLoggedIn && !isPageLoading && !currentApp && (
+                <div className="phone-screen home-screen">
+                    <div className="status-bar">
+                        <span>{time}</span>
+                        <div className="status-right">
+                            <span>📶</span>
+                            <span style={{ marginLeft: 4 }}>87%</span>
+                        </div>
+                    </div>
+                    <div className="home-content">
+                        <div className="big-clock">
+                            <div className="big-time">{time}</div>
+                            <div className="big-date">{dateStr}</div>
+                        </div>
+                        <div className="parent-widgets">
+                            <div className="parent-widget">
+                                <div className="parent-emoji">👨</div>
+                                <div className="parent-info">
+                                    <span className="parent-name">爸爸</span>
+                                    <span className="parent-status">{parentStatus.dadStatus}</span>
+                                </div>
+                                <div className="parent-desc-inline">{parentStatus.dadDesc}</div>
+                            </div>
+                            <div className="parent-widget">
+                                <div className="parent-emoji">👩</div>
+                                <div className="parent-info">
+                                    <span className="parent-name">妈妈</span>
+                                    <span className="parent-status">{parentStatus.momStatus}</span>
+                                </div>
+                                <div className="parent-desc-inline">{parentStatus.momDesc}</div>
+                            </div>
+                        </div>
+                        {isEditing && (
+                            <div id="editModeBar">
+                                <button className="edit-done-btn" onClick={exitEditMode}>完成</button>
+                            </div>
+                        )}
+                        <div
+                            id="appGrid"
+                            ref={appGridRef}
+                            className={`app-page-grid ${isEditing ? "edit-mode" : ""}`}
+                            onTouchStart={handleGridTouchStart}
+                            onTouchEnd={handleGridTouchEnd}
+                            onTouchMove={handleGridTouchEnd}
+                            onMouseDown={handleGridMouseDown}
+                            onMouseUp={handleGridTouchEnd}
+                            onMouseLeave={handleGridTouchEnd}
+                        >
+                            {homeAppIds.map((appId, idx) => {
+                                const app = ALL_HOME_APPS.find(a => a.id === appId);
+                                if (!app)
+                                    return null;
+                                return renderAppIcon(app, false, idx);
+                            })}
+                        </div>
+                    </div>
+                    <div className="dock">
+                        {DOCK_APPS.map(app => (
+                            <div key={app.id} className="dock-icon" onClick={() => openApp(app.id)}>{app.emoji}</div>
+                        ))}
+                    </div>
+                    <div className="home-indicator" onClick={() => setCurrentApp(null)} />
+                </div>
+            )}
+
+            {isLoggedIn && !isPageLoading && currentApp && (
+                <div className={`app-layer ${appClosing ? "closing" : ""}`}>
+                    <div className="app-header">
+                        <span className="app-header-time" style={{ fontSize: 13, fontWeight: 600, color: "#3d5c45" }}>{time}</span>
+                        <button className="app-back" onClick={() => { setAppClosing(true); setTimeout(() => { setCurrentApp(null); setAppClosing(false); }, 220); }}>← 返回</button>
+                    </div>
+                    <div className="app-content">
+                        {renderAppContent()}
+                    </div>
+                    <div className="home-indicator" onClick={() => { setAppClosing(true); setTimeout(() => { setCurrentApp(null); setAppClosing(false); }, 220); }} />
+                </div>
+            )}
         </div>
     );
-}
-
 }
