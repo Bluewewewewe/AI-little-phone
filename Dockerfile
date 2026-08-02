@@ -17,8 +17,8 @@ COPY . .
 # 构建项目
 RUN pnpm build
 
-# 暴露端口
+# 暴露端口 - 使用 PORT 环境变量或默认 5000
 EXPOSE 5000
 
-# 启动服务
-CMD ["node", "dist/server.js"]
+# 启动服务 - 确保使用 PORT 环境变量
+CMD ["sh", "-c", "PORT=${PORT:-5000} node dist/server.js"]
