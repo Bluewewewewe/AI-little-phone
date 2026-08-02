@@ -2960,36 +2960,50 @@ export default function PhonePage() {
     }, []);
 
     useEffect(() => {
-        if (typeof window === "undefined" || !appGridRef.current || !window.Sortable)
+        if (typeof window === "undefined" || !appGridRef.current)
             return;
 
-        sortableRef.current = new window.Sortable(appGridRef.current, {
-            animation: 200,
-            delay: 500,
-            disabled: false,
-            ghostClass: "dragging-ghost",
-            chosenClass: "dragging-chosen",
-            dragClass: "dragging-drag",
-            onChoose: () => {
-                setIsEditing(true);
-                if (typeof navigator !== "undefined" && navigator.vibrate) {
-                    navigator.vibrate(50);
+        function initSortable() {
+            if (!appGridRef.current || sortableRef.current)
+                return;
+            sortableRef.current = new window.Sortable(appGridRef.current, {
+                animation: 200,
+                delay: 500,
+                disabled: false,
+                ghostClass: "dragging-ghost",
+                chosenClass: "dragging-chosen",
+                dragClass: "dragging-drag",
+                onChoose: () => {
+                    setIsEditing(true);
+                    if (typeof navigator !== "undefined" && navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                },
+                onEnd: (evt: { oldIndex?: number; newIndex?: number }) => {
+                    const { oldIndex, newIndex } = evt;
+
+                    if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex)
+                        return;
+
+                    setHomeAppIds(prev => {
+                        const next = [...prev];
+                        const [moved] = next.splice(oldIndex, 1);
+                        next.splice(newIndex, 0, moved);
+                        return next;
+                    });
                 }
-            },
-            onEnd: (evt: { oldIndex?: number; newIndex?: number }) => {
-                const { oldIndex, newIndex } = evt;
+            });
+        }
 
-                if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex)
-                    return;
-
-                setHomeAppIds(prev => {
-                    const next = [...prev];
-                    const [moved] = next.splice(oldIndex, 1);
-                    next.splice(newIndex, 0, moved);
-                    return next;
-                });
-            }
-        });
+        if (window.Sortable) {
+            initSortable();
+        } else {
+            const script = document.createElement("script");
+            script.src = "https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js";
+            script.async = true;
+            script.onload = initSortable;
+            document.head.appendChild(script);
+        }
 
         return () => {
             if (sortableRef.current) {

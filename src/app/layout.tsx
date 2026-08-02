@@ -67,12 +67,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`antialiased`}>
-        {isDev && <Inspector />}
-        {children}
         <Script
           src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
+        {isDev && <Inspector />}
+        {children}
       </body>
     </html>
   );
