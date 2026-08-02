@@ -8575,6 +8575,7 @@ export default function PhonePage() {
     function renderCall() {
         return (
             <div className="call-page">
+                <button className="app-back-btn" style={{ position: "absolute", top: 12, left: 12, zIndex: 10 }} onClick={() => setCurrentApp(null)}>← 返回</button>
                 <div className="call-avatar">👨</div>
                 <div className="call-name">爸爸</div>
                 <div className="call-status">来电中...</div>
@@ -8589,6 +8590,7 @@ export default function PhonePage() {
     function renderBrowser() {
         return (
             <div className="browser-page">
+                <button className="app-back-btn" style={{ position: "absolute", top: 12, left: 12, zIndex: 10 }} onClick={() => setCurrentApp(null)}>← 返回</button>
                 <div className="browser-bar"><input className="browser-url" placeholder="输入网址或搜索" /></div>
                 <div className="browser-body"><div
                         style={{
@@ -8602,6 +8604,7 @@ export default function PhonePage() {
     function renderMusic() {
         return (
             <div className="music-page">
+                <button className="app-back-btn" style={{ position: "absolute", top: 12, left: 12, zIndex: 10 }} onClick={() => setCurrentApp(null)}>← 返回</button>
                 <div className="music-cover">🎵</div>
                 <div className="music-title">我们的时光</div>
                 <div className="music-artist">爸爸唱的</div>
@@ -12281,10 +12284,6 @@ export default function PhonePage() {
 
             {isLoggedIn && !isPageLoading && currentApp && (
                 <div className={`app-layer ${appClosing ? "closing" : ""}`}>
-                    <div className="app-header">
-                        <span className="app-header-time" style={{ fontSize: 13, fontWeight: 600, color: "#3d5c45" }}>{time}</span>
-                        <button className="app-back" onClick={() => { setAppClosing(true); setTimeout(() => { setCurrentApp(null); setAppClosing(false); }, 220); }}>← 返回</button>
-                    </div>
                     <div className="app-content">
                         {renderAppContent()}
                     </div>
