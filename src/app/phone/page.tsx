@@ -1759,6 +1759,20 @@ export default function PhonePage() {
     const [forgotPasswordRequests, setForgotPasswordRequests] = useState<Array<{ id: string; username: string; weiboNickname: string; weiboLink: string; status: "pending" | "processed"; createdAt: string }>>([]);
     const [isPageLoading, setIsPageLoading] = useState(true);
 
+    interface WeiboAccount {
+        nickname: string;
+        avatar: string;
+        bio: string;
+        isSet: boolean;
+    }
+
+    const [weiboAccount, setWeiboAccount] = useState<WeiboAccount>({
+        nickname: "游客用户",
+        avatar: "😎",
+        bio: "",
+        isSet: false
+    });
+
     useEffect(() => {
         // 页面加载完成后隐藏 Loading
         const timer = setTimeout(() => setIsPageLoading(false), 500);
@@ -3723,13 +3737,6 @@ export default function PhonePage() {
         posts?: WeiboPost[];
     }
 
-    interface WeiboAccount {
-        nickname: string;
-        avatar: string;
-        bio: string;
-        isSet: boolean;
-    }
-
     const INITIAL_HOT_SEARCH: HotSearchItem[] = [{
         id: 1,
         title: "北海8岁男童银滩走失",
@@ -3921,13 +3928,6 @@ export default function PhonePage() {
     }]);
 
     const [weiboHotSearch, setWeiboHotSearch] = useState<HotSearchItem[]>(INITIAL_HOT_SEARCH);
-
-    const [weiboAccount, setWeiboAccount] = useState<WeiboAccount>({
-        nickname: "游客用户",
-        avatar: "😎",
-        bio: "",
-        isSet: false
-    });
 
     const [weiboTab, setWeiboTab] = useState<"home" | "discover" | "messages" | "me">("home");
     const [weiboCommentInput, setWeiboCommentInput] = useState("");
