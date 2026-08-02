@@ -2933,28 +2933,13 @@ export default function PhonePage() {
     const enterEditMode = useCallback(() => {
         if (isEditing)
             return;
-
         setIsEditing(true);
-
-        if (sortableRef.current) {
-            sortableRef.current.option("disabled", false);
-        }
-
-        if (typeof navigator !== "undefined" && navigator.vibrate) {
-            navigator.vibrate(50);
-        }
     }, [isEditing]);
 
     const exitEditMode = useCallback(() => {
         if (!isEditing)
             return;
-
         setIsEditing(false);
-
-        if (sortableRef.current) {
-            sortableRef.current.option("disabled", true);
-        }
-
         saveAppOrder();
     }, [isEditing, saveAppOrder]);
 
@@ -2980,10 +2965,17 @@ export default function PhonePage() {
 
         sortableRef.current = new window.Sortable(appGridRef.current, {
             animation: 200,
-            disabled: true,
+            delay: 500,
+            disabled: false,
             ghostClass: "dragging-ghost",
             chosenClass: "dragging-chosen",
             dragClass: "dragging-drag",
+            onChoose: () => {
+                setIsEditing(true);
+                if (typeof navigator !== "undefined" && navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            },
             onEnd: (evt: { oldIndex?: number; newIndex?: number }) => {
                 const { oldIndex, newIndex } = evt;
 
@@ -3007,40 +2999,18 @@ export default function PhonePage() {
         };
     }, []);
 
-    const handleGridTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-        if (isEditing)
+    const handleGridClickCapture = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+        if (!isEditing)
             return;
 
         const target = e.target as HTMLElement;
+        const appItem = target.closest(".app-item");
 
-        if (!target.closest(".app-item"))
-            return;
-
-        longPressTimerRef.current = setTimeout(() => {
-            enterEditMode();
-        }, 500);
-    }, [isEditing, enterEditMode]);
-
-    const handleGridTouchEnd = useCallback(() => {
-        if (longPressTimerRef.current) {
-            clearTimeout(longPressTimerRef.current);
-            longPressTimerRef.current = null;
+        if (appItem && !appItem.classList.contains("sortable-chosen")) {
+            e.preventDefault();
+            e.stopPropagation();
         }
-    }, []);
-
-    const handleGridMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-        if (isEditing)
-            return;
-
-        const target = e.target as HTMLElement;
-
-        if (!target.closest(".app-item"))
-            return;
-
-        longPressTimerRef.current = setTimeout(() => {
-            enterEditMode();
-        }, 500);
-    }, [isEditing, enterEditMode]);
+    }, [isEditing]);
 
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
         if (dragItem !== null)
@@ -12252,12 +12222,6 @@ export default function PhonePage() {
                                 id="appGrid"
                                 ref={appGridRef}
                                 className={`app-page-grid ${isEditing ? "edit-mode" : ""}`}
-                                onTouchStart={handleGridTouchStart}
-                                onTouchEnd={handleGridTouchEnd}
-                                onTouchMove={handleGridTouchEnd}
-                                onMouseDown={handleGridMouseDown}
-                                onMouseUp={handleGridTouchEnd}
-                                onMouseLeave={handleGridTouchEnd}
                             >
                                 {homeAppIds.map((appId, idx) => {
                                     const app = ALL_HOME_APPS.find(a => a.id === appId);
