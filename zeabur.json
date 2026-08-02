@@ -1,0 +1,14 @@
+{
+  "name": "AI-little-phone",
+  "region": "hongkong",
+  "services": {
+    "web": {
+      "buildCommand": "pnpm build",
+      "startCommand": "node dist/server.js",
+      "port": 5000,
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
