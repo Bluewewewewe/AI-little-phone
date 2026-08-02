@@ -9,7 +9,7 @@ const GATE_CONFIG = {
     : 'https://fcenabrbftpqeeuufbdr.supabase.co/rest/v1/',
   supabaseAnonKey: typeof SUPABASE_ANON_KEY !== 'undefined'
     ? SUPABASE_ANON_KEY
-    : 'REPLACED_SECRET',
+    : process.env.SUPABASE_ANON_KEY || '',
   quizTimeLimit: 30,
   quizFailCooldownMs: 10 * 60 * 1000,
   verifyCodeExpireMs: 15 * 60 * 1000,

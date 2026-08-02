@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Supabase 连接配置
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://fcenabrbftpqeeuufbdr.supabase.co';
-const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY || 'REPLACED_SECRET';
+const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY || '';
 
 let supabase: SupabaseClient | null = null;
 
