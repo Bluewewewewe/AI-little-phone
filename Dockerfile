@@ -20,5 +20,8 @@ RUN pnpm build
 # 暴露端口 - 使用 PORT 环境变量或默认 5000
 EXPOSE 5000
 
+# 设置环境变量
+ENV NODE_ENV=production
+
 # 启动服务 - 确保 PORT 是有效数字
 CMD ["sh", "-c", "PORT=$(echo ${PORT:-5000} | grep -E '^[0-9]+$' || echo 5000) node dist/server.js"]
