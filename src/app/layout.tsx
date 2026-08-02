@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Script from 'next/script';
 import { Inspector } from 'react-dev-inspector';
 import './globals.css';
 
@@ -67,10 +66,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`antialiased`}>
-        <Script
-          src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"
-          strategy="afterInteractive"
-        />
         {isDev && <Inspector />}
         {children}
       </body>

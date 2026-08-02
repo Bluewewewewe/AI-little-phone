@@ -44,16 +44,6 @@ import {
 import { ForumApp } from "@/components/forum-app";
 import { AdminApp } from "@/components/admin-app";
 
-interface SortableInstance {
-    option(name: string, value: unknown): void;
-    destroy(): void;
-}
-
-declare global {
-    interface Window {
-        Sortable: new (el: HTMLElement, options: Record<string, unknown>) => SortableInstance;
-    }
-}
 
 interface Message {
     from: "me" | "dad" | "mom" | "system";
@@ -2903,20 +2893,10 @@ export default function PhonePage() {
     }, [isLoggedIn, isAdmin]);
 
     const [isEditing, setIsEditing] = useState(false);
+    const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
     const [homeAppIds, setHomeAppIds] = useState<string[]>(() => ALL_HOME_APPS.map(a => a.id));
     const appGridRef = useRef<HTMLDivElement | null>(null);
-    const sortableRef = useRef<SortableInstance | null>(null);
     const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    const dragStartPosRef = useRef<{
-        x: number;
-        y: number;
-    } | null>(null);
-
-    const [dragPosition, setDragPosition] = useState<{
-        x: number;
-        y: number;
-    } | null>(null);
 
     const [dragItem, setDragItem] = useState<number | null>(null);
     const edgeHoverTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -2959,72 +2939,76 @@ export default function PhonePage() {
         } catch {}
     }, []);
 
-    useEffect(() => {
-        if (typeof window === "undefined" || !appGridRef.current)
+    const handleAppItemClick = useCallback((appId: string) => {
+        if (!isEditing) {
+            openApp(appId);
             return;
-
-        function initSortable() {
-            if (!appGridRef.current || sortableRef.current)
-                return;
-            sortableRef.current = new window.Sortable(appGridRef.current, {
-                animation: 200,
-                delay: 500,
-                disabled: false,
-                ghostClass: "dragging-ghost",
-                chosenClass: "dragging-chosen",
-                dragClass: "dragging-drag",
-                onChoose: () => {
-                    setIsEditing(true);
-                    if (typeof navigator !== "undefined" && navigator.vibrate) {
-                        navigator.vibrate(50);
-                    }
-                },
-                onEnd: (evt: { oldIndex?: number; newIndex?: number }) => {
-                    const { oldIndex, newIndex } = evt;
-
-                    if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex)
-                        return;
-
-                    setHomeAppIds(prev => {
-                        const next = [...prev];
-                        const [moved] = next.splice(oldIndex, 1);
-                        next.splice(newIndex, 0, moved);
-                        return next;
-                    });
-                }
-            });
         }
 
-        if (window.Sortable) {
-            initSortable();
-        } else {
-            const script = document.createElement("script");
-            script.src = "https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js";
-            script.async = true;
-            script.onload = initSortable;
-            document.head.appendChild(script);
+        if (!selectedAppId) {
+            setSelectedAppId(appId);
+            return;
         }
 
-        return () => {
-            if (sortableRef.current) {
-                sortableRef.current.destroy();
-                sortableRef.current = null;
+        if (selectedAppId === appId) {
+            setSelectedAppId(null);
+            return;
+        }
+
+        setHomeAppIds(prev => {
+            const next = [...prev];
+            const i1 = next.indexOf(selectedAppId);
+            const i2 = next.indexOf(appId);
+
+            if (i1 >= 0 && i2 >= 0) {
+                [next[i1], next[i2]] = [next[i2], next[i1]];
             }
-        };
-    }, []);
 
-    const handleGridClickCapture = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
-        if (!isEditing)
+            return next;
+        });
+        setSelectedAppId(null);
+    }, [isEditing, selectedAppId, openApp]);
+
+    const startLongPress = useCallback((target: HTMLElement) => {
+        if (isEditing)
             return;
 
-        const target = e.target as HTMLElement;
         const appItem = target.closest(".app-item");
 
-        if (appItem && !appItem.classList.contains("sortable-chosen")) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
+        if (!appItem)
+            return;
+
+        longPressTimerRef.current = setTimeout(() => {
+            setIsEditing(true);
+
+            if (typeof navigator !== "undefined" && navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }, 500);
     }, [isEditing]);
+
+    const clearLongPress = useCallback(() => {
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+    }, []);
+
+    const handleGridPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+        startLongPress(e.target as HTMLElement);
+    }, [startLongPress]);
+
+    const handleGridPointerUp = useCallback(() => {
+        clearLongPress();
+    }, [clearLongPress]);
+
+    const handleGridPointerMove = useCallback(() => {
+        clearLongPress();
+    }, [clearLongPress]);
+
+    const handleGridContextMenu = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+    }, []);
 
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
         if (dragItem !== null)
@@ -3488,157 +3472,21 @@ export default function PhonePage() {
         index?: number
     ) {
         const displayLabel = getAppLabel(app.id, unlockState.unlocked);
-        const isDragging = draggingApp === app.id;
-        const isDragOver = dragOverIndex === index && !isDock;
-
-        const handleTouchStart = (e: React.TouchEvent) => {
-            if (isDock)
-                return;
-
-            const touch = e.touches[0];
-
-            dragStartPosRef.current = {
-                x: touch.clientX,
-                y: touch.clientY
-            };
-
-            longPressTimerRef.current = setTimeout(() => {
-                setIsEditing(true);
-                setDraggingApp(app.id);
-
-                setDragPosition({
-                    x: touch.clientX,
-                    y: touch.clientY
-                });
-            }, 500);
-        };
-
-        const handleTouchMove = (e: React.TouchEvent) => {
-            if (!draggingApp || isDock)
-                return;
-
-            e.preventDefault();
-            const touch = e.touches[0];
-
-            setDragPosition({
-                x: touch.clientX,
-                y: touch.clientY
-            });
-
-            const target = document.elementFromPoint(touch.clientX, touch.clientY);
-
-            if (target) {
-                const appIcon = target.closest(".app-icon") as HTMLElement;
-
-                if (appIcon) {
-                    const idx = parseInt(appIcon.dataset.index || "-1");
-
-                    if (idx >= 0)
-                        setDragOverIndex(idx);
-                }
-
-                const phoneScreen = target.closest(".phone-screen");
-
-                if (phoneScreen) {
-                    const rect = phoneScreen.getBoundingClientRect();
-
-                    if (touch.clientX < rect.left + 40 && currentPage > 0) {
-                        setDragOverPage(currentPage - 1);
-                    } else if (touch.clientX > rect.right - 40 && currentPage < totalPages - 1) {
-                        setDragOverPage(currentPage + 1);
-                    } else {
-                        setDragOverPage(null);
-                    }
-                }
-            }
-        };
-
-        const handleTouchEnd = () => {
-            if (longPressTimerRef.current) {
-                clearTimeout(longPressTimerRef.current);
-                longPressTimerRef.current = null;
-            }
-
-            if (draggingApp && dragOverIndex !== null && !isDock) {
-                const allApps = [...PAGE1_APPS];
-                const fromIdx = allApps.findIndex(a => a.id === draggingApp);
-                const toIdx = dragOverIndex;
-
-                if (fromIdx !== toIdx && fromIdx >= 0 && toIdx >= 0) {
-                    const [moved] = allApps.splice(fromIdx, 1);
-                    allApps.splice(toIdx, 0, moved);
-                }
-            }
-
-            if (dragOverPage !== null) {
-                setCurrentPage(dragOverPage);
-            }
-
-            setDraggingApp(null);
-            setDragOverIndex(null);
-            setDragOverPage(null);
-            setDragPosition(null);
-            dragStartPosRef.current = null;
-            setTimeout(() => setIsEditing(false), 300);
-        };
-
-        const handleMouseDown = (e: React.MouseEvent) => {
-            if (isDock || index !== undefined && UNLOCK_ONLY_APPS.includes(app.id) && !unlockState.unlocked)
-                return;
-
-            dragStartPosRef.current = {
-                x: e.clientX,
-                y: e.clientY
-            };
-
-            longPressTimerRef.current = setTimeout(() => {
-                setIsEditing(true);
-                setDragItem(index ?? null);
-
-                setDragPosition({
-                    x: e.clientX,
-                    y: e.clientY
-                });
-            }, 500);
-        };
+        const isSelected = selectedAppId === app.id && isEditing && !isDock;
 
         return (
             <div
                 key={app.id}
-                className={`app-icon ${isDragging ? "dragging" : ""} ${isDragOver ? "drag-over" : ""} ${isEditing && !isDock ? "editing" : ""} ${!isDock ? "app-item" : ""}`}
-                style={{
-                    "--app-color": app.color,
-
-                    ...(isDragging ? {
-                        opacity: 0.3,
-                        transform: "scale(0.9)"
-                    } : {})
-                } as React.CSSProperties}
-                data-index={index}
+                className={`app-icon ${isSelected ? "selected-app" : ""} ${!isDock ? "app-item" : ""}`}
+                style={{ "--app-color": app.color } as React.CSSProperties}
                 data-app-id={!isDock ? app.id : undefined}
                 onClick={() => {
-                    if (isEditing && !isDock) {
+                    if (isDock) {
+                        openApp(app.id);
                         return;
                     }
-
-                    if (!unlockState.unlocked && UNLOCK_ONLY_APPS.includes(app.id)) {
-                        openApp("me");
-                    } else {
-                        openApp(app.id);
-                    }
-                }}
-                {...(isDock ? {
-                    onTouchStart: handleTouchStart,
-                    onTouchMove: handleTouchMove,
-                    onTouchEnd: handleTouchEnd,
-                    onMouseDown: handleMouseDown,
-                    onMouseLeave: () => {
-                        if (longPressTimerRef.current) {
-                            clearTimeout(longPressTimerRef.current);
-                            longPressTimerRef.current = null;
-                        }
-                    }
-                } : {})}>
+                    handleAppItemClick(app.id);
+                }}>
                 <div
                     className={isDock ? "" : "app-emoji-box"}
                     style={isDock ? {
@@ -4110,96 +3958,6 @@ export default function PhonePage() {
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     const [dragOverPage, setDragOverPage] = useState<number | null>(null);
 
-    useEffect(() => {
-        if (dragItem === null)
-            return;
-
-        const handleWindowMouseMove = (e: MouseEvent) => {
-            if (dragItem === null)
-                return;
-
-            const rect = (e.target as HTMLElement).closest(".app-icon")?.getBoundingClientRect();
-            const offsetX = rect ? rect.width / 2 : 32;
-            const offsetY = rect ? rect.height / 2 : 40;
-
-            setDragPosition({
-                x: e.clientX - offsetX,
-                y: e.clientY - offsetY
-            });
-
-            const elem = document.elementFromPoint(e.clientX, e.clientY);
-            const target = elem?.closest(".app-icon") as HTMLElement;
-
-            if (target && target.dataset.index) {
-                const targetIndex = parseInt(target.dataset.index);
-
-                if (targetIndex !== dragItem) {
-                    setDragOverIndex(targetIndex);
-                }
-            } else {
-                setDragOverIndex(null);
-            }
-
-            const phoneScreen = document.querySelector(".phone-screen");
-
-            if (phoneScreen) {
-                const screenRect = phoneScreen.getBoundingClientRect();
-                const isLeftEdge = e.clientX < screenRect.left + 40;
-                const isRightEdge = e.clientX > screenRect.right - 40;
-
-                if (isLeftEdge && currentPage > 0) {
-                    if (!edgeHoverTimerRef.current) {
-                        edgeHoverTimerRef.current = setTimeout(() => {
-                            setCurrentPage(prev => Math.max(0, prev - 1));
-                            edgeHoverTimerRef.current = null;
-                        }, 500);
-                    }
-                } else if (isRightEdge && currentPage < totalPages - 1) {
-                    if (!edgeHoverTimerRef.current) {
-                        edgeHoverTimerRef.current = setTimeout(() => {
-                            setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
-                            edgeHoverTimerRef.current = null;
-                        }, 500);
-                    }
-                } else {
-                    if (edgeHoverTimerRef.current) {
-                        clearTimeout(edgeHoverTimerRef.current);
-                        edgeHoverTimerRef.current = null;
-                    }
-                }
-            }
-        };
-
-        const handleWindowMouseUp = () => {
-            if (edgeHoverTimerRef.current) {
-                clearTimeout(edgeHoverTimerRef.current);
-                edgeHoverTimerRef.current = null;
-            }
-
-            if (dragItem !== null && dragOverIndex !== null) {
-                const newApps = [...(currentPage === 0 ? PAGE1_APPS : ALL_HOME_APPS)];
-                const [removed] = newApps.splice(dragItem, 1);
-                newApps.splice(dragOverIndex, 0, removed);
-            }
-
-            setDragItem(null);
-            setDragPosition(null);
-            setDragOverIndex(null);
-            setDragOverPage(null);
-        };
-
-        window.addEventListener("mousemove", handleWindowMouseMove);
-        window.addEventListener("mouseup", handleWindowMouseUp);
-
-        return () => {
-            window.removeEventListener("mousemove", handleWindowMouseMove);
-            window.removeEventListener("mouseup", handleWindowMouseUp);
-
-            if (edgeHoverTimerRef.current) {
-                clearTimeout(edgeHoverTimerRef.current);
-            }
-        };
-    }, [dragItem, dragOverIndex, currentPage, totalPages]);
 
     const handleShopAddToCart = (product: ShopProduct) => {
         if (product.stock <= 0) {
