@@ -587,6 +587,21 @@ const ALL_HOME_APPS = [{
     emoji: "🎵",
     label: "音乐",
     color: "#ec4899"
+}, {
+    id: "lpmi",
+    emoji: "🌽",
+    label: "LPMI测试",
+    color: "#365314"
+}, {
+    id: "mimicosmo",
+    emoji: "📚",
+    label: "米米课程表",
+    color: "#7c3aed"
+}, {
+    id: "miniworkshop",
+    emoji: "🛠️",
+    label: "迷你小作坊",
+    color: "#059669"
 }];
 
 const DOCK_APPS = [{
@@ -620,7 +635,9 @@ function getAppLabel(id: string, unlocked: boolean): string {
         browser: "浏览器",
         music: "音乐",
         shopping: "啪多多",
-        lpmi: "LPMI测试"
+        lpmi: "LPMI测试",
+        mimicosmo: "米米课程表",
+        miniworkshop: "迷你小作坊"
     };
 
     return map[id] || id;
