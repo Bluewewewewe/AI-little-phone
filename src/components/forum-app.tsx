@@ -215,7 +215,7 @@ const MOCK_POSTS: ForumPost[] = [
 ];
 
 // ============ 论坛组件 ============
-export function ForumApp() {
+export function ForumApp({ onClose }: { onClose?: () => void } = {}) {
     const [view, setView] = useState<"sections" | "posts" | "postDetail" | "newPost" | "search">("sections");
     const [currentSection, setCurrentSection] = useState<string | null>(null);
     const [currentPost, setCurrentPost] = useState<ForumPost | null>(null);
@@ -484,8 +484,28 @@ export function ForumApp() {
             <div style={{
                 background: "linear-gradient(135deg, #f97316 0%, #fb923c 100%)",
                 padding: "16px 20px",
-                color: "#fff"
+                color: "#fff",
+                position: "relative"
             }}>
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        style={{
+                            position: "absolute",
+                            top: 16,
+                            right: 16,
+                            background: "rgba(255,255,255,0.25)",
+                            border: "1px solid rgba(255,255,255,0.4)",
+                            borderRadius: 8,
+                            padding: "4px 10px",
+                            color: "#fff",
+                            fontSize: 13,
+                            cursor: "pointer",
+                            backdropFilter: "blur(4px)"
+                        }}>
+                        退出
+                    </button>
+                )}
                 <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>💬 社区论坛</div>
                 <div style={{ fontSize: 12, opacity: 0.9 }}>甜玉米粉丝交流社区</div>
             </div>

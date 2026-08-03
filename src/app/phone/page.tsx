@@ -9565,7 +9565,7 @@ export default function PhonePage() {
     }
 
     function renderForum() {
-        return <ForumApp />;
+        return <ForumApp onClose={() => setCurrentApp(null)} />;
     }
 
     function renderWeiboVerifyScreen() {
