@@ -60,7 +60,7 @@ interface WBSection {
     content: string;
 }
 
-function WorldBookApp() {
+function WorldBookApp({ onClose }: { onClose?: () => void }) {
     const [sections, setSections] = useState<WBSection[]>([]);
     const [expanded, setExpanded] = useState<string | null>(null);
     const [tab, setTab] = useState<"characters" | "rules">("characters");
@@ -162,13 +162,30 @@ function WorldBookApp() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    flexShrink: 0
+                    flexShrink: 0,
+                    position: "relative"
                 }}>
+                {onClose && <button
+                    onClick={onClose}
+                    style={{
+                        position: "absolute",
+                        left: "16px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        fontSize: "20px",
+                        color: "#78350f",
+                        cursor: "pointer",
+                        padding: "8px"
+                    }}>←
+                              </button>}
                 <span
                     style={{
                         fontSize: 17,
                         fontWeight: 700,
-                        color: "#78350f"
+                        color: "#78350f",
+                        margin: "0 auto"
                     }}>📖 世界书</span>
                 <span
                     style={{
@@ -1993,6 +2010,23 @@ export default function PhonePage() {
         // 自动登录：检查是否有有效的 token
         const savedToken = localStorage.getItem("auth_token");
         if (savedToken) {
+            // 本地 mock 管理员 token 直接恢复，无需请求服务端
+            if (savedToken.startsWith("mock_admin_")) {
+                const mockUser = localStorage.getItem("mock_admin_user") || "admin";
+                setIsAdmin(true);
+                setIsLoggedIn(true);
+                setAuthToken(savedToken);
+                setAdminViewMode("admin");
+                setAdminRole("super_admin");
+                setLoginUsername(mockUser);
+                setWeiboAccount(prev => ({
+                    ...prev,
+                    nickname: mockUser,
+                    isSet: true
+                }));
+                return;
+            }
+
             fetch("/api/auth", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -2006,6 +2040,7 @@ export default function PhonePage() {
                     setIsAdmin(isAdminUser);
                     setIsLoggedIn(true);
                     setAuthToken(savedToken);
+                    setLoginUsername(userData.username || "");
                     setAdminViewMode(isAdminUser ? "admin" : "user");
                     // 获取用户的邀请码
                     fetch("/api/invite", {
@@ -2630,6 +2665,10 @@ export default function PhonePage() {
             setAdminViewMode("admin");
             setAdminRole("super_admin");
             setLoginLoading(false);
+            const mockToken = `mock_admin_${username}_${Date.now()}`;
+            setAuthToken(mockToken);
+            localStorage.setItem("auth_token", mockToken);
+            localStorage.setItem("mock_admin_user", username);
             return;
         }
         setLoginLoading(true);
@@ -2666,12 +2705,14 @@ export default function PhonePage() {
             const isAdminUser = result.data?.isAdmin || ADMIN_ACCOUNTS.includes(username.toLowerCase());
             setIsAdmin(isAdminUser);
             setIsLoggedIn(true);
+            setLoginUsername(username);
             setAdminViewMode(isAdminUser ? "admin" : "user");
 
             // 保存登录 token（单设备登录）
             if (result.data?.token) {
                 setAuthToken(result.data.token);
                 localStorage.setItem("auth_token", result.data.token);
+                localStorage.removeItem("mock_admin_user");
             }
 
             setWeiboAccount(prev => ({
@@ -4903,6 +4944,37 @@ export default function PhonePage() {
             <div className="feed-list">
                 <div
                     style={{
+                        padding: "12px 16px 8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        position: "relative",
+                        borderBottom: "1px solid rgba(0,0,0,0.04)"
+                    }}>
+                    <button
+                        onClick={() => setCurrentApp(null)}
+                        style={{
+                            position: "absolute",
+                            left: "16px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            background: "none",
+                            border: "none",
+                            fontSize: "20px",
+                            color: "#3d5c45",
+                            cursor: "pointer",
+                            padding: "8px"
+                        }}>←
+                              </button>
+                    <span
+                        style={{
+                            fontSize: 17,
+                            fontWeight: 700,
+                            color: "#3d5c45"
+                        }}>朋友圈</span>
+                </div>
+                <div
+                    style={{
                         padding: "12px 16px"
                     }}>
                     <div
@@ -5456,13 +5528,29 @@ export default function PhonePage() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "8px 16px"
+                    padding: "8px 16px",
+                    position: "relative"
                 }}>
+                <button
+                    onClick={() => setCurrentApp(null)}
+                    style={{
+                        background: "none",
+                        border: "none",
+                        fontSize: "20px",
+                        color: "#333",
+                        cursor: "pointer",
+                        padding: "8px",
+                        marginLeft: "-8px"
+                    }}>←
+                              </button>
                 <span
                     style={{
                         fontSize: 16,
                         fontWeight: 700,
-                        color: "#333"
+                        color: "#333",
+                        position: "absolute",
+                        left: "50%",
+                        transform: "translateX(-50%)"
                     }}>微博</span>
                 <div
                     style={{
@@ -7546,6 +7634,36 @@ export default function PhonePage() {
 
         return (
             <div className="scene-page">
+                <div
+                    style={{
+                        padding: "12px 16px 8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        position: "relative"
+                    }}>
+                    <button
+                        onClick={() => setCurrentApp(null)}
+                        style={{
+                            position: "absolute",
+                            left: "16px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            background: "none",
+                            border: "none",
+                            fontSize: "20px",
+                            color: "#3d5c45",
+                            cursor: "pointer",
+                            padding: "8px"
+                        }}>←
+                              </button>
+                    <span
+                        style={{
+                            fontSize: 17,
+                            fontWeight: 700,
+                            color: "#3d5c45"
+                        }}>家里</span>
+                </div>
                 <div className="scene-room-grid">
                     {rooms.map((r, i) => <div key={i} className="scene-room">
                         <div className="scene-room-icon">{r.icon}</div>
@@ -7583,6 +7701,36 @@ export default function PhonePage() {
 
         return (
             <div className="pet-page">
+                <div
+                    style={{
+                        padding: "12px 16px 8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        position: "relative"
+                    }}>
+                    <button
+                        onClick={() => setCurrentApp(null)}
+                        style={{
+                            position: "absolute",
+                            left: "16px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            background: "none",
+                            border: "none",
+                            fontSize: "20px",
+                            color: "#3d5c45",
+                            cursor: "pointer",
+                            padding: "8px"
+                        }}>←
+                              </button>
+                    <span
+                        style={{
+                            fontSize: 17,
+                            fontWeight: 700,
+                            color: "#3d5c45"
+                        }}>宠物</span>
+                </div>
                 {pets.map((p, i) => <div key={i} className="pet-card">
                     <div className="pet-avatar">{p.emoji}</div>
                     <div className="pet-info">
@@ -7621,6 +7769,36 @@ export default function PhonePage() {
 
         return (
             <div className="dress-page">
+                <div
+                    style={{
+                        padding: "12px 16px 8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        position: "relative"
+                    }}>
+                    <button
+                        onClick={() => setCurrentApp(null)}
+                        style={{
+                            position: "absolute",
+                            left: "16px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            background: "none",
+                            border: "none",
+                            fontSize: "20px",
+                            color: "#3d5c45",
+                            cursor: "pointer",
+                            padding: "8px"
+                        }}>←
+                              </button>
+                    <span
+                        style={{
+                            fontSize: 17,
+                            fontWeight: 700,
+                            color: "#3d5c45"
+                        }}>换装</span>
+                </div>
                 <div className="dress-preview">🧍‍♀️</div>
                 <div className="dress-tabs">
                     <button className="dress-tab active">衣服</button>
@@ -8244,6 +8422,36 @@ export default function PhonePage() {
 
         return (
             <div className="me-page">
+                <div
+                    style={{
+                        padding: "12px 16px 8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        position: "relative"
+                    }}>
+                    <button
+                        onClick={() => setCurrentApp(null)}
+                        style={{
+                            position: "absolute",
+                            left: "16px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            background: "none",
+                            border: "none",
+                            fontSize: "20px",
+                            color: "#3d5c45",
+                            cursor: "pointer",
+                            padding: "8px"
+                        }}>←
+                              </button>
+                    <span
+                        style={{
+                            fontSize: 17,
+                            fontWeight: 700,
+                            color: "#3d5c45"
+                        }}>我的</span>
+                </div>
                 <div className="me-header">
                     <div className="me-avatar">👧</div>
                     <div className="me-name">{displayName}</div>
@@ -8306,7 +8514,7 @@ export default function PhonePage() {
     }
 
     function renderWorldBook() {
-        return <WorldBookApp />;
+        return <WorldBookApp onClose={() => setCurrentApp(null)} />;
     }
 
     function renderCall() {
@@ -10671,6 +10879,9 @@ export default function PhonePage() {
                                 setIsLoggedIn(false);
                                 setIsAdmin(false);
                                 setLoginUsername("");
+                                setAuthToken(null);
+                                localStorage.removeItem("auth_token");
+                                localStorage.removeItem("mock_admin_user");
                             }}
                             style={{
                                 fontSize: 10,
