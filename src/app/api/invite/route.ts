@@ -15,6 +15,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "缺少用户名" }, { status: 400 });
       }
 
+      const { roleType, count = 1 } = body;
+      const generateCount = Math.min(Math.max(parseInt(String(count), 10) || 1, 1), 100);
+
       // 验证是否为管理员
       const { data: user } = await supabase
         .from("users")
@@ -26,32 +29,52 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "无权操作：你不是管理员" }, { status: 403 });
       }
 
-      // 生成随机邀请码
-      const inviteCode = `INV-${randomUUID().slice(0, 8).toUpperCase()}`;
-      
-      const expiresAt = expiresInDays
-        ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString()
-        : null;
+      const isSuperAdmin = user.level >= 99 || username === "admin";
 
-      const { data, error } = await supabase
-        .from("invitation_codes")
-        .insert({
-          code: inviteCode,
-          created_by: username,
-          created_by_id: user.id,
-          max_uses: maxUses || 1,
-          expires_at: expiresAt,
-          is_active: true,
-          note: note || "",
-        })
-        .select()
-        .single();
-
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+      // 普通管理员只能生成普通用户邀请码，且总量不超过10个
+      if (!isSuperAdmin) {
+        if (roleType && roleType !== "user") {
+          return NextResponse.json({ error: "普通管理员只能生成普通用户邀请码" }, { status: 403 });
+        }
+        const { count: existingCount } = await supabase
+          .from("invitation_codes")
+          .select("id", { count: "exact" })
+          .eq("created_by", username);
+        if ((existingCount || 0) + generateCount > 10) {
+          return NextResponse.json({ error: "普通管理员最多持有10个邀请码" }, { status: 403 });
+        }
       }
 
-      return NextResponse.json({ success: true, data });
+      const generated: any[] = [];
+      const targetRole = isSuperAdmin ? (roleType || "user") : "user";
+
+      for (let i = 0; i < generateCount; i++) {
+        const inviteCode = `INV-${randomUUID().slice(0, 8).toUpperCase()}`;
+        const expiresAt = expiresInDays
+          ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString()
+          : null;
+
+        const { data, error } = await supabase
+          .from("invitation_codes")
+          .insert({
+            code: inviteCode,
+            created_by: username,
+            created_by_id: user.id,
+            max_uses: maxUses || 1,
+            expires_at: expiresAt,
+            is_active: true,
+            note: note || `role:${targetRole}`,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+        generated.push(data);
+      }
+
+      return NextResponse.json({ success: true, data: generated.length === 1 ? generated[0] : generated });
     }
 
     // ========== 验证邀请码 ==========

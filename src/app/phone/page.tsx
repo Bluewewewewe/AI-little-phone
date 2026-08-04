@@ -43,6 +43,7 @@ import {
 
 import { ForumApp } from "@/components/forum-app";
 import { AdminApp } from "@/components/admin-app";
+import InviteApp from "@/components/invite-app";
 
 
 interface Message {
@@ -507,34 +508,29 @@ function nextId() {
     return ++msgIdCounter;
 }
 
-const PAGE1_APPS = [{
-    id: "mixin",
-    emoji: "💬",
-    label: "米信",
-    color: "#07c160"
+const FIRST_PAGE_APPS = [{
+    id: "forum",
+    emoji: "🏘️",
+    label: "社区论坛",
+    color: "#8b5cf6"
 }, {
-    id: "weibo",
-    emoji: "📱",
-    label: "微博",
-    color: "#ef4444"
+    id: "mimicosmo",
+    emoji: "📚",
+    label: "米米课程表",
+    color: "#7c3aed"
 }, {
-    id: "home",
-    emoji: "🏠",
-    label: "家里",
-    color: "#92400e"
+    id: "miniworkshop",
+    emoji: "🛠️",
+    label: "迷你小作坊",
+    color: "#059669"
 }, {
-    id: "pet",
-    emoji: "🐾",
-    label: "宠物",
-    color: "#10b981"
-}, {
-    id: "dressup",
-    emoji: "👗",
-    label: "换装",
-    color: "#a855f7"
+    id: "lpmi",
+    emoji: "🌽",
+    label: "LPMI测试",
+    color: "#365314"
 }];
 
-const ALL_HOME_APPS = [{
+const SECOND_PAGE_APPS = [{
     id: "mixin",
     emoji: "💬",
     label: "米信",
@@ -584,27 +580,9 @@ const ALL_HOME_APPS = [{
     emoji: "🛍️",
     label: "啪多多",
     color: "#f43f5e"
-}, {
-    id: "lpmi",
-    emoji: "🌽",
-    label: "LPMI测试",
-    color: "#365314"
-}, {
-    id: "mimicosmo",
-    emoji: "📚",
-    label: "米米课程表",
-    color: "#7c3aed"
-}, {
-    id: "miniworkshop",
-    emoji: "🛠️",
-    label: "迷你小作坊",
-    color: "#059669"
-}, {
-    id: "forum",
-    emoji: "🏘️",
-    label: "社区论坛",
-    color: "#8b5cf6"
 }];
+
+const ALL_HOME_APPS = [...FIRST_PAGE_APPS, ...SECOND_PAGE_APPS];
 
 const DOCK_APPS = [{
     id: "call",
@@ -1794,12 +1772,18 @@ export default function PhonePage() {
     const [loginPassword, setLoginPassword] = useState("");
     const [loginMode, setLoginMode] = useState<"login" | "register">("login");
     const [loginError, setLoginError] = useState("");
+    const [defaultPasswordTip, setDefaultPasswordTip] = useState(false);
     const [loginLoading, setLoginLoading] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [forgotPasswordForm, setForgotPasswordForm] = useState({ username: "", weiboNickname: "", weiboLink: "" });
     const [forgotPasswordSubmitted, setForgotPasswordSubmitted] = useState(false);
     const [forgotPasswordRequests, setForgotPasswordRequests] = useState<Array<{ id: string; username: string; weiboNickname: string; weiboLink: string; status: "pending" | "processed"; createdAt: string }>>([]);
     const [isPageLoading, setIsPageLoading] = useState(true);
+    const [accountDisplayName, setAccountDisplayName] = useState(loginUsername);
+    const [accountCurrentPassword, setAccountCurrentPassword] = useState("");
+    const [accountNewPassword, setAccountNewPassword] = useState("");
+    const [accountLoading, setAccountLoading] = useState(false);
+    const [accountMessage, setAccountMessage] = useState("");
 
     interface WeiboAccount {
         nickname: string;
@@ -1888,6 +1872,8 @@ export default function PhonePage() {
     const [userLevel, setUserLevel] = useState(1);
     const [adminAnnouncement, setAdminAnnouncement] = useState("");
     const [adminHotSearchLocked, setAdminHotSearchLocked] = useState<number[]>([]);
+    const [toast, setToast] = useState<{ message: string; show: boolean }>({ message: "", show: false });
+    const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const touchStartX = useRef(0);
     const touchDeltaX = useRef(0);
     const isDragging = useRef(false);
@@ -2043,10 +2029,10 @@ export default function PhonePage() {
                     setLoginUsername(userData.username || "");
                     setAdminViewMode(isAdminUser ? "admin" : "user");
                     // 获取用户的邀请码
-                    fetch("/api/invite", {
+                    fetch("/api/auth", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ action: "my_codes", username: userData.username })
+                        body: JSON.stringify({ action: "list_my_invite_codes", token: savedToken })
                     })
                     .then(r => r.json())
                     .then(res => {
@@ -2062,6 +2048,9 @@ export default function PhonePage() {
                     }));
                     if (!isAdminUser && !userData.weiboVerified) {
                         setShowWeiboVerify(true);
+                    }
+                    if (userData.isDefaultPassword) {
+                        setDefaultPasswordTip(true);
                     }
                 } else {
                     // Token 无效（可能被其他设备踢下线）
@@ -2096,7 +2085,13 @@ export default function PhonePage() {
         }
     }, [unlockState, mounted]);
 
-    const [meSubPage, setMeSubPage] = useState<"main" | "settings" | "identity" | "unlock" | "about" | "invite">("main");
+    useEffect(() => {
+        if (loginUsername) {
+            setAccountDisplayName(loginUsername);
+        }
+    }, [loginUsername]);
+
+    const [meSubPage, setMeSubPage] = useState<"main" | "settings" | "identity" | "unlock" | "about" | "invite" | "account">("main");
     const [identityStep, setIdentityStep] = useState(0);
     const [debugMode, setDebugMode] = useState(false);
     const [debugLevel, setDebugLevel] = useState<number | "all" | null>(null);
@@ -2639,6 +2634,24 @@ export default function PhonePage() {
         }
     }
 
+    async function loadMyInviteCodes() {
+        try {
+            const token = localStorage.getItem("auth_token");
+            if (!token) return;
+            const res = await fetch("/api/auth", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "list_my_invite_codes", token })
+            });
+            const json = await res.json();
+            if (json.success) {
+                setMyInviteCodes(json.data || []);
+            }
+        } catch (e) {
+            console.error("加载邀请码失败:", e);
+        }
+    }
+
     const handleLogin = async () => {
         const username = loginUsername.trim();
         const password = loginPassword.trim();
@@ -2669,6 +2682,7 @@ export default function PhonePage() {
             setAuthToken(mockToken);
             localStorage.setItem("auth_token", mockToken);
             localStorage.setItem("mock_admin_user", username);
+            setDefaultPasswordTip(true);
             return;
         }
         setLoginLoading(true);
@@ -2714,6 +2728,12 @@ export default function PhonePage() {
                 localStorage.setItem("auth_token", result.data.token);
                 localStorage.removeItem("mock_admin_user");
             }
+
+            if (result.data?.isDefaultPassword) {
+                setDefaultPasswordTip(true);
+            }
+
+            loadMyInviteCodes();
 
             setWeiboAccount(prev => ({
                 ...prev,
@@ -2935,7 +2955,7 @@ export default function PhonePage() {
 
     const [isEditing, setIsEditing] = useState(false);
     const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
-    const [homeAppIds, setHomeAppIds] = useState<string[]>(() => ALL_HOME_APPS.map(a => a.id));
+    const [homeAppIds, setHomeAppIds] = useState<string[]>(() => FIRST_PAGE_APPS.map(a => a.id));
     const appGridRef = useRef<HTMLDivElement | null>(null);
     const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -2947,7 +2967,8 @@ export default function PhonePage() {
             return;
 
         try {
-            localStorage.setItem("phone_app_order_v3", JSON.stringify(homeAppIds));
+            const firstPageIds = homeAppIds.filter(id => FIRST_PAGE_APPS.some(a => a.id === id));
+            localStorage.setItem("phone_app_order_v4", JSON.stringify(firstPageIds));
         } catch {}
     }, [homeAppIds]);
 
@@ -2969,22 +2990,31 @@ export default function PhonePage() {
             return;
 
         try {
-            const saved = localStorage.getItem("phone_app_order_v3");
+            const saved = localStorage.getItem("phone_app_order_v4");
 
             if (saved) {
                 const order = JSON.parse(saved) as string[];
-                const valid = order.filter(id => ALL_HOME_APPS.some(a => a.id === id));
-                const remaining = ALL_HOME_APPS.filter(a => !valid.includes(a.id)).map(a => a.id);
+                const valid = order.filter(id => FIRST_PAGE_APPS.some(a => a.id === id));
+                const remaining = FIRST_PAGE_APPS.filter(a => !valid.includes(a.id)).map(a => a.id);
                 setHomeAppIds([...valid, ...remaining]);
+            } else {
+                setHomeAppIds(FIRST_PAGE_APPS.map(a => a.id));
             }
-        } catch {}
+        } catch {
+            setHomeAppIds(FIRST_PAGE_APPS.map(a => a.id));
+        }
     }, []);
 
     const handleAppItemClick = useCallback((appId: string) => {
+        const isFirstPage = FIRST_PAGE_APPS.some(a => a.id === appId);
+
         if (!isEditing) {
             openApp(appId);
             return;
         }
+
+        if (!isFirstPage)
+            return;
 
         if (!selectedAppId) {
             setSelectedAppId(appId);
@@ -3168,7 +3198,21 @@ export default function PhonePage() {
         };
     }, [currentPage]);
 
+    function showToast(message: string) {
+        if (toastTimerRef.current)
+            clearTimeout(toastTimerRef.current);
+        setToast({ message, show: true });
+        toastTimerRef.current = setTimeout(() => setToast({ message: "", show: false }), 2000);
+    }
+
     function openApp(appId: string) {
+        const isSecondPage = SECOND_PAGE_APPS.some(a => a.id === appId);
+
+        if (isSecondPage && !isAdmin) {
+            showToast("装修中，敬请期待");
+            return;
+        }
+
         setCurrentApp(appId);
         setAppClosing(false);
 
@@ -8311,6 +8355,11 @@ export default function PhonePage() {
                             color: "#92400e",
                             marginBottom: 16
                         }}>⚙️ 设置</div>
+                    <div className="me-menu-item" onClick={() => setMeSubPage("account")}>
+                        <span className="me-menu-icon">🔑</span>
+                        <span className="me-menu-label">账户设置</span>
+                        <span className="me-menu-arrow">›</span>
+                    </div>
                     <div className="me-menu-item" onClick={() => setMeSubPage("unlock")}>
                         <span className="me-menu-icon">{unlockState.unlocked ? "🔓" : "🔒"}</span>
                         <span className="me-menu-label">{unlockState.unlocked ? "身份已解锁" : "暗号解锁"}</span>
@@ -8354,65 +8403,126 @@ export default function PhonePage() {
         }
 
         if (meSubPage === "invite") {
+            return <InviteApp isAdmin={isAdmin} adminRole={adminRole} loginUsername={loginUsername} onBack={() => setMeSubPage("main")} />;
+        }
+
+        if (meSubPage === "account") {
+            const handleUpdateAccount = async () => {
+                setAccountLoading(true);
+                setAccountMessage("");
+                const token = localStorage.getItem("auth_token");
+                try {
+                    const res = await fetch("/api/auth", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            action: "change_password",
+                            token,
+                            currentPassword: accountCurrentPassword,
+                            newPassword: accountNewPassword,
+                            newDisplayName: accountDisplayName
+                        })
+                    });
+                    const json = await res.json();
+                    if (json.success) {
+                        setAccountMessage("修改成功，请重新登录");
+                        setTimeout(() => {
+                            localStorage.removeItem("auth_token");
+                            setIsLoggedIn(false);
+                            setIsAdmin(false);
+                            setCurrentApp(null);
+                            setMeSubPage("main");
+                        }, 1500);
+                    } else {
+                        setAccountMessage(json.error || "修改失败");
+                    }
+                } catch (e) {
+                    setAccountMessage("网络错误");
+                } finally {
+                    setAccountLoading(false);
+                }
+            };
+
             return (
                 <div style={{ padding: 16 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#92400e", marginBottom: 16 }}>🎟️ 我的邀请码</div>
-                    <div style={{ padding: 12, borderRadius: 12, background: "rgba(254,243,199,0.8)", fontSize: 11, color: "#92400e", textAlign: "center", lineHeight: 1.5, marginBottom: 16 }}>
-                        微博验证通过后获得 5 个邀请码<br/>每个邀请码只能使用 1 次
-                    </div>
-                    {myInviteCodes.length === 0 ? (
-                        <div style={{ textAlign: "center", padding: "30px 0", color: "#a16207", fontSize: 13 }}>
-                            <div style={{ fontSize: 36, marginBottom: 8 }}>🎟️</div>
-                            暂无邀请码<br/>
-                            <span style={{ fontSize: 11, color: "#d97706" }}>完成微博验证后自动获得</span>
-                        </div>
-                    ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            {myInviteCodes.map((c: { code: string; use_count: number; max_uses: number; is_active: boolean; used_by?: string }, idx: number) => (
-                                <div key={idx} style={{
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#3d5c45", marginBottom: 16 }}>🔑 账户设置</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div>
+                            <div style={{ fontSize: 12, color: "#4a7c50", marginBottom: 4 }}>显示昵称</div>
+                            <input
+                                type="text"
+                                value={accountDisplayName}
+                                onChange={(e) => setAccountDisplayName(e.target.value)}
+                                style={{
+                                    width: "100%",
                                     padding: "10px 12px",
                                     borderRadius: 10,
-                                    background: c.is_active && c.use_count < c.max_uses ? "rgba(255,255,255,0.8)" : "rgba(200,200,200,0.5)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between"
-                                }}>
-                                    <div>
-                                        <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "monospace", color: c.is_active && c.use_count < c.max_uses ? "#92400e" : "#999" }}>
-                                            {c.code}
-                                        </div>
-                                        <div style={{ fontSize: 10, color: "#a16207", marginTop: 2 }}>
-                                            {c.use_count >= c.max_uses ? "已使用" : c.is_active ? `可使用 ${c.max_uses - c.use_count} 次` : "已停用"}
-                                            {c.used_by && ` → @${c.used_by}`}
-                                        </div>
-                                    </div>
-                                    {c.is_active && c.use_count < c.max_uses && (
-                                        <button
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(c.code);
-                                                alert("邀请码已复制：" + c.code);
-                                            }}
-                                            style={{
-                                                padding: "4px 10px",
-                                                borderRadius: 8,
-                                                background: "#f59e0b",
-                                                color: "#fff",
-                                                fontSize: 11,
-                                                fontWeight: 600,
-                                                border: "none",
-                                                cursor: "pointer"
-                                            }}
-                                        >复制</button>
-                                    )}
-                                </div>
-                            ))}
+                                    border: "1px solid #b8dcc4",
+                                    background: "rgba(255,255,255,0.8)",
+                                    fontSize: 14,
+                                    color: "#2e5c33"
+                                }}
+                            />
                         </div>
-                    )}
-                    <button
-                        className="identity-btn"
-                        onClick={() => setMeSubPage("main")}
-                        style={{ marginTop: 16, width: "100%", background: "#e5e7eb", color: "#78350f" }}>← 返回
-                    </button>
+                        <div>
+                            <div style={{ fontSize: 12, color: "#4a7c50", marginBottom: 4 }}>当前密码</div>
+                            <input
+                                type="password"
+                                value={accountCurrentPassword}
+                                onChange={(e) => setAccountCurrentPassword(e.target.value)}
+                                placeholder="输入当前密码"
+                                style={{
+                                    width: "100%",
+                                    padding: "10px 12px",
+                                    borderRadius: 10,
+                                    border: "1px solid #b8dcc4",
+                                    background: "rgba(255,255,255,0.8)",
+                                    fontSize: 14,
+                                    color: "#2e5c33"
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: 12, color: "#4a7c50", marginBottom: 4 }}>新密码</div>
+                            <input
+                                type="password"
+                                value={accountNewPassword}
+                                onChange={(e) => setAccountNewPassword(e.target.value)}
+                                placeholder="输入新密码（至少6位）"
+                                style={{
+                                    width: "100%",
+                                    padding: "10px 12px",
+                                    borderRadius: 10,
+                                    border: "1px solid #b8dcc4",
+                                    background: "rgba(255,255,255,0.8)",
+                                    fontSize: 14,
+                                    color: "#2e5c33"
+                                }}
+                            />
+                        </div>
+                        {accountMessage && (
+                            <div style={{ fontSize: 12, color: accountMessage.includes("成功") ? "#2e7d32" : "#ef4444", textAlign: "center" }}>
+                                {accountMessage}
+                            </div>
+                        )}
+                        <button
+                            onClick={handleUpdateAccount}
+                            disabled={accountLoading || !accountCurrentPassword || accountNewPassword.length < 6}
+                            className="identity-btn"
+                            style={{
+                                marginTop: 8,
+                                width: "100%",
+                                background: accountLoading || !accountCurrentPassword || accountNewPassword.length < 6 ? "#b8dcc4" : "#2e7d32",
+                                color: "#fff"
+                            }}>
+                            {accountLoading ? "保存中..." : "保存修改"}
+                        </button>
+                        <button
+                            className="identity-btn"
+                            onClick={() => setMeSubPage("main")}
+                            style={{ width: "100%", background: "#e5e7eb", color: "#3d5c45" }}>← 返回
+                        </button>
+                    </div>
                 </div>
             );
         }
@@ -12200,19 +12310,38 @@ export default function PhonePage() {
                                 <button className="edit-done-btn" onClick={exitEditMode}>完成</button>
                             </div>
                         )}
-                        <div className="app-grid-scroll">
+                        <div
+                            className="home-slider"
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
+                            onMouseDown={handleMouseDown}
+                        >
                             <div
-                                id="appGrid"
-                                ref={appGridRef}
-                                className={`app-page-grid ${isEditing ? "edit-mode" : ""}`}
+                                ref={sliderRef}
+                                className={`home-slider-track ${isEditing ? "edit-mode" : ""}`}
+                                style={{ transform: `translateX(${-currentPage * 100}%)`, transition: "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }}
                             >
-                                {homeAppIds.map((appId, idx) => {
-                                    const app = ALL_HOME_APPS.find(a => a.id === appId);
-                                    if (!app)
-                                        return null;
-                                    return renderAppIcon(app, false, idx);
-                                })}
+                                <div className="home-page">
+                                    <div className="app-page-grid page-one">
+                                        {homeAppIds.map((appId, idx) => {
+                                            const app = FIRST_PAGE_APPS.find(a => a.id === appId);
+                                            if (!app)
+                                                return null;
+                                            return renderAppIcon(app, false, idx);
+                                        })}
+                                    </div>
+                                </div>
+                                <div className="home-page">
+                                    <div className="app-page-grid page-two">
+                                        {SECOND_PAGE_APPS.map((app, idx) => renderAppIcon(app, false, idx))}
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+                        <div className="page-indicator">
+                            <span className={currentPage === 0 ? "active" : ""} />
+                            <span className={currentPage === 1 ? "active" : ""} />
                         </div>
                     </div>
                     <div className="dock">
@@ -12232,6 +12361,33 @@ export default function PhonePage() {
                     <div className="home-indicator" onClick={() => { setAppClosing(true); setTimeout(() => { setCurrentApp(null); setAppClosing(false); }, 220); }} />
                 </div>
             )}
+            {defaultPasswordTip && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000, padding: 24 }}>
+                    <div style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)", borderRadius: 20, padding: 24, maxWidth: 320, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "#2e5c33", marginBottom: 12, textAlign: "center" }}>🔒 建议修改默认密码</div>
+                        <div style={{ fontSize: 13, color: "#4a7c50", lineHeight: 1.6, marginBottom: 20, textAlign: "center" }}>
+                            你当前使用的是默认密码，为了账户安全，建议立即前往「我的 → 账户设置」修改密码。
+                        </div>
+                        <div style={{ display: "flex", gap: 10 }}>
+                            <button
+                                onClick={() => setDefaultPasswordTip(false)}
+                                style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", background: "#e5e7eb", color: "#3d5c45", fontWeight: 600, fontSize: 13 }}>
+                                稍后
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setDefaultPasswordTip(false);
+                                    setCurrentApp("me");
+                                    setMeSubPage("account");
+                                }}
+                                style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", background: "#2e7d32", color: "#fff", fontWeight: 600, fontSize: 13 }}>
+                                去修改
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <div className={`phone-toast ${toast.show ? "show" : ""}`}>{toast.message}</div>
         </div>
     );
 }

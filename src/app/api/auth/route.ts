@@ -2,6 +2,50 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
 import { randomUUID } from "crypto";
 
+function generateInviteCode(prefix: string): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let result = "";
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `${prefix}${result}`;
+}
+
+async function createDefaultInviteCodes(
+  supabase: Awaited<ReturnType<typeof getSupabaseClient>>,
+  userId: string
+): Promise<void> {
+  const codes: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    let code = generateInviteCode("MIMI-");
+    let attempts = 0;
+    while (attempts < 5) {
+      const { data: existing } = await supabase
+        .from("invitation_codes")
+        .select("id")
+        .eq("code", code)
+        .single();
+      if (!existing) break;
+      code = generateInviteCode("MIMI-");
+      attempts++;
+    }
+    codes.push(code);
+  }
+
+  const insertData = codes.map((code) => ({
+    code,
+    created_by: userId,
+    max_uses: 1,
+    use_count: 0,
+    is_active: true,
+  }));
+
+  const { error } = await supabase.from("invitation_codes").insert(insertData);
+  if (error) {
+    console.error("自动生成邀请码失败:", error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -150,6 +194,11 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // 普通用户注册成功后自动生成 10 个邀请码
+      if (!data.admin_pending) {
+        await createDefaultInviteCodes(supabase, data.id);
+      }
+
       return NextResponse.json({
         success: true,
         data: {
@@ -209,6 +258,7 @@ export async function POST(request: NextRequest) {
       }
 
       const isAdminUser = (user.is_admin && user.admin_approved) || user.level >= 99;
+      const isDefaultPassword = user.password === "admin123" || user.password === user.username;
 
       return NextResponse.json({
         success: true,
@@ -221,6 +271,7 @@ export async function POST(request: NextRequest) {
           weiboVerified: user.weibo_verified,
           weiboUid: user.weibo_uid,
           isAdmin: isAdminUser,
+          isDefaultPassword,
           token: newToken,
         },
       });
@@ -234,7 +285,7 @@ export async function POST(request: NextRequest) {
 
       const { data: session } = await supabase
         .from("sessions")
-        .select("*, users(username, display_name, level, weibo_verified, is_admin, admin_approved)")
+        .select("*, users(username, display_name, level, weibo_verified, is_admin, admin_approved, password)")
         .eq("token", token)
         .gte("expires_at", new Date().toISOString())
         .single();
@@ -245,6 +296,7 @@ export async function POST(request: NextRequest) {
 
       const u = session.users as Record<string, unknown>;
       const isAdminUser = (u.is_admin && u.admin_approved) || (u.level as number) >= 99;
+      const isDefaultPassword = (u.password as string) === "admin123" || (u.password as string) === (u.username as string);
 
       return NextResponse.json({
         valid: true,
@@ -255,6 +307,7 @@ export async function POST(request: NextRequest) {
           level: u.level,
           weiboVerified: u.weibo_verified,
           isAdmin: isAdminUser,
+          isDefaultPassword,
         },
       });
     }
@@ -298,6 +351,9 @@ export async function POST(request: NextRequest) {
       if (error) {
         return NextResponse.json({ error: "审批失败: " + error.message }, { status: 500 });
       }
+
+      // 审批通过后，为新管理员自动生成10个邀请码
+      await createDefaultInviteCodes(supabase, targetUserId);
 
       return NextResponse.json({ success: true, message: "已通过" });
     }
@@ -432,6 +488,215 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ success: true, message: `角色已更新为 ${role}` });
+    }
+
+    // ========== 修改密码/昵称 ==========
+    if (action === "change_password") {
+      const { token: authToken, currentPassword, newPassword, newDisplayName } = body;
+
+      if (!authToken || !currentPassword || !newPassword) {
+        return NextResponse.json(
+          { error: "缺少必要参数" },
+          { status: 400 }
+        );
+      }
+
+      if (newPassword.length < 4) {
+        return NextResponse.json(
+          { error: "新密码至少4位" },
+          { status: 400 }
+        );
+      }
+
+      const { data: session } = await supabase
+        .from("sessions")
+        .select("*, users(*)")
+        .eq("token", authToken)
+        .gte("expires_at", new Date().toISOString())
+        .single();
+
+      if (!session) {
+        return NextResponse.json(
+          { error: "登录已过期，请重新登录" },
+          { status: 401 }
+        );
+      }
+
+      const user = session.users as Record<string, unknown>;
+      if ((user.password as string) !== currentPassword) {
+        return NextResponse.json(
+          { error: "当前密码错误" },
+          { status: 403 }
+        );
+      }
+
+      const updateData: Record<string, unknown> = {
+        password: newPassword,
+      };
+      if (newDisplayName && newDisplayName.trim()) {
+        updateData.display_name = newDisplayName.trim();
+      }
+
+      const { error } = await supabase
+        .from("users")
+        .update(updateData)
+        .eq("id", session.user_id);
+
+      if (error) {
+        console.error("修改密码失败:", error);
+        return NextResponse.json(
+          { error: "修改失败: " + error.message },
+          { status: 500 }
+        );
+      }
+
+      // 修改成功后清除该用户所有会话，要求重新登录
+      await supabase.from("sessions").delete().eq("user_id", session.user_id);
+
+      return NextResponse.json({
+        success: true,
+        message: "修改成功，请使用新密码重新登录",
+      });
+    }
+
+    // ========== 生成邀请码 ==========
+    if (action === "generate_invite_codes") {
+      const { token: authToken, count, roleType } = body;
+
+      if (!authToken || !count || count < 1) {
+        return NextResponse.json(
+          { error: "缺少必要参数" },
+          { status: 400 }
+        );
+      }
+
+      const { data: session } = await supabase
+        .from("sessions")
+        .select("*, users(*)")
+        .eq("token", authToken)
+        .gte("expires_at", new Date().toISOString())
+        .single();
+
+      if (!session) {
+        return NextResponse.json(
+          { error: "登录已过期" },
+          { status: 401 }
+        );
+      }
+
+      const user = session.users as Record<string, unknown>;
+      const isSuperAdmin = (user.is_admin && user.admin_approved) || (user.level as number) >= 99;
+      const isAdmin = user.is_admin && user.admin_approved;
+
+      if (!isAdmin && !isSuperAdmin) {
+        return NextResponse.json(
+          { error: "无权操作：需要管理员身份" },
+          { status: 403 }
+        );
+      }
+
+      const targetRole = roleType === "admin" ? "admin" : "user";
+
+      // 普通管理员只能生成普通用户邀请码
+      if (!isSuperAdmin && targetRole === "admin") {
+        return NextResponse.json(
+          { error: "只有大管理员可以生成管理员邀请码" },
+          { status: 403 }
+        );
+      }
+
+      // 普通管理员每次最多生成10个
+      const generateCount = Math.min(count, isSuperAdmin ? 100 : 10);
+      const prefix = targetRole === "admin" ? "ADMIN-" : "MIMI-";
+      const codes: string[] = [];
+
+      for (let i = 0; i < generateCount; i++) {
+        let code = generateInviteCode(prefix);
+        let attempts = 0;
+        // 避免重复
+        while (attempts < 5) {
+          const { data: existing } = await supabase
+            .from("invitation_codes")
+            .select("id")
+            .eq("code", code)
+            .single();
+          if (!existing) break;
+          code = generateInviteCode(prefix);
+          attempts++;
+        }
+        codes.push(code);
+      }
+
+      const insertData = codes.map((code) => ({
+        code,
+        created_by: session.user_id,
+        max_uses: 1,
+        use_count: 0,
+        is_active: true,
+      }));
+
+      const { error } = await supabase
+        .from("invitation_codes")
+        .insert(insertData);
+
+      if (error) {
+        console.error("生成邀请码失败:", error);
+        return NextResponse.json(
+          { error: "生成失败: " + error.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: codes,
+        message: `成功生成 ${codes.length} 个邀请码`,
+      });
+    }
+
+    // ========== 获取我的邀请码 ==========
+    if (action === "list_my_invite_codes") {
+      const { token: authToken } = body;
+
+      if (!authToken) {
+        return NextResponse.json(
+          { error: "缺少 token" },
+          { status: 400 }
+        );
+      }
+
+      const { data: session } = await supabase
+        .from("sessions")
+        .select("*, users(*)")
+        .eq("token", authToken)
+        .gte("expires_at", new Date().toISOString())
+        .single();
+
+      if (!session) {
+        return NextResponse.json(
+          { error: "登录已过期" },
+          { status: 401 }
+        );
+      }
+
+      const { data, error } = await supabase
+        .from("invitation_codes")
+        .select("*")
+        .eq("created_by", session.user_id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("获取邀请码失败:", error);
+        return NextResponse.json(
+          { error: "获取失败: " + error.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: data || [],
+      });
     }
 
     return NextResponse.json(

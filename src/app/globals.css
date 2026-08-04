@@ -423,7 +423,93 @@ body {
   box-shadow: 0 0 0 2px rgba(255,255,255,0.5);
 }
 
-/* Page Dots */
+/* Home Slider */
+.home-slider {
+  flex: 1 1 auto;
+  overflow: hidden;
+  position: relative;
+  touch-action: pan-y;
+}
+.home-slider-track {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  will-change: transform;
+}
+.home-page {
+  min-width: 100%;
+  flex: 0 0 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 20px;
+  box-sizing: border-box;
+}
+.home-page .app-page-grid {
+  min-width: 100%;
+}
+
+/* Page indicator */
+.page-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0 10px;
+  flex-shrink: 0;
+}
+.page-indicator span {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.35);
+  transition: all 0.3s ease;
+}
+.page-indicator span.active {
+  width: 18px;
+  background: rgba(255,255,255,0.85);
+}
+
+/* First page icons slightly larger */
+.page-one .app-emoji-box {
+  width: 58px;
+  height: 58px;
+  font-size: 28px;
+  border-radius: 17px;
+}
+.page-one .app-emoji-box::before {
+  border-radius: 17px 17px 0 0;
+}
+.page-one .app-label {
+  font-size: 11px;
+  max-width: 68px;
+}
+
+/* Toast */
+.phone-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  white-space: nowrap;
+}
+.phone-toast.show {
+  opacity: 1;
+}
+
+/* Page Dots (legacy) */
 .page-dots { display: flex; justify-content: center; gap: 6px; padding: 8px 0; }
 .dot { width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.35); transition: all 0.3s; }
 .dot.active { width: 18px; background: rgba(255,255,255,0.8); }
