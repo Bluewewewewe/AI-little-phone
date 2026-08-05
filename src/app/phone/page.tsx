@@ -12828,7 +12828,7 @@ export default function PhonePage() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            zIndex: 9999,
+                            zIndex: 99999,
                             cursor: knobDragging ? "grabbing" : "grab",
                             userSelect: "none",
                             touchAction: "none",
@@ -12850,7 +12850,7 @@ export default function PhonePage() {
                                 borderRadius: 16,
                                 padding: "8px 0",
                                 boxShadow: "0 10px 40px rgba(46,92,51,0.2)",
-                                zIndex: 10000,
+                                zIndex: 100000,
                                 minWidth: 140,
                             }}
                         >
