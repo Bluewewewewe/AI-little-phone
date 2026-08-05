@@ -43,8 +43,9 @@ import {
 
 import { ForumApp } from "@/components/forum-app";
 import { AdminApp } from "@/components/admin-app";
-import InviteApp from "@/components/invite-app";
+import { InviteApp } from "@/components/invite-app";
 import UserProfileApp from "@/components/user-profile-app";
+import { AdminReviewApp } from "@/components/admin-review-app";
 
 
 interface Message {
@@ -1826,6 +1827,7 @@ export default function PhonePage() {
     const [requestAdmin, setRequestAdmin] = useState(false);
     const [adminPendingMsg, setAdminPendingMsg] = useState("");
     const [invitationCode, setInvitationCode] = useState("");
+    const [registerWeiboName, setRegisterWeiboName] = useState("");
     const [weiboLink, setWeiboLink] = useState("");
     const [inviteRequired, setInviteRequired] = useState(false);
     const [myInviteCodes, setMyInviteCodes] = useState<Array<{ code: string; use_count: number; max_uses: number; is_active: boolean; used_by?: string }>>([]);
@@ -2713,6 +2715,16 @@ export default function PhonePage() {
             setLoginError("请输入密码");
             return;
         }
+        if (loginMode === "register") {
+            if (!invitationCode.trim()) {
+                setLoginError("请输入邀请码");
+                return;
+            }
+            if (!registerWeiboName.trim()) {
+                setLoginError("请输入微博昵称");
+                return;
+            }
+        }
 
         setLoginError("");
         // Mock 管理员账号验证（开发环境）
@@ -2744,8 +2756,8 @@ export default function PhonePage() {
                     action: loginMode,
                     username,
                     password,
-                    requestAdmin: loginMode === "register" ? requestAdmin : undefined,
-                    invitationCode: loginMode === "register" ? invitationCode : undefined,
+                    weiboName: loginMode === "register" ? registerWeiboName.trim() : undefined,
+                    invitationCode: loginMode === "register" ? invitationCode.trim() : undefined,
                 })
             });
             const result = await res.json();
@@ -2756,11 +2768,13 @@ export default function PhonePage() {
                 return;
             }
 
-            // 注册时如果申请管理员，显示等待审批提示
-            if (loginMode === "register" && requestAdmin) {
-                setAdminPendingMsg("管理员申请已提交，请等待现有管理员审批后再登录");
+            // 注册成功后进入待审核状态
+            if (loginMode === "register" && result.pending) {
+                setAdminPendingMsg(result.message || "注册成功，账号正在审核中，请耐心等待管理员通过后再登录");
                 setLoginLoading(false);
                 setLoginPassword("");
+                setInvitationCode("");
+                setRegisterWeiboName("");
                 return;
             }
 
@@ -8465,6 +8479,13 @@ export default function PhonePage() {
                         <span className="me-menu-label">账户设置</span>
                         <span className="me-menu-arrow">›</span>
                     </div>
+                    {isAdmin && (
+                        <div className="me-menu-item" onClick={() => setCurrentApp("admin-review")}>
+                            <span className="me-menu-icon">✅</span>
+                            <span className="me-menu-label">用户审核</span>
+                            <span className="me-menu-arrow">›</span>
+                        </div>
+                    )}
                     <div className="me-menu-item" onClick={() => setMeSubPage("wallpaper")}>
                         <span className="me-menu-icon">🖼️</span>
                         <span className="me-menu-label">壁纸</span>
@@ -8518,7 +8539,7 @@ export default function PhonePage() {
         }
 
         if (meSubPage === "invite") {
-            return <InviteApp isAdmin={isAdmin} adminRole={adminRole} loginUsername={loginUsername} onBack={() => setMeSubPage("main")} />;
+            return <InviteApp isAdmin={isAdmin} loginUsername={loginUsername} onClose={() => setMeSubPage("main")} />;
         }
 
         if (meSubPage === "account") {
@@ -10079,6 +10100,8 @@ export default function PhonePage() {
             return renderUserProfile();
         case "admin":
             return <AdminApp adminRole={adminRole} onClose={() => setCurrentApp(null)} />;
+        case "admin-review":
+            return <AdminReviewApp loginUsername={loginUsername} onClose={() => setCurrentApp(null)} />;
         default:
             return <div className="empty-state"><div className="empty-emoji">📱</div>APP开发中</div>;
         }
@@ -10736,7 +10759,7 @@ export default function PhonePage() {
                                 </div>
                             </div>
                         )}
-                        {/* 微博主页链接（注册时必填） */}
+                        {/* 微博昵称（注册时必填） */}
                         {loginMode === "register" && (
                             <div style={{
                                 marginBottom: 14
@@ -10747,7 +10770,7 @@ export default function PhonePage() {
                                     fontWeight: 700,
                                     marginBottom: 6,
                                     letterSpacing: 1.5
-                                }}>微博主页链接 <span style={{color: "#ef4444"}}>*</span></div>
+                                }}>微博昵称 <span style={{color: "#ef4444"}}>*</span></div>
                                 <div style={{
                                     display: "flex",
                                     alignItems: "center",
@@ -10769,11 +10792,11 @@ export default function PhonePage() {
                                         padding: "0 0 0 14px",
                                         fontSize: 16,
                                         opacity: 0.7
-                                    }}></span>
+                                    }}>🧣</span>
                                     <input
-                                        value={weiboLink}
-                                        onChange={e => setWeiboLink(e.target.value)}
-                                        placeholder="请输入微博主页链接"
+                                        value={registerWeiboName}
+                                        onChange={e => setRegisterWeiboName(e.target.value)}
+                                        placeholder="请输入微博昵称"
                                         style={{
                                             flex: 1,
                                             padding: "12px 14px 12px 8px",
@@ -10787,31 +10810,7 @@ export default function PhonePage() {
                                 </div>
                             </div>
                         )}
-                        {/* 申请管理员复选框（仅注册时显示） */}
-                        {loginMode === "register" && (
-                            <label style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                                marginBottom: 14,
-                                padding: "10px 14px",
-                                background: "rgba(46,125,50,0.05)",
-                                border: "1px solid rgba(46,125,50,0.15)",
-                                borderRadius: 10,
-                                cursor: "pointer",
-                                fontSize: 13,
-                                color: "#2e5c33"
-                            }}>
-                                <input
-                                    type="checkbox"
-                                    checked={requestAdmin}
-                                    onChange={(e) => setRequestAdmin(e.target.checked)}
-                                    style={{ width: 16, height: 16, accentColor: "#2e7d32" }}
-                                />
-                                <span>申请管理员权限（需现有管理员审批）</span>
-                            </label>
-                        )}
-                        {/* 管理员待审批提示 */}
+                        {/* 注册成功待审核提示 */}
                         {adminPendingMsg && (
                             <div style={{
                                 background: "rgba(46,125,50,0.06)",
