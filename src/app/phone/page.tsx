@@ -44,6 +44,7 @@ import {
 import { ForumApp } from "@/components/forum-app";
 import { AdminApp } from "@/components/admin-app";
 import InviteApp from "@/components/invite-app";
+import UserProfileApp from "@/components/user-profile-app";
 
 
 interface Message {
@@ -1789,6 +1790,19 @@ export default function PhonePage() {
     const [accountMessage, setAccountMessage] = useState("");
     const [dockAppIds, setDockAppIds] = useState<string[]>(DEFAULT_DOCK_APP_IDS);
     const [isDockReplacing, setIsDockReplacing] = useState(false);
+    const [viewingUserProfile, setViewingUserProfile] = useState<string | null>(null);
+    const [wallpaper, setWallpaper] = useState<string>("default");
+
+    const WALLPAPER_PRESETS: Record<string, string> = {
+        default: "linear-gradient(175deg, #f0f7f2 0%, #e8f3eb 30%, #dceee2 60%, #d4e8da 100%)",
+        fresh: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%)",
+        mint: "linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 50%, #80cbc4 100%)",
+        sky: "linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 50%, #81d4fa 100%)",
+        blush: "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 50%, #ffcc80 100%)",
+        dusk: "linear-gradient(135deg, #f3e5f5 0%, #e1bee7 50%, #ce93d8 100%)",
+        dots: "radial-gradient(circle, rgba(90,158,106,0.12) 2px, transparent 2px), linear-gradient(175deg, #f0f7f2 0%, #e8f3eb 100%)",
+        lines: "repeating-linear-gradient(45deg, rgba(90,158,106,0.06) 0, rgba(90,158,106,0.06) 1px, transparent 1px, transparent 12px), linear-gradient(175deg, #f0f7f2 0%, #e8f3eb 100%)"
+    };
 
     interface WeiboAccount {
         nickname: string;
@@ -2084,6 +2098,16 @@ export default function PhonePage() {
         } catch {}
     }, []);
 
+    // 加载壁纸配置
+    useEffect(() => {
+        try {
+            const savedWallpaper = localStorage.getItem("phone_wallpaper_v1");
+            if (savedWallpaper && WALLPAPER_PRESETS[savedWallpaper]) {
+                setWallpaper(savedWallpaper);
+            }
+        } catch {}
+    }, []);
+
     // 监听 iframe 消息（关闭 APP）
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -2116,7 +2140,7 @@ export default function PhonePage() {
         }
     }, [loginUsername]);
 
-    const [meSubPage, setMeSubPage] = useState<"main" | "settings" | "identity" | "unlock" | "about" | "invite" | "account">("main");
+    const [meSubPage, setMeSubPage] = useState<"main" | "settings" | "identity" | "unlock" | "about" | "invite" | "account" | "wallpaper" | "theme">("main");
     const [identityStep, setIdentityStep] = useState(0);
     const [debugMode, setDebugMode] = useState(false);
     const [debugLevel, setDebugLevel] = useState<number | "all" | null>(null);
@@ -8441,6 +8465,16 @@ export default function PhonePage() {
                         <span className="me-menu-label">账户设置</span>
                         <span className="me-menu-arrow">›</span>
                     </div>
+                    <div className="me-menu-item" onClick={() => setMeSubPage("wallpaper")}>
+                        <span className="me-menu-icon">🖼️</span>
+                        <span className="me-menu-label">壁纸</span>
+                        <span className="me-menu-arrow">›</span>
+                    </div>
+                    <div className="me-menu-item" onClick={() => setMeSubPage("theme")}>
+                        <span className="me-menu-icon">🎨</span>
+                        <span className="me-menu-label">主题</span>
+                        <span className="me-menu-arrow">›</span>
+                    </div>
                     <div className="me-menu-item" onClick={() => setMeSubPage("unlock")}>
                         <span className="me-menu-icon">{unlockState.unlocked ? "🔓" : "🔒"}</span>
                         <span className="me-menu-label">{unlockState.unlocked ? "身份已解锁" : "暗号解锁"}</span>
@@ -8608,6 +8642,86 @@ export default function PhonePage() {
             );
         }
 
+        if (meSubPage === "wallpaper") {
+            const WALLPAPER_OPTIONS: { key: string; label: string; emoji: string }[] = [
+                { key: "default", label: "默认浅绿", emoji: "🌿" },
+                { key: "fresh", label: "清新绿意", emoji: "🍃" },
+                { key: "mint", label: "薄荷清凉", emoji: "🧊" },
+                { key: "sky", label: "天空之蓝", emoji: "☁️" },
+                { key: "blush", label: "暖阳橙粉", emoji: "🌅" },
+                { key: "dusk", label: "薄暮紫霞", emoji: "🌆" },
+                { key: "dots", label: "绿意波点", emoji: "🔘" },
+                { key: "lines", label: "斜纹绿意", emoji: "📐" }
+            ];
+
+            return (
+                <div style={{ padding: 16, display: "flex", flexDirection: "column", height: "100%" }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#3d5c45", marginBottom: 16, textAlign: "center" }}>🖼️ 壁纸设置</div>
+                    <div style={{ flex: 1, overflowY: "auto" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                            {WALLPAPER_OPTIONS.map((option) => (
+                                <button
+                                    key={option.key}
+                                    onClick={() => {
+                                        setWallpaper(option.key);
+                                        try {
+                                            localStorage.setItem("phone_wallpaper_v1", option.key);
+                                        } catch {}
+                                    }}
+                                    style={{
+                                        padding: 12,
+                                        borderRadius: 16,
+                                        border: wallpaper === option.key ? "2px solid #2e7d32" : "1px solid rgba(255,255,255,0.5)",
+                                        background: "rgba(255,255,255,0.65)",
+                                        backdropFilter: "blur(12px)",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        cursor: "pointer"
+                                    }}
+                                >
+                                    <div style={{
+                                        width: "100%",
+                                        aspectRatio: "9/16",
+                                        borderRadius: 10,
+                                        background: WALLPAPER_PRESETS[option.key],
+                                        boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.05)"
+                                    }} />
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: "#3d5c45" }}>{option.emoji} {option.label}</span>
+                                    {wallpaper === option.key && <span style={{ fontSize: 11, color: "#2e7d32" }}>✓ 使用中</span>}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <button
+                        className="identity-btn"
+                        onClick={() => setMeSubPage("main")}
+                        style={{ width: "100%", background: "#e5e7eb", color: "#3d5c45", marginTop: 12 }}>← 返回
+                    </button>
+                </div>
+            );
+        }
+
+        if (meSubPage === "theme") {
+            return (
+                <div style={{ padding: 16, display: "flex", flexDirection: "column", height: "100%", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: "#3d5c45", marginBottom: 8, textAlign: "center" }}>主题系统</div>
+                    <div style={{ fontSize: 13, color: "#4a7c50", textAlign: "center", lineHeight: 1.6, marginBottom: 24 }}>
+                        自定义时间字体、APP框外观、图标外观、装饰物品<br />
+                        装饰物品可用米米币兑换
+                    </div>
+                    <div style={{ padding: "12px 24px", borderRadius: 20, background: "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", fontSize: 14, fontWeight: 600, color: "#5a9e6a" }}>敬请期待</div>
+                    <button
+                        className="identity-btn"
+                        onClick={() => setMeSubPage("main")}
+                        style={{ width: "100%", background: "#e5e7eb", color: "#3d5c45", marginTop: 32 }}>← 返回
+                    </button>
+                </div>
+            );
+        }
+
         const displayName = unlockState.userIdentity.name || "小甜玉米";
         const displayNick = unlockState.userIdentity.nickname;
 
@@ -8670,6 +8784,11 @@ export default function PhonePage() {
                     <div className="me-menu-item" onClick={() => setMeSubPage("invite")}>
                         <span className="me-menu-icon">🎟️</span>
                         <span className="me-menu-label">我的邀请码</span>
+                        <span className="me-menu-arrow">›</span>
+                    </div>
+                    <div className="me-menu-item" onClick={() => { setViewingUserProfile(loginUsername); setCurrentApp("user-profile"); }}>
+                        <span className="me-menu-icon">👤</span>
+                        <span className="me-menu-label">我的主页</span>
                         <span className="me-menu-arrow">›</span>
                     </div>
                     <div className="me-menu-item" onClick={() => setMeSubPage("settings")}>
@@ -9956,6 +10075,8 @@ export default function PhonePage() {
             return renderExternalApp("miniworkshop", "迷你小作坊", "/mimi/mimi_university_new1/index.html?workshopOnly=true");
         case "forum":
             return renderForum();
+        case "user-profile":
+            return renderUserProfile();
         case "admin":
             return <AdminApp adminRole={adminRole} onClose={() => setCurrentApp(null)} />;
         default:
@@ -9964,7 +10085,30 @@ export default function PhonePage() {
     }
 
     function renderForum() {
-        return <ForumApp onClose={() => setCurrentApp(null)} isAdmin={isAdmin} loginUsername={loginUsername} />;
+        return (
+            <ForumApp
+                onClose={() => setCurrentApp(null)}
+                isAdmin={isAdmin}
+                loginUsername={loginUsername}
+                onViewUserProfile={(username) => {
+                    setViewingUserProfile(username);
+                    setCurrentApp("user-profile");
+                }}
+            />
+        );
+    }
+
+    function renderUserProfile() {
+        return (
+            <UserProfileApp
+                username={viewingUserProfile || loginUsername}
+                isSelf={viewingUserProfile === loginUsername || !viewingUserProfile}
+                onClose={() => {
+                    setViewingUserProfile(null);
+                    setCurrentApp("forum");
+                }}
+            />
+        );
     }
 
     function renderWeiboVerifyScreen() {
@@ -12237,7 +12381,7 @@ export default function PhonePage() {
     };
 
     return (
-        <div className="phone-page">
+        <div className="phone-page" style={{ background: WALLPAPER_PRESETS[wallpaper] }}>
             {}
             {showInfoPanel && <div className="info-panel">
                 {isAdmin && <div

@@ -18,6 +18,8 @@ interface ForumPost {
     isPinned: boolean;
     isLocked: boolean;
     replies: ForumReply[];
+    likes: number;
+    favorites: number;
 }
 
 interface ForumReply {
@@ -116,6 +118,8 @@ const MOCK_POSTS: ForumPost[] = [
         createdAt: "2024-01-01 10:00",
         lastReplyAt: "2024-01-15 14:30",
         status: "normal",
+        likes: 128,
+        favorites: 56,
         isEssence: true,
         isPinned: true,
         isLocked: true,
@@ -155,6 +159,8 @@ const MOCK_POSTS: ForumPost[] = [
         createdAt: "2024-01-10 09:00",
         lastReplyAt: "2024-01-15 16:45",
         status: "normal",
+        likes: 356,
+        favorites: 128,
         isEssence: true,
         isPinned: false,
         isLocked: false,
@@ -205,6 +211,8 @@ const MOCK_POSTS: ForumPost[] = [
         createdAt: "2024-01-12 20:00",
         lastReplyAt: "2024-01-15 12:00",
         status: "normal",
+        likes: 89,
+        favorites: 34,
         isEssence: false,
         isPinned: false,
         isLocked: false,
@@ -234,6 +242,8 @@ const MOCK_POSTS: ForumPost[] = [
         createdAt: "2024-01-13 15:00",
         lastReplyAt: "2024-01-15 18:30",
         status: "normal",
+        likes: 245,
+        favorites: 78,
         isEssence: false,
         isPinned: false,
         isLocked: false,
@@ -251,6 +261,8 @@ const MOCK_POSTS: ForumPost[] = [
         createdAt: "2024-01-14 10:00",
         lastReplyAt: "2024-01-15 20:00",
         status: "normal",
+        likes: 167,
+        favorites: 56,
         isEssence: false,
         isPinned: false,
         isLocked: false,
@@ -263,14 +275,15 @@ interface ForumAppProps {
     onClose?: () => void;
     isAdmin?: boolean;
     loginUsername?: string;
+    onViewUserProfile?: (username: string) => void;
 }
 
-export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: ForumAppProps = {}) {
+export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewUserProfile }: ForumAppProps = {}) {
     const [view, setView] = useState<"sections" | "posts" | "postDetail" | "newPost" | "search">("sections");
     const [currentSection, setCurrentSection] = useState<string | null>(null);
     const [currentPost, setCurrentPost] = useState<ForumPost | null>(null);
     const [posts, setPosts] = useState<ForumPost[]>(MOCK_POSTS);
-    const [sortBy, setSortBy] = useState<"lastReply" | "newest" | "hot" | "essence">("lastReply");
+    const [sortBy, setSortBy] = useState<"latest" | "hot" | "essence">("latest");
     const [searchQuery, setSearchQuery] = useState("");
     const [searchType, setSearchType] = useState<"post" | "user">("post");
     const [searchFilter, setSearchFilter] = useState<{ section: string; time: string; essenceOnly: boolean }>({
@@ -293,6 +306,27 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: Forum
     const [reportPostId, setReportPostId] = useState<string | null>(null);
     const [reportType, setReportType] = useState("");
     const [reportDesc, setReportDesc] = useState("");
+
+    // 用户点赞/收藏记录
+    const userKey = loginUsername || "guest";
+    const [likedPostIds, setLikedPostIds] = useState<string[]>(() => {
+        if (typeof window === "undefined") return [];
+        try {
+            const raw = localStorage.getItem(`forum_likes_${userKey}`);
+            return raw ? JSON.parse(raw) : [];
+        } catch {
+            return [];
+        }
+    });
+    const [favoritedPostIds, setFavoritedPostIds] = useState<string[]>(() => {
+        if (typeof window === "undefined") return [];
+        try {
+            const raw = localStorage.getItem(`forum_favorites_${userKey}`);
+            return raw ? JSON.parse(raw) : [];
+        } catch {
+            return [];
+        }
+    });
 
     // 官方通知（仅管理员可发布，所有用户可见）
     const [officialNotices, setOfficialNotices] = useState<OfficialNotice[]>(() => {
@@ -360,17 +394,15 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: Forum
 
         let sorted = unpinned;
         switch (sortBy) {
-            case "newest":
+            case "latest":
                 sorted = [...unpinned].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 break;
             case "hot":
-                sorted = [...unpinned].sort((a, b) => b.replyCount - a.replyCount);
+                sorted = [...unpinned].sort((a, b) => (b.likes + b.viewCount) - (a.likes + a.viewCount));
                 break;
             case "essence":
-                sorted = unpinned.filter(p => p.isEssence);
+                sorted = [...unpinned].filter(p => p.isEssence).sort((a, b) => (b.likes + b.viewCount) - (a.likes + a.viewCount));
                 break;
-            default: // lastReply
-                sorted = [...unpinned].sort((a, b) => new Date(b.lastReplyAt).getTime() - new Date(a.lastReplyAt).getTime());
         }
 
         return [...pinned, ...sorted];
@@ -415,6 +447,48 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: Forum
         } catch {}
     }, [bugReports]);
 
+    const incrementViewCount = useCallback((postId: string): ForumPost | undefined => {
+        let updated: ForumPost | undefined;
+        setPosts(prev => prev.map(p => {
+            if (p.id !== postId) return p;
+            updated = { ...p, viewCount: p.viewCount + 1 };
+            return updated;
+        }));
+        setBugReports(prev => prev.map(p => {
+            if (p.id !== postId) return p;
+            const bugUpdated = { ...p, viewCount: p.viewCount + 1 };
+            updated = bugUpdated;
+            return bugUpdated;
+        }));
+        return updated;
+    }, []);
+
+    const toggleLike = useCallback((postId: string) => {
+        const liked = likedPostIds.includes(postId);
+        setLikedPostIds(prev => liked ? prev.filter(id => id !== postId) : [...prev, postId]);
+        setPosts(prev => prev.map(p => {
+            if (p.id !== postId) return p;
+            return { ...p, likes: Math.max(0, p.likes + (liked ? -1 : 1)) };
+        }));
+        setBugReports(prev => prev.map(p => {
+            if (p.id !== postId) return p;
+            return { ...p, likes: Math.max(0, p.likes + (liked ? -1 : 1)) };
+        }));
+    }, [likedPostIds]);
+
+    const toggleFavorite = useCallback((postId: string) => {
+        const favorited = favoritedPostIds.includes(postId);
+        setFavoritedPostIds(prev => favorited ? prev.filter(id => id !== postId) : [...prev, postId]);
+        setPosts(prev => prev.map(p => {
+            if (p.id !== postId) return p;
+            return { ...p, favorites: Math.max(0, p.favorites + (favorited ? -1 : 1)) };
+        }));
+        setBugReports(prev => prev.map(p => {
+            if (p.id !== postId) return p;
+            return { ...p, favorites: Math.max(0, p.favorites + (favorited ? -1 : 1)) };
+        }));
+    }, [favoritedPostIds]);
+
     // 发帖
     const handleCreatePost = useCallback(() => {
         if (!newPostTitle.trim() || !newPostContent.trim() || !newPostSection) return;
@@ -429,6 +503,8 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: Forum
             section: newPostSection,
             replyCount: 0,
             viewCount: 0,
+            likes: 0,
+            favorites: 0,
             createdAt: now,
             lastReplyAt: now,
             status: "normal",
@@ -872,14 +948,13 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: Forum
                     overflowX: "auto"
                 }}>
                     {[
-                        { key: "lastReply", label: "最新回复" },
-                        { key: "newest", label: "最新发布" },
-                        { key: "hot", label: "热门" },
-                        { key: "essence", label: "精华" }
+                        { key: "latest", label: "最新发布" },
+                        { key: "hot", label: "最热帖子" },
+                        { key: "essence", label: "精华帖子" }
                     ].map(item => (
                         <button
                             key={item.key}
-                            onClick={() => setSortBy(item.key as any)}
+                            onClick={() => setSortBy(item.key as "latest" | "hot" | "essence")}
                             style={{
                                 padding: "6px 14px",
                                 background: sortBy === item.key ? "#f97316" : "#f5f5f5",
@@ -910,7 +985,8 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: Forum
                             <div
                                 key={post.id}
                                 onClick={() => {
-                                    setCurrentPost(post);
+                                    const updated = incrementViewCount(post.id) || post;
+                                    setCurrentPost(updated);
                                     setView("postDetail");
                                 }}
                                 style={{
@@ -932,7 +1008,13 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: Forum
                                 {/* 作者信息 */}
                                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                                     <span style={{ fontSize: 18 }}>{post.authorAvatar}</span>
-                                    <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 500 }}>{post.author}</span>
+                                    <span
+                                      style={{ fontSize: 13, color: "#6b7280", fontWeight: 500, cursor: onViewUserProfile ? "pointer" : "default" }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onViewUserProfile?.(post.author);
+                                      }}
+                                    >{post.author}</span>
                                     <span style={{ fontSize: 12, color: "#d1d5db" }}>·</span>
                                     <span style={{ fontSize: 12, color: "#9ca3af" }}>{post.createdAt}</span>
                                 </div>
@@ -945,7 +1027,9 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: Forum
                                     color: "#9ca3af"
                                 }}>
                                     <span>💬 {post.replyCount} 回复</span>
-                                    <span> {post.viewCount} 浏览</span>
+                                    <span>👁 {post.viewCount} 浏览</span>
+                                    <span>👍 {post.likes} 赞</span>
+                                    <span>⭐ {post.favorites} 收藏</span>
                                     <span style={{ marginLeft: "auto" }}>最后回复 {post.lastReplyAt}</span>
                                 </div>
                             </div>
@@ -1065,6 +1149,26 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: Forum
                             borderTop: "1px solid #f3f4f6",
                             paddingTop: 12
                         }}>
+                            <span
+                                onClick={() => toggleLike(currentPost.id)}
+                                style={{
+                                    cursor: "pointer",
+                                    color: likedPostIds.includes(currentPost.id) ? "#ef4444" : "#6b7280",
+                                    fontWeight: likedPostIds.includes(currentPost.id) ? 700 : 400
+                                }}
+                            >
+                                {likedPostIds.includes(currentPost.id) ? "❤️" : "🤍"} {currentPost.likes}
+                            </span>
+                            <span
+                                onClick={() => toggleFavorite(currentPost.id)}
+                                style={{
+                                    cursor: "pointer",
+                                    color: favoritedPostIds.includes(currentPost.id) ? "#f59e0b" : "#6b7280",
+                                    fontWeight: favoritedPostIds.includes(currentPost.id) ? 700 : 400
+                                }}
+                            >
+                                {favoritedPostIds.includes(currentPost.id) ? "⭐" : "☆"} {currentPost.favorites}
+                            </span>
                             <span>💬 {currentPost.replyCount} 回复</span>
                             <span>👁 {currentPost.viewCount} 浏览</span>
                         </div>
@@ -1679,7 +1783,8 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: Forum
                             <div
                                 key={post.id}
                                 onClick={() => {
-                                    setCurrentPost(post);
+                                    const updated = incrementViewCount(post.id) || post;
+                                    setCurrentPost(updated);
                                     setView("postDetail");
                                 }}
                                 style={{
@@ -1697,7 +1802,13 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: Forum
                                 </div>
                                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                                     <span style={{ fontSize: 18 }}>{post.authorAvatar}</span>
-                                    <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 500 }}>{post.author}</span>
+                                    <span
+                                      style={{ fontSize: 13, color: "#6b7280", fontWeight: 500, cursor: onViewUserProfile ? "pointer" : "default" }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onViewUserProfile?.(post.author);
+                                      }}
+                                    >{post.author}</span>
                                     <span style={{ fontSize: 12, color: "#d1d5db" }}>·</span>
                                     <span style={{ fontSize: 12, color: "#9ca3af" }}>{getSection(post.section)?.name}</span>
                                 </div>
