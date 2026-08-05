@@ -24,14 +24,22 @@ async function getUserByToken(
   authToken: string
 ): Promise<{ user: Record<string, unknown>; session: Record<string, unknown> } | null> {
   const { data: session } = await supabase
-    .from("sessions")
-    .select("*, users(*)")
+    .from("user_sessions")
+    .select("*")
     .eq("token", authToken)
     .gte("expires_at", new Date().toISOString())
     .single();
 
   if (!session) return null;
-  return { user: session.users as Record<string, unknown>, session };
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", session.user_id as string)
+    .single();
+
+  if (!user) return null;
+  return { user, session };
 }
 
 async function createDefaultInviteCodes(
@@ -249,10 +257,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      await supabase.from("sessions").delete().eq("user_id", user.id);
+      await supabase.from("user_sessions").delete().eq("user_id", user.id);
 
       const newToken = randomUUID();
-      const { error: sessionError } = await supabase.from("sessions").insert({
+      const { error: sessionError } = await supabase.from("user_sessions").insert({
         user_id: user.id,
         token: newToken,
         device_info: deviceInfo || "未知设备",
@@ -326,7 +334,7 @@ export async function POST(request: NextRequest) {
     // ========== 登出 ==========
     if (action === "logout") {
       if (token) {
-        await supabase.from("sessions").delete().eq("token", token);
+        await supabase.from("user_sessions").delete().eq("token", token);
       }
       return NextResponse.json({ success: true });
     }
@@ -569,7 +577,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      await supabase.from("sessions").delete().eq("user_id", user.id);
+      await supabase.from("user_sessions").delete().eq("user_id", user.id);
 
       return NextResponse.json({
         success: true,

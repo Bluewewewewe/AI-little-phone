@@ -2205,6 +2205,22 @@ export default function PhonePage() {
         }
     }, [mounted]);
 
+    useEffect(() => {
+        if (!mounted)
+            return;
+        if (typeof document === "undefined")
+            return;
+        const appContent = document.querySelector(".app-content") as HTMLElement | null;
+        if (appContent)
+            appContent.scrollTop = 0;
+        const iframes = document.querySelectorAll(".external-app-cache-iframe");
+        iframes.forEach((iframe) => {
+            const el = iframe as HTMLIFrameElement;
+            if (el.contentWindow)
+                el.contentWindow.scrollTo(0, 0);
+        });
+    }, [currentApp, mounted]);
+
     const knobDragStart = useRef<{ x: number; y: number; posX: number; posY: number } | null>(null);
     const knobRef = useRef<HTMLDivElement | null>(null);
 
@@ -9091,6 +9107,7 @@ export default function PhonePage() {
                 </div>
                 <div style={{ flex: 1, position: "relative" }}>
                     <iframe
+                        className="external-app-cache-iframe"
                         src={urlMimi}
                         title="米米课程表"
                         style={{
@@ -9104,6 +9121,7 @@ export default function PhonePage() {
                         }}
                     />
                     <iframe
+                        className="external-app-cache-iframe"
                         src={urlWorkshop}
                         title="迷你小作坊"
                         style={{
