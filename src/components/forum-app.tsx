@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 // ============ 类型定义 ============
 interface ForumPost {
@@ -93,6 +93,44 @@ function loadBugReports(): ForumPost[] {
 function saveBugReports(reports: ForumPost[]) {
     if (typeof window === "undefined") return;
     localStorage.setItem("forum_bug_reports", JSON.stringify(reports));
+}
+
+function loadCustomSections(): ForumSection[] {
+    if (typeof window === "undefined") return [];
+    try {
+        const raw = localStorage.getItem("forum_custom_sections");
+        if (raw) return JSON.parse(raw) as ForumSection[];
+    } catch {}
+    return [];
+}
+
+function saveCustomSections(sections: ForumSection[]) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("forum_custom_sections", JSON.stringify(sections));
+}
+
+function loadCoins(username: string): number {
+    if (typeof window === "undefined") return 1000;
+    try {
+        const raw = localStorage.getItem(`mimi_coins_${username}`);
+        return raw ? Number(raw) : 1000;
+    } catch {
+        return 1000;
+    }
+}
+
+function saveCoins(username: string, amount: number) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(`mimi_coins_${username}`, String(Math.max(0, amount)));
+}
+
+function transferCoins(from: string, to: string, amount: number): boolean {
+    if (!from || !to || from === to || amount <= 0) return false;
+    const fromBalance = loadCoins(from);
+    if (fromBalance < amount) return false;
+    saveCoins(from, fromBalance - amount);
+    saveCoins(to, loadCoins(to) + amount);
+    return true;
 }
 
 // ============ Mock 数据 ============
@@ -351,6 +389,20 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
         }
     });
 
+    // 板块列表（支持管理员创建自定义板块）
+    const [customSections, setCustomSections] = useState<ForumSection[]>(() => loadCustomSections());
+    const sections = useMemo(() => [...MOCK_SECTIONS, ...customSections], [customSections]);
+    const [showSectionForm, setShowSectionForm] = useState(false);
+    const [newSectionName, setNewSectionName] = useState("");
+    const [newSectionDesc, setNewSectionDesc] = useState("");
+    const [newSectionIcon, setNewSectionIcon] = useState("📁");
+
+    // 打赏/奖励输入
+    const [showRewardForm, setShowRewardForm] = useState(false);
+    const [rewardAmount, setRewardAmount] = useState("");
+    const [rewardMessage, setRewardMessage] = useState("");
+    const [rewardAdminMode, setRewardAdminMode] = useState(false);
+
     // 发布官方通知（仅admin）
     const handlePublishNotice = () => {
         const title = newNoticeTitle.trim();
@@ -371,8 +423,68 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
         setShowNoticeForm(false);
     };
 
+    // 创建板块（仅管理员）
+    const handleCreateSection = () => {
+        const name = newSectionName.trim();
+        const desc = newSectionDesc.trim();
+        if (!name) return;
+        const id = `custom_${Date.now()}`;
+        const section: ForumSection = {
+            id,
+            icon: newSectionIcon || "📁",
+            name,
+            desc: desc || "社区板块",
+            postCount: 0
+        };
+        setCustomSections(prev => [...prev, section]);
+        setNewSectionName("");
+        setNewSectionDesc("");
+        setNewSectionIcon("📁");
+        setShowSectionForm(false);
+    };
+
+    // 管理员加精/取消加精
+    const toggleEssence = (postId: string) => {
+        setPosts(prev => prev.map(p => p.id === postId ? { ...p, isEssence: !p.isEssence } : p));
+        setCurrentPost(prev => prev && prev.id === postId ? { ...prev, isEssence: !prev.isEssence } : prev);
+    };
+
+    // 打赏/奖励作者米米币
+    const handleReward = (isAdminReward = false) => {
+        if (!currentPost) return;
+        const amount = Number(rewardAmount);
+        if (!amount || amount <= 0) {
+            setRewardMessage("请输入有效金额");
+            return;
+        }
+        const from = isAdminReward ? "system" : (loginUsername || "guest");
+        const to = currentPost.author;
+        if (!isAdminReward && from === to) {
+            setRewardMessage("不能打赏自己");
+            return;
+        }
+        if (isAdminReward) {
+            // 管理员奖励：系统发放
+            saveCoins(to, loadCoins(to) + amount);
+            setRewardMessage(`已奖励作者 ${amount} 米米币`);
+        } else {
+            // 用户打赏
+            if (transferCoins(from, to, amount)) {
+                setRewardMessage(`打赏成功，已转给作者 ${amount} 米米币`);
+            } else {
+                setRewardMessage("米米币不足");
+                return;
+            }
+        }
+        setTimeout(() => {
+            setShowRewardForm(false);
+            setRewardAmount("");
+            setRewardMessage("");
+        }, 1200);
+    };
+
     // 获取板块信息
-    const getSection = (id: string) => MOCK_SECTIONS.find(s => s.id === id);
+    const getSection = (id: string) => sections.find(s => s.id === id);
 
     // 过滤和排序帖子
     const getFilteredPosts = () => {
@@ -446,6 +558,12 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
             localStorage.setItem("forum_bug_reports", JSON.stringify(bugReports));
         } catch {}
     }, [bugReports]);
+
+    useEffect(() => {
+        try {
+            saveCustomSections(customSections);
+        } catch {}
+    }, [customSections]);
 
     const incrementViewCount = useCallback((postId: string): ForumPost | undefined => {
         let updated: ForumPost | undefined;
@@ -834,7 +952,92 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
 
             {/* 板块列表 */}
             <div style={{ flex: 1, overflow: "auto", padding: "12px 16px" }}>
-                {MOCK_SECTIONS.map(section => (
+                {isAdmin && (
+                    <div style={{ marginBottom: 12 }}>
+                        <button
+                            onClick={() => setShowSectionForm(!showSectionForm)}
+                            style={{
+                                width: "100%",
+                                padding: "10px 14px",
+                                background: showSectionForm ? "#fff" : "#e8f5e9",
+                                border: "1px solid #b8dcc4",
+                                borderRadius: 12,
+                                fontSize: 14,
+                                color: "#2e5c33",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 6
+                            }}>
+                            <span>{showSectionForm ? "取消" : "➕ 创建新板块"}</span>
+                        </button>
+                    </div>
+                )}
+
+                {showSectionForm && isAdmin && (
+                    <div style={{ marginBottom: 12, padding: 12, background: "#fff", borderRadius: 12, border: "1px solid #eee" }}>
+                        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                            <input
+                                type="text"
+                                placeholder="图标 Emoji"
+                                value={newSectionIcon}
+                                onChange={e => setNewSectionIcon(e.target.value)}
+                                style={{
+                                    width: 60,
+                                    padding: "8px 10px",
+                                    border: "1px solid #ddd",
+                                    borderRadius: 8,
+                                    fontSize: 14,
+                                    textAlign: "center"
+                                }}
+                            />
+                            <input
+                                type="text"
+                                placeholder="板块名称"
+                                value={newSectionName}
+                                onChange={e => setNewSectionName(e.target.value)}
+                                style={{
+                                    flex: 1,
+                                    padding: "8px 10px",
+                                    border: "1px solid #ddd",
+                                    borderRadius: 8,
+                                    fontSize: 14
+                                }}
+                            />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="板块描述（可选）"
+                            value={newSectionDesc}
+                            onChange={e => setNewSectionDesc(e.target.value)}
+                            style={{
+                                width: "100%",
+                                padding: "8px 10px",
+                                marginBottom: 8,
+                                border: "1px solid #ddd",
+                                borderRadius: 8,
+                                fontSize: 14
+                            }}
+                        />
+                        <button
+                            onClick={handleCreateSection}
+                            style={{
+                                width: "100%",
+                                padding: 10,
+                                background: "#2e7d32",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 8,
+                                fontSize: 14,
+                                cursor: "pointer"
+                            }}>
+                            确认创建
+                        </button>
+                    </div>
+                )}
+
+                {[...MOCK_SECTIONS, ...customSections].map(section => (
                     <div
                         key={section.id}
                         onClick={() => {
@@ -1172,6 +1375,67 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                             <span>💬 {currentPost.replyCount} 回复</span>
                             <span>👁 {currentPost.viewCount} 浏览</span>
                         </div>
+
+                        {/* 作者名与互动操作 */}
+                        <div style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 8,
+                            marginTop: 12,
+                            paddingTop: 12,
+                            borderTop: "1px solid #f3f4f6"
+                        }}>
+                            <button
+                                onClick={() => onViewUserProfile?.(currentPost.author)}
+                                style={{
+                                    background: "#f5f5f5",
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "6px 12px",
+                                    fontSize: 13,
+                                    color: "#6b7280",
+                                    cursor: "pointer"
+                                }}>👤 查看主页</button>
+                            {isAdmin && (
+                                <button
+                                    onClick={() => toggleEssence(currentPost.id)}
+                                    style={{
+                                        background: currentPost.isEssence ? "#fff7ed" : "#f5f5f5",
+                                        border: "none",
+                                        borderRadius: 8,
+                                        padding: "6px 12px",
+                                        fontSize: 13,
+                                        color: currentPost.isEssence ? "#f97316" : "#6b7280",
+                                        cursor: "pointer"
+                                    }}>{currentPost.isEssence ? "⭐ 取消精华" : "⭐ 设为精华"}</button>
+                            )}
+                            {isAdmin && (
+                                <button
+                                    onClick={() => { setShowRewardForm(true); setRewardAdminMode(true); setRewardAmount(""); setRewardMessage(""); }}
+                                    style={{
+                                        background: "#f5f5f5",
+                                        border: "none",
+                                        borderRadius: 8,
+                                        padding: "6px 12px",
+                                        fontSize: 13,
+                                        color: "#6b7280",
+                                        cursor: "pointer"
+                                    }}>🎁 奖励作者</button>
+                            )}
+                            {loginUsername && loginUsername !== currentPost.author && (
+                                <button
+                                    onClick={() => { setShowRewardForm(true); setRewardAdminMode(false); setRewardAmount(""); setRewardMessage(""); }}
+                                    style={{
+                                        background: "#fff7ed",
+                                        border: "none",
+                                        borderRadius: 8,
+                                        padding: "6px 12px",
+                                        fontSize: 13,
+                                        color: "#f97316",
+                                        cursor: "pointer"
+                                    }}>🍬 打赏作者</button>
+                            )}
+                        </div>
                     </div>
 
                     {/* 回复列表 */}
@@ -1369,6 +1633,105 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                     </div>
                 )}
 
+                {/* 打赏/奖励弹窗 */}
+                {showRewardForm && currentPost && (
+                    <div style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(0,0,0,0.5)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 1001,
+                        padding: 20
+                    }}>
+                        <div style={{
+                            background: "#fff",
+                            borderRadius: 16,
+                            padding: 20,
+                            width: "100%",
+                            maxWidth: 360
+                        }}>
+                            <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 12 }}>
+                                {rewardAdminMode ? "🎁 奖励作者米米币" : "🍬 打赏作者"}
+                            </div>
+                            <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+                                作者：<strong>{currentPost.author}</strong>
+                                {!rewardAdminMode && loginUsername && (
+                                    <div style={{ marginTop: 4 }}>我的余额：{loadCoins(loginUsername)} 米米币</div>
+                                )}
+                            </div>
+                            <div style={{ marginBottom: 16 }}>
+                                <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 8 }}>金额</div>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={rewardAmount}
+                                    onChange={e => setRewardAmount(e.target.value)}
+                                    placeholder="请输入米米币数量"
+                                    style={{
+                                        width: "100%",
+                                        padding: 12,
+                                        border: "1px solid #e5e7eb",
+                                        borderRadius: 10,
+                                        fontSize: 15,
+                                        outline: "none",
+                                        boxSizing: "border-box"
+                                    }}
+                                />
+                            </div>
+                            {rewardMessage && (
+                                <div style={{
+                                    marginBottom: 14,
+                                    padding: "10px 12px",
+                                    background: rewardMessage.includes("不足") || rewardMessage.includes("不能") || rewardMessage.includes("有效")
+                                        ? "#fef2f2"
+                                        : "#f0fdf4",
+                                    color: rewardMessage.includes("不足") || rewardMessage.includes("不能") || rewardMessage.includes("有效")
+                                        ? "#ef4444"
+                                        : "#16a34a",
+                                    borderRadius: 8,
+                                    fontSize: 13
+                                }}>{rewardMessage}</div>
+                            )}
+                            <div style={{ display: "flex", gap: 10 }}>
+                                <button
+                                    onClick={() => {
+                                        setShowRewardForm(false);
+                                        setRewardAmount("");
+                                        setRewardMessage("");
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: 12,
+                                        background: "#f5f5f5",
+                                        color: "#666",
+                                        border: "none",
+                                        borderRadius: 10,
+                                        fontSize: 14,
+                                        cursor: "pointer"
+                                    }}>取消</button>
+                                <button
+                                    onClick={() => handleReward(rewardAdminMode)}
+                                    style={{
+                                        flex: 1,
+                                        padding: 12,
+                                        background: "#f97316",
+                                        color: "#fff",
+                                        border: "none",
+                                        borderRadius: 10,
+                                        fontSize: 14,
+                                        fontWeight: 600,
+                                        cursor: "pointer"
+                                    }}>确认{rewardAdminMode ? "奖励" : "打赏"}</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* 举报弹窗 */}
                 {reportPostId && (
                     <div style={{
@@ -1510,7 +1873,7 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: "#1f2937", marginBottom: 12 }}>选择板块</div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        {MOCK_SECTIONS.filter(s => s.id !== "announce").map(section => (
+                        {sections.filter(s => s.id !== "announce").map(section => (
                             <button
                                 key={section.id}
                                 onClick={() => setNewPostSection(section.id)}
@@ -1746,7 +2109,7 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                                 background: "#fff"
                             }}>
                             <option value="all">全部板块</option>
-                            {MOCK_SECTIONS.map(s => (
+                            {sections.map(s => (
                                 <option key={s.id} value={s.id}>{s.name}</option>
                             ))}
                         </select>

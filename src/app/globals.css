@@ -652,7 +652,17 @@ html, body {
 .app-title { font-size: 17px; font-weight: 600; color: #1a1a1a; margin-left: 4px; }
 
 /* App Content */
-.app-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.app-content > * {
+  flex: 1 1 auto;
+  min-height: 0;
+}
 
 /* Chat styles */
 .chat-list { padding: 4px 0; }
