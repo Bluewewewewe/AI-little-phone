@@ -137,6 +137,11 @@ body {
 }
 
 /* ========== Phone Simulator Styles ========== */
+html, body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 .phone-page {
   width: 100%; height: 100vh; overflow: hidden;
   display: flex; align-items: stretch; justify-content: flex-start;
@@ -254,7 +259,7 @@ body {
   background: transparent;
 }
 .home-screen.hidden { opacity: 0; transform: scale(0.95); pointer-events: none; }
-.home-content { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+.home-content { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 
 /* Status Bar */
 .status-bar {
@@ -281,7 +286,7 @@ body {
 }
 
 /* Big Clock */
-.big-clock { flex-shrink: 0; text-align: center; padding: 20px 0 6px 0; }
+.big-clock { flex-shrink: 0; text-align: center; padding: 6px 0 4px 0; }
 .big-time {
   font-size: 56px; font-weight: 200; color: #3d5c45;
   letter-spacing: 3px; line-height: 1;
@@ -290,7 +295,7 @@ body {
 .big-date { font-size: 13px; color: #5a7d64; margin-top: 6px; font-weight: 400; letter-spacing: 0.5px; }
 
 /* Parent Widgets */
-.parent-widgets { flex-shrink: 0; display: flex; gap: 10px; padding: 10px 20px; }
+.parent-widgets { flex-shrink: 0; display: flex; gap: 10px; padding: 6px 20px 8px; }
 .parent-widget {
   flex: 1; background: rgba(255,255,255,0.35);
   backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
@@ -352,10 +357,10 @@ body {
 .app-grid-wrapper { flex: 0 0 auto; overflow: visible; padding: 8px 20px; position: relative; display: flex; flex-direction: column; }
 .app-grid-slider { display: flex; transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94); will-change: transform; }
 .app-page-grid {
-  min-width: 100%; display: grid;
+  width: 100%; min-width: auto; display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(4, minmax(72px, auto));
-  gap: 8px 0; padding: 4px 0;
+  grid-template-rows: repeat(4, 1fr);
+  gap: 4px 0; padding: 4px 0;
   place-items: center center;
 }
 .app-icon {
@@ -440,13 +445,16 @@ body {
   min-width: 100%;
   flex: 0 0 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 20px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 4px 16px 8px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 .home-page .app-page-grid {
-  min-width: 100%;
+  width: 100%;
+  min-width: auto;
+  align-self: stretch;
 }
 
 /* Page indicator */
@@ -525,8 +533,8 @@ body {
   box-shadow: 0 2px 16px rgba(0,0,0,0.04);
 }
 .dock-icon {
-  display: flex; align-items: center; justify-content: center;
-  width: 48px; height: 48px; font-size: 24px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 48px; height: auto; padding: 4px 0 2px; font-size: 22px; gap: 1px;
   background: rgba(255,255,255,0.25);
   backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
   border: 1px solid rgba(255,255,255,0.35);
@@ -540,6 +548,7 @@ body {
   box-shadow: 0 6px 18px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.4);
 }
 .dock-icon:active { transform: scale(0.82); }
+.dock-label { font-size: 8px; color: #2e5c33; font-weight: 500; text-align: center; white-space: nowrap; }
 .dock-icon::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
   background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 100%);

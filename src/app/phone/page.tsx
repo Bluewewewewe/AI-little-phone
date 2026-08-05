@@ -600,6 +600,11 @@ const DOCK_APPS = [{
     id: "mixin",
     emoji: "💬",
     color: "#07c160"
+}, {
+    id: "settings",
+    emoji: "⚙️",
+    color: "#6b7280",
+    label: "设置"
 }];
 
 function getAppLabel(id: string, unlocked: boolean): string {
@@ -619,7 +624,8 @@ function getAppLabel(id: string, unlocked: boolean): string {
         mimicosmo: "米米课程表",
         miniworkshop: "迷你小作坊",
         forum: "社区论坛",
-        profile: "我的"
+        profile: "我的",
+        settings: "设置"
     };
 
     return map[id] || id;
@@ -3210,6 +3216,13 @@ export default function PhonePage() {
 
         if (isSecondPage && !isAdmin) {
             showToast("装修中，敬请期待");
+            return;
+        }
+
+        if (appId === "settings") {
+            setCurrentApp("me");
+            setMeSubPage("settings");
+            setAppClosing(false);
             return;
         }
 
@@ -12346,7 +12359,10 @@ export default function PhonePage() {
                     </div>
                     <div className="dock">
                         {DOCK_APPS.map(app => (
-                            <div key={app.id} className="dock-icon" onClick={() => openApp(app.id)}>{app.emoji}</div>
+                            <div key={app.id} className="dock-icon" onClick={() => openApp(app.id)}>
+                                <span>{app.emoji}</span>
+                                <span className="dock-label">{getAppLabel(app.id, true)}</span>
+                            </div>
                         ))}
                     </div>
                     <div className="home-indicator" onClick={() => setCurrentApp(null)} />
