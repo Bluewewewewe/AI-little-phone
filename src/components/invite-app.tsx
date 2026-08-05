@@ -28,7 +28,7 @@ export function InviteApp({ onClose, loginUsername = "", isAdmin = false }: Invi
   const [error, setError] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("mimi_token") || "" : "";
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "";
   const isSuperAdmin = loginUsername === "admin";
 
   useEffect(() => {

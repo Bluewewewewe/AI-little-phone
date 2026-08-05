@@ -23,6 +23,8 @@ export function AdminReviewApp({ loginUsername, onClose }: { loginUsername: stri
     const [rejectUser, setRejectUser] = useState<ReviewUser | null>(null);
     const [rejectReason, setRejectReason] = useState("");
 
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "";
+
     async function fetchPending() {
         setLoading(true);
         setError("");
@@ -30,7 +32,7 @@ export function AdminReviewApp({ loginUsername, onClose }: { loginUsername: stri
             const res = await fetch("/api/auth", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "list_pending_users" })
+                body: JSON.stringify({ action: "list_pending_users", token })
             });
             const result = await res.json();
             if (result.success && Array.isArray(result.data)) {
@@ -59,7 +61,7 @@ export function AdminReviewApp({ loginUsername, onClose }: { loginUsername: stri
             const res = await fetch("/api/auth", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "batch_approve_users", userIds: ids, reviewedBy: loginUsername })
+                body: JSON.stringify({ action: "batch_approve_users", userIds: ids, reviewedBy: loginUsername, token })
             });
             const result = await res.json();
             if (result.success) {
@@ -90,7 +92,8 @@ export function AdminReviewApp({ loginUsername, onClose }: { loginUsername: stri
                     action: "reject_user",
                     userId: user.id,
                     reason: rejectReason.trim(),
-                    reviewedBy: loginUsername
+                    reviewedBy: loginUsername,
+                    token
                 })
             });
             const result = await res.json();
