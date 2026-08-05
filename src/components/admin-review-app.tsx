@@ -144,7 +144,7 @@ export function AdminReviewApp({ loginUsername, onClose }: { loginUsername: stri
                 background: "rgba(255,255,255,0.8)",
                 backdropFilter: "blur(20px)",
                 borderBottom: "1px solid rgba(46,92,51,0.08)",
-                padding: "10px 14px",
+                padding: "24px 14px 10px 14px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between"

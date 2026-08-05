@@ -1836,6 +1836,9 @@ export default function PhonePage() {
     const [adminViewMode, setAdminViewMode] = useState<"admin" | "user">("admin");
     const [authToken, setAuthToken] = useState<string | null>(null);
     const [kickedMessage, setKickedMessage] = useState<string | null>(null);
+    const [knobPos, setKnobPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+    const [showKnobMenu, setShowKnobMenu] = useState(false);
+    const [knobDragging, setKnobDragging] = useState(false);
 
     // 新注册系统状态
     const [showAdminApp, setShowAdminApp] = useState(false);
@@ -2110,6 +2113,19 @@ export default function PhonePage() {
         } catch {}
     }, []);
 
+    // 加载悬浮旋钮位置
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem("mimi_knob_position_v1");
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+                    setKnobPos(parsed);
+                }
+            }
+        } catch {}
+    }, []);
+
     // 监听 iframe 消息（关闭 APP）
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -2188,6 +2204,66 @@ export default function PhonePage() {
             }
         }
     }, [mounted]);
+
+    const knobDragStart = useRef<{ x: number; y: number; posX: number; posY: number } | null>(null);
+    const knobRef = useRef<HTMLDivElement | null>(null);
+
+    const handleKnobPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setKnobDragging(true);
+        setShowKnobMenu(false);
+        knobDragStart.current = {
+            x: e.clientX,
+            y: e.clientY,
+            posX: knobPos.x,
+            posY: knobPos.y,
+        };
+        if (knobRef.current) {
+            knobRef.current.setPointerCapture(e.pointerId);
+        }
+    }, [knobPos.x, knobPos.y]);
+
+    const handleKnobPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+        if (!knobDragging || !knobDragStart.current) return;
+        const dx = e.clientX - knobDragStart.current.x;
+        const dy = e.clientY - knobDragStart.current.y;
+        setKnobPos({ x: knobDragStart.current.posX + dx, y: knobDragStart.current.posY + dy });
+    }, [knobDragging]);
+
+    const handleKnobPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+        setKnobDragging(false);
+        if (knobRef.current) {
+            knobRef.current.releasePointerCapture(e.pointerId);
+        }
+        try {
+            localStorage.setItem("mimi_knob_position_v1", JSON.stringify(knobPos));
+        } catch {}
+    }, [knobPos]);
+
+    const handleKnobClick = useCallback(() => {
+        if (knobDragging) return;
+        setShowKnobMenu((v) => !v);
+    }, [knobDragging]);
+
+    const handleKnobBack = useCallback(() => {
+        setShowKnobMenu(false);
+        if (currentApp) {
+            setAppClosing(true);
+            setTimeout(() => {
+                setCurrentApp(null);
+                setAppClosing(false);
+            }, 220);
+        }
+    }, [currentApp]);
+
+    const handleKnobHome = useCallback(() => {
+        setShowKnobMenu(false);
+        setAppClosing(true);
+        setTimeout(() => {
+            setCurrentApp(null);
+            setAppClosing(false);
+        }, 220);
+    }, []);
 
     const handleDebugTitleClick = useCallback(() => {
         if (!DEBUG_ENABLED || debugMode)
@@ -8909,34 +8985,38 @@ export default function PhonePage() {
             }}>
                 {/* Header */}
                 <div style={{
-                    padding: "12px 16px",
+                    padding: "22px 16px 12px 16px",
                     background: "rgba(255,255,255,0.8)",
                     backdropFilter: "blur(20px)",
                     borderBottom: "1px solid rgba(0,0,0,0.05)",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    position: "relative"
+                    justifyContent: "space-between",
+                    flexShrink: 0
                 }}>
                     <button
                         onClick={() => setCurrentApp(null)}
                         style={{
-                            position: "absolute",
-                            left: "16px",
                             background: "none",
                             border: "none",
-                            fontSize: "16px",
-                            color: "#7c3aed",
+                            fontSize: "15px",
+                            color: "#5a9e6a",
                             cursor: "pointer",
-                            padding: "4px 8px"
+                            padding: "6px 10px",
+                            borderRadius: 10,
+                            fontWeight: 500
                         }}>
                         ← 返回
                     </button>
                     <span style={{
                         fontSize: "15px",
                         fontWeight: 600,
-                        color: "#1a1a1a"
+                        color: "#1a1a1a",
+                        position: "absolute",
+                        left: "50%",
+                        transform: "translateX(-50%)"
                     }}>{name}</span>
+                    <div style={{ width: 50 }} />
                 </div>
                 {/* iframe */}
                 <iframe
@@ -8950,6 +9030,93 @@ export default function PhonePage() {
                     title={name}
                     allow="camera; microphone; geolocation"
                 />
+            </div>
+        );
+    }
+
+    function renderExternalAppCache() {
+        const isMimi = currentApp === "mimicosmo";
+        const isWorkshop = currentApp === "miniworkshop";
+        const active = isMimi || isWorkshop;
+        const title = isMimi ? "米米课程表" : "迷你小作坊";
+        const urlMimi = "/mimi/mimi_university_new1/index.html?hideWorkshop=true";
+        const urlWorkshop = "/mimi/mimi_university_new1/index.html?workshopOnly=true";
+        return (
+            <div style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                zIndex: 20,
+                opacity: active ? 1 : 0,
+                pointerEvents: active ? "auto" : "none",
+                transition: "opacity 0.2s ease",
+                background: active ? "#fbfaf8" : "transparent"
+            }}>
+                <div style={{
+                    padding: "22px 16px 12px 16px",
+                    background: "rgba(255,255,255,0.85)",
+                    backdropFilter: "blur(20px)",
+                    borderBottom: "1px solid rgba(0,0,0,0.05)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexShrink: 0,
+                    opacity: active ? 1 : 0,
+                    transition: "opacity 0.2s ease"
+                }}>
+                    <button
+                        onClick={() => setCurrentApp(null)}
+                        style={{
+                            background: "none",
+                            border: "none",
+                            fontSize: "15px",
+                            color: "#5a9e6a",
+                            cursor: "pointer",
+                            padding: "6px 10px",
+                            borderRadius: 10,
+                            fontWeight: 500
+                        }}>
+                        ← 返回
+                    </button>
+                    <span style={{
+                        fontSize: "15px",
+                        fontWeight: 600,
+                        color: "#1a1a1a",
+                        position: "absolute",
+                        left: "50%",
+                        transform: "translateX(-50%)"
+                    }}>{title}</span>
+                    <div style={{ width: 50 }} />
+                </div>
+                <div style={{ flex: 1, position: "relative" }}>
+                    <iframe
+                        src={urlMimi}
+                        title="米米课程表"
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            width: "100%",
+                            height: "100%",
+                            border: "none",
+                            visibility: isMimi ? "visible" : "hidden",
+                            pointerEvents: isMimi ? "auto" : "none"
+                        }}
+                    />
+                    <iframe
+                        src={urlWorkshop}
+                        title="迷你小作坊"
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            width: "100%",
+                            height: "100%",
+                            border: "none",
+                            visibility: isWorkshop ? "visible" : "hidden",
+                            pointerEvents: isWorkshop ? "auto" : "none"
+                        }}
+                    />
+                </div>
             </div>
         );
     }
@@ -10091,9 +10258,8 @@ export default function PhonePage() {
         case "lpmi":
             return renderLpmi();
         case "mimicosmo":
-            return renderExternalApp("mimicosmo", "米米课程表", "/mimi/mimi_university_new1/index.html?hideWorkshop=true");
         case "miniworkshop":
-            return renderExternalApp("miniworkshop", "迷你小作坊", "/mimi/mimi_university_new1/index.html?workshopOnly=true");
+            return null;
         case "forum":
             return renderForum();
         case "user-profile":
@@ -12498,14 +12664,9 @@ export default function PhonePage() {
             )}
 
             {isLoggedIn && !isPageLoading && !currentApp && (
+                <>
                 <div className="phone-screen home-screen">
-                    <div className="status-bar">
-                        <span>{time}</span>
-                        <div className="status-right">
-                            <span>📶</span>
-                            <span style={{ marginLeft: 4 }}>87%</span>
-                        </div>
-                    </div>
+                    <div className="status-bar" />
                     <div className="home-content">
                         <div className="big-clock">
                             <div className="big-time">{time}</div>
@@ -12602,8 +12763,9 @@ export default function PhonePage() {
                             );
                         })}
                     </div>
-                    <div className="home-indicator" onClick={() => setCurrentApp(null)} />
                 </div>
+                {renderExternalAppCache()}
+            </>
             )}
 
             {isLoggedIn && !isPageLoading && currentApp && (
@@ -12611,7 +12773,7 @@ export default function PhonePage() {
                     <div className="app-content">
                         {renderAppContent()}
                     </div>
-                    <div className="home-indicator" onClick={() => { setAppClosing(true); setTimeout(() => { setCurrentApp(null); setAppClosing(false); }, 220); }} />
+                    {renderExternalAppCache()}
                 </div>
             )}
             {defaultPasswordTip && (
@@ -12641,6 +12803,97 @@ export default function PhonePage() {
                 </div>
             )}
             <div className={`phone-toast ${toast.show ? "show" : ""}`}>{toast.message}</div>
+
+            {isLoggedIn && (
+                <>
+                    <div
+                        ref={knobRef}
+                        onPointerDown={handleKnobPointerDown}
+                        onPointerMove={handleKnobPointerMove}
+                        onPointerUp={handleKnobPointerUp}
+                        onClick={handleKnobClick}
+                        style={{
+                            position: "absolute",
+                            right: knobPos.x === 0 ? 16 : undefined,
+                            bottom: knobPos.y === 0 ? 80 : undefined,
+                            transform: `translate(${knobPos.x === 0 ? 0 : -knobPos.x}px, ${knobPos.y === 0 ? 0 : -knobPos.y}px)`,
+                            left: knobPos.x !== 0 ? `calc(100% - ${48 + knobPos.x}px)` : undefined,
+                            top: knobPos.y !== 0 ? `calc(100% - ${48 + knobPos.y}px)` : undefined,
+                            width: 48,
+                            height: 48,
+                            borderRadius: "50%",
+                            background: "rgba(255,255,255,0.85)",
+                            backdropFilter: "blur(12px)",
+                            boxShadow: "0 4px 20px rgba(46,92,51,0.18), inset 0 0 0 1px rgba(255,255,255,0.6)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 9999,
+                            cursor: knobDragging ? "grabbing" : "grab",
+                            userSelect: "none",
+                            touchAction: "none",
+                            fontSize: 22,
+                        }}
+                    >
+                        🏠
+                    </div>
+                    {showKnobMenu && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                right: knobPos.x === 0 ? 20 : undefined,
+                                bottom: knobPos.y === 0 ? 140 : undefined,
+                                left: knobPos.x !== 0 ? `calc(100% - ${44 + knobPos.x}px)` : undefined,
+                                top: knobPos.y !== 0 ? `calc(100% - ${108 + knobPos.y}px)` : undefined,
+                                background: "rgba(255,255,255,0.95)",
+                                backdropFilter: "blur(16px)",
+                                borderRadius: 16,
+                                padding: "8px 0",
+                                boxShadow: "0 10px 40px rgba(46,92,51,0.2)",
+                                zIndex: 10000,
+                                minWidth: 140,
+                            }}
+                        >
+                            {currentApp && (
+                                <button
+                                    onClick={handleKnobBack}
+                                    style={{
+                                        display: "block",
+                                        width: "100%",
+                                        padding: "12px 18px",
+                                        border: "none",
+                                        background: "transparent",
+                                        textAlign: "left",
+                                        fontSize: 14,
+                                        color: "#2e5c33",
+                                        fontWeight: 500,
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    ↩ 返回上一级
+                                </button>
+                            )}
+                            <button
+                                onClick={handleKnobHome}
+                                style={{
+                                    display: "block",
+                                    width: "100%",
+                                    padding: "12px 18px",
+                                    border: "none",
+                                    background: "transparent",
+                                    textAlign: "left",
+                                    fontSize: 14,
+                                    color: "#2e5c33",
+                                    fontWeight: 500,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                ⌂ 回主界面
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
         </div>
     );
 }

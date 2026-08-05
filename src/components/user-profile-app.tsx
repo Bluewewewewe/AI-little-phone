@@ -118,7 +118,7 @@ export default function UserProfileApp({ username, isSelf = false, onClose }: Us
   return (
     <div className="app-page flex flex-col h-full bg-gradient-to-b from-background to-background/95">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/30 bg-white/40 backdrop-blur-md shrink-0">
+      <div className="flex items-center justify-between px-4 pt-6 pb-2 border-b border-border/30 bg-white/40 backdrop-blur-md shrink-0">
         <button
           onClick={onClose}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-white/50 active:scale-90 transition-transform"

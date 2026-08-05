@@ -123,7 +123,7 @@ export function InviteApp({ onClose, loginUsername = "", isAdmin = false }: Invi
 
   return (
     <div className="h-full flex flex-col bg-background text-foreground">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/50 backdrop-blur-sm">
+      <div className="flex items-center justify-between px-4 pt-6 pb-2 border-b border-border bg-card/50 backdrop-blur-sm">
         <div>
           <h2 className="text-lg font-semibold text-foreground">我的邀请码</h2>
           <p className="text-xs text-muted-foreground">未使用: {unusedCount} / 总数: {codes.length}</p>

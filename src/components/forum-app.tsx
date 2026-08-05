@@ -792,7 +792,7 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
             {/* 顶部标题栏 */}
             <div style={{
                 background: "linear-gradient(135deg, #f97316 0%, #fb923c 100%)",
-                padding: "16px 20px",
+                padding: "28px 20px 12px 20px",
                 color: "#fff",
                 position: "relative"
             }}>
@@ -801,7 +801,7 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                         onClick={onClose}
                         style={{
                             position: "absolute",
-                            top: 16,
+                            top: 28,
                             right: 16,
                             background: "rgba(255,255,255,0.25)",
                             border: "1px solid rgba(255,255,255,0.4)",
