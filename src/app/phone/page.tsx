@@ -508,7 +508,14 @@ function nextId() {
     return ++msgIdCounter;
 }
 
-const FIRST_PAGE_APPS = [{
+interface AppItem {
+    id: string;
+    emoji: string;
+    label: string;
+    color: string;
+}
+
+const FIRST_PAGE_APPS: AppItem[] = [{
     id: "forum",
     emoji: "🏘️",
     label: "社区论坛",
@@ -584,28 +591,18 @@ const SECOND_PAGE_APPS = [{
 
 const ALL_HOME_APPS = [...FIRST_PAGE_APPS, ...SECOND_PAGE_APPS];
 
-const DOCK_APPS = [{
-    id: "call",
-    emoji: "📞",
-    color: "#06b6d4"
-}, {
-    id: "browser",
-    emoji: "🌐",
-    color: "#6366f1"
-}, {
-    id: "music",
-    emoji: "🎵",
-    color: "#ec4899"
-}, {
-    id: "mixin",
-    emoji: "💬",
-    color: "#07c160"
-}, {
-    id: "settings",
-    emoji: "⚙️",
-    color: "#6b7280",
-    label: "设置"
-}];
+const DEFAULT_DOCK_APP_IDS = ["settings", "mimicosmo", "miniworkshop", "forum"];
+const DOCK_APPS: AppItem[] = DEFAULT_DOCK_APP_IDS.map(id => {
+    const app = ALL_HOME_APPS.find(a => a.id === id);
+    if (app) return app;
+    if (id === "settings") return { id: "settings", emoji: "⚙️", label: "设置", color: "#64748b" };
+    return { id, emoji: "❓", label: id, color: "#94a3b8" };
+});
+
+function getAppById(id: string): AppItem | undefined {
+    if (id === "settings") return { id: "settings", emoji: "⚙️", label: "设置", color: "#64748b" };
+    return ALL_HOME_APPS.find(a => a.id === id);
+}
 
 function getAppLabel(id: string, unlocked: boolean): string {
     const map: Record<string, string> = {
@@ -1790,6 +1787,8 @@ export default function PhonePage() {
     const [accountNewPassword, setAccountNewPassword] = useState("");
     const [accountLoading, setAccountLoading] = useState(false);
     const [accountMessage, setAccountMessage] = useState("");
+    const [dockAppIds, setDockAppIds] = useState<string[]>(DEFAULT_DOCK_APP_IDS);
+    const [isDockReplacing, setIsDockReplacing] = useState(false);
 
     interface WeiboAccount {
         nickname: string;
@@ -2072,6 +2071,19 @@ export default function PhonePage() {
         }
     }, []);
 
+    // 加载 Dock 配置
+    useEffect(() => {
+        try {
+            const savedDock = localStorage.getItem("phone_dock_apps_v1");
+            if (savedDock) {
+                const parsed = JSON.parse(savedDock) as string[];
+                if (Array.isArray(parsed) && parsed.length >= 1 && parsed.length <= 5) {
+                    setDockAppIds(parsed);
+                }
+            }
+        } catch {}
+    }, []);
+
     // 监听 iframe 消息（关闭 APP）
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -2082,6 +2094,13 @@ export default function PhonePage() {
         window.addEventListener("message", handleMessage);
         return () => window.removeEventListener("message", handleMessage);
     }, []);
+
+    // 保存 Dock 配置
+    useEffect(() => {
+        try {
+            localStorage.setItem("phone_dock_apps_v1", JSON.stringify(dockAppIds));
+        } catch {}
+    }, [dockAppIds]);
 
     useEffect(() => {
         if (mounted) {
@@ -2988,8 +3007,57 @@ export default function PhonePage() {
         if (!isEditing)
             return;
         setIsEditing(false);
+        setSelectedAppId(null);
+        setIsDockReplacing(false);
         saveAppOrder();
     }, [isEditing, saveAppOrder]);
+
+    const addToDock = useCallback((appId: string) => {
+        if (!appId)
+            return;
+
+        setDockAppIds(prev => {
+            if (prev.includes(appId))
+                return prev;
+
+            if (prev.length < 5) {
+                const next = [...prev, appId];
+
+                try {
+                    localStorage.setItem("phone_dock_apps_v1", JSON.stringify(next));
+                } catch {}
+
+                return next;
+            }
+
+            setIsDockReplacing(true);
+            return prev;
+        });
+    }, []);
+
+    const replaceDockApp = useCallback((targetId: string) => {
+        if (!selectedAppId || !isDockReplacing)
+            return;
+
+        setDockAppIds(prev => {
+            const idx = prev.indexOf(targetId);
+
+            if (idx === -1)
+                return prev;
+
+            const next = [...prev];
+
+            next[idx] = selectedAppId;
+
+            try {
+                localStorage.setItem("phone_dock_apps_v1", JSON.stringify(next));
+            } catch {}
+
+            return next;
+        });
+        setIsDockReplacing(false);
+        setSelectedAppId(null);
+    }, [selectedAppId, isDockReplacing]);
 
     useEffect(() => {
         if (typeof window === "undefined")
@@ -9896,7 +9964,7 @@ export default function PhonePage() {
     }
 
     function renderForum() {
-        return <ForumApp onClose={() => setCurrentApp(null)} />;
+        return <ForumApp onClose={() => setCurrentApp(null)} isAdmin={isAdmin} loginUsername={loginUsername} />;
     }
 
     function renderWeiboVerifyScreen() {
@@ -12320,6 +12388,13 @@ export default function PhonePage() {
                         </div>
                         {isEditing && (
                             <div id="editModeBar">
+                                <button
+                                    className="edit-dock-btn"
+                                    disabled={!selectedAppId}
+                                    onClick={() => selectedAppId && addToDock(selectedAppId)}
+                                >
+                                    {isDockReplacing ? "点击Dock图标替换" : "添加到Dock"}
+                                </button>
                                 <button className="edit-done-btn" onClick={exitEditMode}>完成</button>
                             </div>
                         )}
@@ -12358,12 +12433,31 @@ export default function PhonePage() {
                         </div>
                     </div>
                     <div className="dock">
-                        {DOCK_APPS.map(app => (
-                            <div key={app.id} className="dock-icon" onClick={() => openApp(app.id)}>
-                                <span>{app.emoji}</span>
-                                <span className="dock-label">{getAppLabel(app.id, true)}</span>
-                            </div>
-                        ))}
+                        {dockAppIds.map((appId, idx) => {
+                            const app = getAppById(appId);
+                            if (!app) return null;
+                            return (
+                                <div
+                                    key={appId}
+                                    className={`dock-icon ${isDockReplacing && isEditing ? "replacing" : ""}`}
+                                    onClick={() => {
+                                        if (isEditing && isDockReplacing && selectedAppId) {
+                                            const newDock = [...dockAppIds];
+                                            newDock[idx] = selectedAppId;
+                                            setDockAppIds(newDock);
+                                            localStorage.setItem("phone_dock_apps_v1", JSON.stringify(newDock));
+                                            setIsDockReplacing(false);
+                                            setSelectedAppId(null);
+                                        } else {
+                                            openApp(appId);
+                                        }
+                                    }}
+                                >
+                                    <span>{app.emoji}</span>
+                                    <span className="dock-label">{getAppLabel(appId, true)}</span>
+                                </div>
+                            );
+                        })}
                     </div>
                     <div className="home-indicator" onClick={() => setCurrentApp(null)} />
                 </div>

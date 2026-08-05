@@ -50,13 +50,57 @@ interface ForumSection {
     postCount: number;
 }
 
+interface OfficialNotice {
+    id: string;
+    title: string;
+    content: string;
+    author: string;
+    createdBy: string;
+    createdAt: string;
+    linkSection?: string;
+}
+
+// ============ localStorage 数据持久化 ============
+function loadOfficialNotices(): OfficialNotice[] {
+    if (typeof window === "undefined") return [];
+    try {
+        const raw = localStorage.getItem("forum_official_notices");
+        if (raw) return JSON.parse(raw) as OfficialNotice[];
+    } catch {
+        // ignore
+    }
+    return [];
+}
+
+function saveOfficialNotices(notices: OfficialNotice[]) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("forum_official_notices", JSON.stringify(notices));
+}
+
+function loadBugReports(): ForumPost[] {
+    if (typeof window === "undefined") return [];
+    try {
+        const raw = localStorage.getItem("forum_bug_reports");
+        if (raw) return JSON.parse(raw) as ForumPost[];
+    } catch {
+        // ignore
+    }
+    return [];
+}
+
+function saveBugReports(reports: ForumPost[]) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("forum_bug_reports", JSON.stringify(reports));
+}
+
 // ============ Mock 数据 ============
 const MOCK_SECTIONS: ForumSection[] = [
     { id: "creative", icon: "🎨", name: "同人创作", desc: "文字描述、创作讨论", postCount: 128 },
     { id: "cp", icon: "💬", name: "CP讨论", desc: "日常嗑糖、剧情讨论", postCount: 256 },
     { id: "fanfic", icon: "", name: "同人文", desc: "粉丝创作的故事", postCount: 89 },
     { id: "event", icon: "🏆", name: "活动专区", desc: "比赛投票", postCount: 24 },
-    { id: "announce", icon: "📢", name: "公告板", desc: "仅管理员可发帖", postCount: 12 }
+    { id: "announce", icon: "📢", name: "公告板", desc: "仅管理员可发帖", postCount: 12 },
+    { id: "bug-report", icon: "🐛", name: "Bug反馈", desc: "提交bug与功能建议", postCount: 0 }
 ];
 
 const MOCK_POSTS: ForumPost[] = [
@@ -215,7 +259,13 @@ const MOCK_POSTS: ForumPost[] = [
 ];
 
 // ============ 论坛组件 ============
-export function ForumApp({ onClose }: { onClose?: () => void } = {}) {
+interface ForumAppProps {
+    onClose?: () => void;
+    isAdmin?: boolean;
+    loginUsername?: string;
+}
+
+export function ForumApp({ onClose, isAdmin = false, loginUsername = "" }: ForumAppProps = {}) {
     const [view, setView] = useState<"sections" | "posts" | "postDetail" | "newPost" | "search">("sections");
     const [currentSection, setCurrentSection] = useState<string | null>(null);
     const [currentPost, setCurrentPost] = useState<ForumPost | null>(null);
@@ -244,11 +294,59 @@ export function ForumApp({ onClose }: { onClose?: () => void } = {}) {
     const [reportType, setReportType] = useState("");
     const [reportDesc, setReportDesc] = useState("");
 
+    // 官方通知（仅管理员可发布，所有用户可见）
+    const [officialNotices, setOfficialNotices] = useState<OfficialNotice[]>(() => {
+        if (typeof window === "undefined") return [];
+        try {
+            return JSON.parse(localStorage.getItem("forum_official_notices") || "[]");
+        } catch {
+            return [];
+        }
+    });
+    const [newNoticeTitle, setNewNoticeTitle] = useState("");
+    const [newNoticeContent, setNewNoticeContent] = useState("");
+    const [showNoticeForm, setShowNoticeForm] = useState(false);
+
+    // Bug反馈（所有用户可提交，admin可回复）
+    const [bugReports, setBugReports] = useState<ForumPost[]>(() => {
+        if (typeof window === "undefined") return [];
+        try {
+            return JSON.parse(localStorage.getItem("forum_bug_reports") || "[]");
+        } catch {
+            return [];
+        }
+    });
+
+    // 发布官方通知（仅admin）
+    const handlePublishNotice = () => {
+        const title = newNoticeTitle.trim();
+        const content = newNoticeContent.trim();
+        if (!title || !content) return;
+        const notice: OfficialNotice = {
+            id: Date.now().toString(),
+            title,
+            content,
+            author: "官方通知",
+            createdAt: new Date().toISOString(),
+            createdBy: loginUsername || "admin",
+            linkSection: "",
+        };
+        setOfficialNotices(prev => [notice, ...prev]);
+        setNewNoticeTitle("");
+        setNewNoticeContent("");
+        setShowNoticeForm(false);
+    };
+
     // 获取板块信息
     const getSection = (id: string) => MOCK_SECTIONS.find(s => s.id === id);
 
     // 过滤和排序帖子
     const getFilteredPosts = () => {
+        // Bug 反馈板块单独读取
+        if (currentSection === "bug-report") {
+            return [...bugReports].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
+
         let filtered = posts.filter(p => p.status === "normal");
 
         // 按板块过滤
@@ -304,6 +402,19 @@ export function ForumApp({ onClose }: { onClose?: () => void } = {}) {
         return results;
     };
 
+    // 持久化官方通知和Bug反馈
+    useEffect(() => {
+        try {
+            localStorage.setItem("forum_official_notices", JSON.stringify(officialNotices));
+        } catch {}
+    }, [officialNotices]);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem("forum_bug_reports", JSON.stringify(bugReports));
+        } catch {}
+    }, [bugReports]);
+
     // 发帖
     const handleCreatePost = useCallback(() => {
         if (!newPostTitle.trim() || !newPostContent.trim() || !newPostSection) return;
@@ -327,13 +438,17 @@ export function ForumApp({ onClose }: { onClose?: () => void } = {}) {
             replies: []
         };
 
-        setPosts([newPost, ...posts]);
+        if (newPostSection === "bug-report") {
+            setBugReports([newPost, ...bugReports]);
+        } else {
+            setPosts([newPost, ...posts]);
+        }
         setNewPostTitle("");
         setNewPostContent("");
         setNewPostSection("");
         setView("posts");
         setCurrentSection(newPostSection);
-    }, [newPostTitle, newPostContent, newPostSection, posts]);
+    }, [newPostTitle, newPostContent, newPostSection, posts, bugReports]);
 
     // 回复
     const handleReply = useCallback(() => {
@@ -529,6 +644,117 @@ export function ForumApp({ onClose }: { onClose?: () => void } = {}) {
                     <span>搜索帖子或用户</span>
                 </div>
             </div>
+
+            {/* 官方通知置顶 */}
+            {officialNotices.length > 0 && (
+                <div style={{ padding: "0 16px 12px", background: "#fff" }}>
+                    <div
+                        onClick={() => {
+                            if (officialNotices[0].linkSection) {
+                                setCurrentSection(officialNotices[0].linkSection);
+                            }
+                        }}
+                        style={{
+                            padding: "12px 14px",
+                            background: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)",
+                            borderRadius: 12,
+                            border: "1px solid #b8dcc4",
+                            cursor: officialNotices[0].linkSection ? "pointer" : "default"
+                        }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                            <span style={{ fontSize: 16 }}>📢</span>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: "#2e5c33" }}>官方通知</span>
+                            <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>
+                                {officialNotices[0].createdAt}
+                            </span>
+                        </div>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: "#2e5c33", marginBottom: 4 }}>
+                            {officialNotices[0].title}
+                        </div>
+                        <div style={{ fontSize: 13, color: "#4a7c50", lineHeight: 1.5, whiteSpace: "pre-line" }}>
+                            {officialNotices[0].content.length > 80
+                                ? officialNotices[0].content.slice(0, 80) + "..."
+                                : officialNotices[0].content}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 管理员发布通知入口 */}
+            {isAdmin && (
+                <div style={{ padding: "0 16px 12px", background: "#fff" }}>
+                    <button
+                        onClick={() => setShowNoticeForm(!showNoticeForm)}
+                        style={{
+                            width: "100%",
+                            padding: "10px 14px",
+                            background: showNoticeForm ? "#fff" : "#f5f0e8",
+                            border: "1px solid #d4c8b8",
+                            borderRadius: 12,
+                            fontSize: 14,
+                            color: "#5a4a3a",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6
+                        }}>
+                        <span>{showNoticeForm ? "取消" : "✏️ 发布官方通知"}</span>
+                    </button>
+                </div>
+            )}
+
+            {showNoticeForm && isAdmin && (
+                <div style={{ padding: "0 16px 12px", background: "#fff" }}>
+                    <div style={{ padding: 12, background: "#fafafa", borderRadius: 12, border: "1px solid #eee" }}>
+                        <input
+                            type="text"
+                            placeholder="通知标题"
+                            value={newNoticeTitle}
+                            onChange={e => setNewNoticeTitle(e.target.value)}
+                            style={{
+                                width: "100%",
+                                padding: "8px 10px",
+                                marginBottom: 8,
+                                border: "1px solid #ddd",
+                                borderRadius: 8,
+                                fontSize: 14,
+                                background: "#fff"
+                            }}
+                        />
+                        <textarea
+                            placeholder="通知内容"
+                            value={newNoticeContent}
+                            onChange={e => setNewNoticeContent(e.target.value)}
+                            rows={3}
+                            style={{
+                                width: "100%",
+                                padding: "8px 10px",
+                                marginBottom: 8,
+                                border: "1px solid #ddd",
+                                borderRadius: 8,
+                                fontSize: 14,
+                                resize: "none",
+                                background: "#fff"
+                            }}
+                        />
+                        <button
+                            onClick={handlePublishNotice}
+                            style={{
+                                width: "100%",
+                                padding: "10px",
+                                background: "#2e7d32",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 8,
+                                fontSize: 14,
+                                cursor: "pointer"
+                            }}>
+                            发布置顶通知
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* 板块列表 */}
             <div style={{ flex: 1, overflow: "auto", padding: "12px 16px" }}>
