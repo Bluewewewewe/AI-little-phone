@@ -1898,6 +1898,7 @@ export default function PhonePage() {
     const [adminHotSearchLocked, setAdminHotSearchLocked] = useState<number[]>([]);
     const [toast, setToast] = useState<{ message: string; show: boolean }>({ message: "", show: false });
     const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const appCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const touchStartX = useRef(0);
     const touchDeltaX = useRef(0);
     const isDragging = useRef(false);
@@ -3432,11 +3433,15 @@ export default function PhonePage() {
     }
 
     function closeApp() {
+        if (appClosing) return;
         setAppClosing(true);
 
-        setTimeout(() => {
+        if (appCloseTimerRef.current)
+            clearTimeout(appCloseTimerRef.current);
+        appCloseTimerRef.current = setTimeout(() => {
             setCurrentApp(null);
             setAppClosing(false);
+            appCloseTimerRef.current = null;
         }, 250);
     }
 
@@ -12782,7 +12787,6 @@ export default function PhonePage() {
                         })}
                     </div>
                 </div>
-                {renderExternalAppCache()}
             </>
             )}
 
