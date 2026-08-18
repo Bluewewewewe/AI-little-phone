@@ -9060,8 +9060,10 @@ export default function PhonePage() {
         const isWorkshop = currentApp === "miniworkshop";
         const active = isMimi || isWorkshop;
         const title = isMimi ? "米米课程表" : "迷你小作坊";
-        const urlMimi = "/mimi/mimi_university_new1/index.html?hideWorkshop=true";
-        const urlWorkshop = "/mimi/mimi_university_new1/index.html?workshopOnly=true";
+        const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "";
+        const role = isAdmin ? "admin" : "user";
+        const urlMimi = `/mimi/mimi_university_new1/index.html?hideWorkshop=true&token=${encodeURIComponent(token)}&username=${encodeURIComponent(loginUsername)}&role=${role}`;
+        const urlWorkshop = `/mimi/mimi_university_new1/index.html?workshopOnly=true&token=${encodeURIComponent(token)}&username=${encodeURIComponent(loginUsername)}&role=${role}`;
         return (
             <div style={{
                 position: "absolute",

@@ -108,6 +108,23 @@ let teacherCategories = [];
 let lastLoginAt = {};
 let currentUser = null;
 let currentDetail = null;
+
+// 从父页面（AI小手机）通过 URL 参数恢复登录态
+const iframeToken = urlParams.get('token');
+const iframeUsername = urlParams.get('username');
+const iframeRole = urlParams.get('role');
+if (iframeToken && iframeUsername) {
+    currentUser = {
+        name: iframeUsername,
+        type: iframeRole === 'admin' || iframeRole === 'super' ? 'admin' : 'user'
+    };
+    if (iframeRole === 'admin' || iframeRole === 'super') {
+        isAdmin = true;
+    }
+    if (iframeRole === 'super') {
+        isSuper = true;
+    }
+}
 let currentTeacherId = null;
 let chatMessages = [];
 let chatExpanded = false;
