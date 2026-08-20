@@ -23,6 +23,7 @@ interface ForumPost {
 interface UserProfileAppProps {
   username: string;
   isSelf?: boolean;
+  bio?: string;
   onClose: () => void;
 }
 
@@ -63,7 +64,7 @@ function formatTime(iso: string): string {
   return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
 }
 
-export default function UserProfileApp({ username, isSelf = false, onClose }: UserProfileAppProps) {
+export default function UserProfileApp({ username, isSelf = false, bio = "", onClose }: UserProfileAppProps) {
   const [activeTab, setActiveTab] = useState<"posts" | "likes" | "favorites">("posts");
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
@@ -143,6 +144,11 @@ export default function UserProfileApp({ username, isSelf = false, onClose }: Us
               </span>
               {isTeacher && <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">米老师</span>}
             </div>
+            {bio ? (
+              <p className="mt-2 text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{bio}</p>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground/60 italic">暂无个人简介</p>
+            )}
           </div>
         </div>
       </div>

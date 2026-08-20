@@ -20,6 +20,7 @@ interface ForumPost {
     replies: ForumReply[];
     likes: number;
     favorites: number;
+    bugStatus?: "pending" | "fixed" | "wontfix";
 }
 
 interface ForumReply {
@@ -52,37 +53,11 @@ interface ForumSection {
     postCount: number;
 }
 
-interface OfficialNotice {
-    id: string;
-    title: string;
-    content: string;
-    author: string;
-    createdBy: string;
-    createdAt: string;
-    linkSection?: string;
-}
-
 // ============ localStorage 数据持久化 ============
-function loadOfficialNotices(): OfficialNotice[] {
+function loadPosts(): ForumPost[] {
     if (typeof window === "undefined") return [];
     try {
-        const raw = localStorage.getItem("forum_official_notices");
-        if (raw) return JSON.parse(raw) as OfficialNotice[];
-    } catch {
-        // ignore
-    }
-    return [];
-}
-
-function saveOfficialNotices(notices: OfficialNotice[]) {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("forum_official_notices", JSON.stringify(notices));
-}
-
-function loadBugReports(): ForumPost[] {
-    if (typeof window === "undefined") return [];
-    try {
-        const raw = localStorage.getItem("forum_bug_reports");
+        const raw = localStorage.getItem("forum_posts");
         if (raw) return JSON.parse(raw) as ForumPost[];
     } catch {
         // ignore
@@ -90,9 +65,9 @@ function loadBugReports(): ForumPost[] {
     return [];
 }
 
-function saveBugReports(reports: ForumPost[]) {
+function savePosts(posts: ForumPost[]) {
     if (typeof window === "undefined") return;
-    localStorage.setItem("forum_bug_reports", JSON.stringify(reports));
+    localStorage.setItem("forum_posts", JSON.stringify(posts));
 }
 
 function loadCustomSections(): ForumSection[] {
@@ -320,7 +295,44 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
     const [view, setView] = useState<"sections" | "posts" | "postDetail" | "newPost" | "search">("sections");
     const [currentSection, setCurrentSection] = useState<string | null>(null);
     const [currentPost, setCurrentPost] = useState<ForumPost | null>(null);
-    const [posts, setPosts] = useState<ForumPost[]>(MOCK_POSTS);
+    const [posts, setPosts] = useState<ForumPost[]>(() => {
+        if (typeof window === "undefined") return MOCK_POSTS;
+        const saved = loadPosts();
+        if (saved.length > 0) return saved;
+        // 迁移旧的官方通知和 Bug 反馈数据
+        try {
+            const notices: Array<{ id: string; title: string; content: string; author: string; createdBy: string; createdAt: string }> = JSON.parse(localStorage.getItem("forum_official_notices") || "[]");
+            const bugs: ForumPost[] = JSON.parse(localStorage.getItem("forum_bug_reports") || "[]");
+            const migrated: ForumPost[] = [
+                ...notices.map(n => ({
+                    id: `notice_${n.id}`,
+                    title: n.title,
+                    content: n.content,
+                    author: n.author || "官方通知",
+                    authorAvatar: "📢",
+                    section: "announce",
+                    replyCount: 0,
+                    viewCount: 0,
+                    createdAt: typeof n.createdAt === "string" ? n.createdAt.replace("T", " ").slice(0, 16) : new Date().toLocaleString("zh-CN"),
+                    lastReplyAt: typeof n.createdAt === "string" ? n.createdAt.replace("T", " ").slice(0, 16) : new Date().toLocaleString("zh-CN"),
+                    status: "normal" as const,
+                    isEssence: true,
+                    isPinned: true,
+                    isLocked: false,
+                    replies: [],
+                    likes: 0,
+                    favorites: 0
+                })),
+                ...bugs.map(b => ({ ...b, bugStatus: b.bugStatus || "pending" }))
+            ];
+            if (migrated.length > 0) {
+                return [...MOCK_POSTS, ...migrated];
+            }
+        } catch {
+            // ignore
+        }
+        return MOCK_POSTS;
+    });
     const [sortBy, setSortBy] = useState<"latest" | "hot" | "essence">("latest");
     const [searchQuery, setSearchQuery] = useState("");
     const [searchType, setSearchType] = useState<"post" | "user">("post");
@@ -366,28 +378,8 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
         }
     });
 
-    // 官方通知（仅管理员可发布，所有用户可见）
-    const [officialNotices, setOfficialNotices] = useState<OfficialNotice[]>(() => {
-        if (typeof window === "undefined") return [];
-        try {
-            return JSON.parse(localStorage.getItem("forum_official_notices") || "[]");
-        } catch {
-            return [];
-        }
-    });
-    const [newNoticeTitle, setNewNoticeTitle] = useState("");
-    const [newNoticeContent, setNewNoticeContent] = useState("");
-    const [showNoticeForm, setShowNoticeForm] = useState(false);
-
-    // Bug反馈（所有用户可提交，admin可回复）
-    const [bugReports, setBugReports] = useState<ForumPost[]>(() => {
-        if (typeof window === "undefined") return [];
-        try {
-            return JSON.parse(localStorage.getItem("forum_bug_reports") || "[]");
-        } catch {
-            return [];
-        }
-    });
+    // 新 Bug 状态（管理员回复时可更新）
+    const [newBugStatus, setNewBugStatus] = useState<"pending" | "fixed" | "wontfix">("pending");
 
     // 板块列表（支持管理员创建自定义板块）
     const [customSections, setCustomSections] = useState<ForumSection[]>(() => loadCustomSections());
@@ -408,20 +400,36 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
         const title = newNoticeTitle.trim();
         const content = newNoticeContent.trim();
         if (!title || !content) return;
-        const notice: OfficialNotice = {
-            id: Date.now().toString(),
-            title,
+        const now = new Date().toLocaleString("zh-CN");
+        const notice: ForumPost = {
+            id: `notice_${crypto.randomUUID()}`,
+            title: `【官方公告】${title}`,
             content,
-            author: "官方通知",
-            createdAt: new Date().toISOString(),
-            createdBy: loginUsername || "admin",
-            linkSection: "",
+            author: loginUsername || "官方通知",
+            authorAvatar: "📢",
+            section: "announce",
+            replyCount: 0,
+            viewCount: 0,
+            createdAt: now,
+            lastReplyAt: now,
+            status: "normal",
+            isEssence: true,
+            isPinned: true,
+            isLocked: false,
+            replies: [],
+            likes: 0,
+            favorites: 0
         };
-        setOfficialNotices(prev => [notice, ...prev]);
+        setPosts(prev => [notice, ...prev]);
         setNewNoticeTitle("");
         setNewNoticeContent("");
         setShowNoticeForm(false);
     };
+
+    // 通知相关状态
+    const [newNoticeTitle, setNewNoticeTitle] = useState("");
+    const [newNoticeContent, setNewNoticeContent] = useState("");
+    const [showNoticeForm, setShowNoticeForm] = useState(false);
 
     // 创建板块（仅管理员）
     const handleCreateSection = () => {
@@ -488,11 +496,6 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
 
     // 过滤和排序帖子
     const getFilteredPosts = () => {
-        // Bug 反馈板块单独读取
-        if (currentSection === "bug-report") {
-            return [...bugReports].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        }
-
         let filtered = posts.filter(p => p.status === "normal");
 
         // 按板块过滤
@@ -546,18 +549,19 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
         return results;
     };
 
-    // 持久化官方通知和Bug反馈
+    // 持久化帖子数据
     useEffect(() => {
         try {
-            localStorage.setItem("forum_official_notices", JSON.stringify(officialNotices));
+            localStorage.setItem("forum_posts", JSON.stringify(posts));
         } catch {}
-    }, [officialNotices]);
+    }, [posts]);
 
+    // 进入 Bug 帖子详情时同步状态选择器
     useEffect(() => {
-        try {
-            localStorage.setItem("forum_bug_reports", JSON.stringify(bugReports));
-        } catch {}
-    }, [bugReports]);
+        if (currentPost?.section === "bug-report") {
+            setNewBugStatus(currentPost.bugStatus || "pending");
+        }
+    }, [currentPost]);
 
     useEffect(() => {
         try {
@@ -572,12 +576,6 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
             updated = { ...p, viewCount: p.viewCount + 1 };
             return updated;
         }));
-        setBugReports(prev => prev.map(p => {
-            if (p.id !== postId) return p;
-            const bugUpdated = { ...p, viewCount: p.viewCount + 1 };
-            updated = bugUpdated;
-            return bugUpdated;
-        }));
         return updated;
     }, []);
 
@@ -585,10 +583,6 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
         const liked = likedPostIds.includes(postId);
         setLikedPostIds(prev => liked ? prev.filter(id => id !== postId) : [...prev, postId]);
         setPosts(prev => prev.map(p => {
-            if (p.id !== postId) return p;
-            return { ...p, likes: Math.max(0, p.likes + (liked ? -1 : 1)) };
-        }));
-        setBugReports(prev => prev.map(p => {
             if (p.id !== postId) return p;
             return { ...p, likes: Math.max(0, p.likes + (liked ? -1 : 1)) };
         }));
@@ -601,15 +595,12 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
             if (p.id !== postId) return p;
             return { ...p, favorites: Math.max(0, p.favorites + (favorited ? -1 : 1)) };
         }));
-        setBugReports(prev => prev.map(p => {
-            if (p.id !== postId) return p;
-            return { ...p, favorites: Math.max(0, p.favorites + (favorited ? -1 : 1)) };
-        }));
     }, [favoritedPostIds]);
 
     // 发帖
     const handleCreatePost = useCallback(() => {
         if (!newPostTitle.trim() || !newPostContent.trim() || !newPostSection) return;
+        if (newPostSection === "announce" && !isAdmin) return;
 
         const now = new Date().toLocaleString("zh-CN");
         const newPost: ForumPost = {
@@ -626,23 +617,20 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
             createdAt: now,
             lastReplyAt: now,
             status: "normal",
-            isEssence: false,
-            isPinned: false,
+            isEssence: newPostSection === "announce",
+            isPinned: newPostSection === "announce",
             isLocked: false,
-            replies: []
+            replies: [],
+            bugStatus: newPostSection === "bug-report" ? "pending" : undefined
         };
 
-        if (newPostSection === "bug-report") {
-            setBugReports([newPost, ...bugReports]);
-        } else {
-            setPosts([newPost, ...posts]);
-        }
+        setPosts(prev => [newPost, ...prev]);
         setNewPostTitle("");
         setNewPostContent("");
         setNewPostSection("");
         setView("posts");
         setCurrentSection(newPostSection);
-    }, [newPostTitle, newPostContent, newPostSection, posts, bugReports]);
+    }, [newPostTitle, newPostContent, newPostSection, isAdmin]);
 
     // 回复
     const handleReply = useCallback(() => {
@@ -661,13 +649,16 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
             subReplies: []
         };
 
+        const shouldUpdateBugStatus = isAdmin && currentPost.section === "bug-report" && newBugStatus !== currentPost.bugStatus;
+
         const updatedPosts = posts.map(p => {
             if (p.id === currentPost.id) {
                 return {
                     ...p,
                     replies: [...p.replies, newReply],
                     replyCount: p.replyCount + 1,
-                    lastReplyAt: now
+                    lastReplyAt: now,
+                    bugStatus: shouldUpdateBugStatus ? newBugStatus : p.bugStatus
                 };
             }
             return p;
@@ -678,7 +669,7 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
         setReplyContent("");
         setReplyToReplyId(null);
         setReplyToAuthor("");
-    }, [replyContent, currentPost, posts]);
+    }, [replyContent, currentPost, posts, isAdmin, newBugStatus]);
 
     // 楼中楼回复
     const handleSubReply = (replyId: string, replyToAuthor: string) => {
@@ -840,39 +831,44 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
             </div>
 
             {/* 官方通知置顶 */}
-            {officialNotices.length > 0 && (
-                <div style={{ padding: "0 16px 12px", background: "#fff" }}>
-                    <div
-                        onClick={() => {
-                            if (officialNotices[0].linkSection) {
-                                setCurrentSection(officialNotices[0].linkSection);
-                            }
-                        }}
-                        style={{
-                            padding: "12px 14px",
-                            background: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)",
-                            borderRadius: 12,
-                            border: "1px solid #b8dcc4",
-                            cursor: officialNotices[0].linkSection ? "pointer" : "default"
-                        }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                            <span style={{ fontSize: 16 }}>📢</span>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: "#2e5c33" }}>官方通知</span>
-                            <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>
-                                {officialNotices[0].createdAt}
-                            </span>
-                        </div>
-                        <div style={{ fontSize: 15, fontWeight: 600, color: "#2e5c33", marginBottom: 4 }}>
-                            {officialNotices[0].title}
-                        </div>
-                        <div style={{ fontSize: 13, color: "#4a7c50", lineHeight: 1.5, whiteSpace: "pre-line" }}>
-                            {officialNotices[0].content.length > 80
-                                ? officialNotices[0].content.slice(0, 80) + "..."
-                                : officialNotices[0].content}
+            {(() => {
+                const pinnedAnnounce = posts.filter(p => p.section === "announce" && p.status === "normal").sort(
+                    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                )[0];
+                if (!pinnedAnnounce) return null;
+                return (
+                    <div style={{ padding: "0 16px 12px", background: "#fff" }}>
+                        <div
+                            onClick={() => {
+                                setCurrentPost(pinnedAnnounce);
+                                setView("postDetail");
+                            }}
+                            style={{
+                                padding: "12px 14px",
+                                background: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)",
+                                borderRadius: 12,
+                                border: "1px solid #b8dcc4",
+                                cursor: "pointer"
+                            }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                                <span style={{ fontSize: 16 }}>📢</span>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: "#2e5c33" }}>官方通知</span>
+                                <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>
+                                    {pinnedAnnounce.createdAt}
+                                </span>
+                            </div>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: "#2e5c33", marginBottom: 4 }}>
+                                {pinnedAnnounce.title}
+                            </div>
+                            <div style={{ fontSize: 13, color: "#4a7c50", lineHeight: 1.5, whiteSpace: "pre-line" }}>
+                                {pinnedAnnounce.content.length > 80
+                                    ? pinnedAnnounce.content.slice(0, 80) + "..."
+                                    : pinnedAnnounce.content}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {/* 管理员发布通知入口 */}
             {isAdmin && (
@@ -1202,10 +1198,24 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                                 }}>
                                 {/* 标题 */}
                                 <div style={{ fontSize: 15, fontWeight: 600, color: "#1f2937", marginBottom: 8, lineHeight: 1.4 }}>
-                                    {post.isPinned && <span style={{ color: "#f97316", marginRight: 6 }}></span>}
+                                    {post.isPinned && <span style={{ color: "#f97316", marginRight: 6 }}>📌</span>}
+                                    {post.section === "announce" && <span style={{ color: "#f97316", marginRight: 6 }}>📢</span>}
                                     {post.isEssence && <span style={{ color: "#f59e0b", marginRight: 6 }}>⭐</span>}
-                                    {post.isLocked && <span style={{ color: "#9ca3af", marginRight: 6 }}></span>}
+                                    {post.isLocked && <span style={{ color: "#9ca3af", marginRight: 6 }}>🔒</span>}
                                     {post.title}
+                                    {post.section === "bug-report" && post.bugStatus && (
+                                        <span style={{
+                                            marginLeft: 8,
+                                            fontSize: 11,
+                                            padding: "2px 8px",
+                                            borderRadius: 10,
+                                            background: post.bugStatus === "fixed" ? "#dcfce7" : post.bugStatus === "wontfix" ? "#f3f4f6" : "#ffedd5",
+                                            color: post.bugStatus === "fixed" ? "#166534" : post.bugStatus === "wontfix" ? "#6b7280" : "#9a3412",
+                                            fontWeight: 500
+                                        }}>
+                                            {post.bugStatus === "fixed" ? "已修复" : post.bugStatus === "wontfix" ? "不修复" : "待处理"}
+                                        </span>
+                                    )}
                                 </div>
 
                                 {/* 作者信息 */}
@@ -1241,21 +1251,23 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                 </div>
 
                 {/* 底部发帖按钮 */}
-                <div style={{ padding: "12px 16px", background: "#fff", borderTop: "1px solid #f0f0f0" }}>
-                    <button
-                        onClick={() => setView("newPost")}
-                        style={{
-                            width: "100%",
-                            padding: 14,
-                            background: "linear-gradient(135deg, #f97316 0%, #fb923c 100%)",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 12,
-                            fontSize: 15,
-                            fontWeight: 600,
-                            cursor: "pointer"
-                        }}>✏️ 发布新帖</button>
-                </div>
+                {currentSection !== "announce" && (
+                    <div style={{ padding: "12px 16px", background: "#fff", borderTop: "1px solid #f0f0f0" }}>
+                        <button
+                            onClick={() => setView("newPost")}
+                            style={{
+                                width: "100%",
+                                padding: 14,
+                                background: "linear-gradient(135deg, #f97316 0%, #fb923c 100%)",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 12,
+                                fontSize: 15,
+                                fontWeight: 600,
+                                cursor: "pointer"
+                            }}>✏️ 发布新帖</button>
+                    </div>
+                )}
             </div>
         );
     };
@@ -1328,8 +1340,22 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                     }}>
                         <div style={{ fontSize: 17, fontWeight: 700, color: "#1f2937", marginBottom: 12, lineHeight: 1.5 }}>
                             {currentPost.isPinned && <span style={{ color: "#f97316", marginRight: 6 }}>📌</span>}
+                            {currentPost.section === "announce" && <span style={{ color: "#f97316", marginRight: 6 }}>📢</span>}
                             {currentPost.isEssence && <span style={{ color: "#f59e0b", marginRight: 6 }}>⭐</span>}
                             {currentPost.title}
+                            {currentPost.section === "bug-report" && currentPost.bugStatus && (
+                                <span style={{
+                                    marginLeft: 10,
+                                    fontSize: 12,
+                                    padding: "3px 10px",
+                                    borderRadius: 12,
+                                    background: currentPost.bugStatus === "fixed" ? "#dcfce7" : currentPost.bugStatus === "wontfix" ? "#f3f4f6" : "#ffedd5",
+                                    color: currentPost.bugStatus === "fixed" ? "#166534" : currentPost.bugStatus === "wontfix" ? "#6b7280" : "#9a3412",
+                                    fontWeight: 500
+                                }}>
+                                    {currentPost.bugStatus === "fixed" ? "已修复" : currentPost.bugStatus === "wontfix" ? "不修复" : "待处理"}
+                                </span>
+                            )}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                             <span style={{ fontSize: 20 }}>{currentPost.authorAvatar}</span>
@@ -1585,6 +1611,42 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                                         cursor: "pointer",
                                         fontSize: 16
                                     }}>×</button>
+                            </div>
+                        )}
+                        {isAdmin && currentPost.section === "bug-report" && (
+                            <div style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                marginBottom: 8,
+                                padding: "8px 12px",
+                                background: "#f9fafb",
+                                borderRadius: 8,
+                                fontSize: 13,
+                                color: "#4b5563"
+                            }}>
+                                <span>Bug 状态：</span>
+                                {[
+                                    { key: "pending", label: "待处理" },
+                                    { key: "fixed", label: "已修复" },
+                                    { key: "wontfix", label: "不修复" }
+                                ].map(item => (
+                                    <button
+                                        key={item.key}
+                                        onClick={() => setNewBugStatus(item.key as "pending" | "fixed" | "wontfix")}
+                                        style={{
+                                            padding: "4px 10px",
+                                            borderRadius: 10,
+                                            border: "none",
+                                            fontSize: 12,
+                                            cursor: "pointer",
+                                            background: newBugStatus === item.key
+                                                ? (item.key === "fixed" ? "#22c55e" : item.key === "wontfix" ? "#9ca3af" : "#f97316")
+                                                : "#e5e7eb",
+                                            color: newBugStatus === item.key ? "#fff" : "#374151"
+                                        }}
+                                    >{item.label}</button>
+                                ))}
                             </div>
                         )}
                         <div style={{ display: "flex", gap: 10 }}>
@@ -1873,7 +1935,7 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: "#1f2937", marginBottom: 12 }}>选择板块</div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        {sections.filter(s => s.id !== "announce").map(section => (
+                        {sections.filter(s => isAdmin || s.id !== "announce").map(section => (
                             <button
                                 key={section.id}
                                 onClick={() => setNewPostSection(section.id)}

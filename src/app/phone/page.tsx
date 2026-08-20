@@ -1807,6 +1807,10 @@ export default function PhonePage() {
     const [changePasswordConfirm, setChangePasswordConfirm] = useState("");
     const [changePasswordLoading, setChangePasswordLoading] = useState(false);
     const [changePasswordMessage, setChangePasswordMessage] = useState("");
+    const [userBio, setUserBio] = useState("");
+    const [bioDraft, setBioDraft] = useState("");
+    const [bioLoading, setBioLoading] = useState(false);
+    const [bioMessage, setBioMessage] = useState("");
 
     const WALLPAPER_PRESETS: Record<string, string> = {
         default: "linear-gradient(175deg, #f0f7f2 0%, #e8f3eb 30%, #dceee2 60%, #d4e8da 100%)",
@@ -2044,6 +2048,9 @@ export default function PhonePage() {
                 setAdminViewMode("admin");
                 setAdminRole("super_admin");
                 setLoginUsername(mockUser);
+                const savedBio = localStorage.getItem("mimi_user_bio") || "";
+                setUserBio(savedBio);
+                setBioDraft(savedBio);
                 setWeiboAccount(prev => ({
                     ...prev,
                     nickname: mockUser,
@@ -2066,6 +2073,9 @@ export default function PhonePage() {
                     setIsLoggedIn(true);
                     setAuthToken(savedToken);
                     setLoginUsername(userData.username || "");
+                    setUserBio(userData.userBio || "");
+                    setBioDraft(userData.userBio || "");
+                    localStorage.setItem("mimi_user_bio", userData.userBio || "");
                     setAdminViewMode(isAdminUser ? "admin" : "user");
                     // 获取用户的邀请码
                     fetch("/api/auth", {
@@ -2183,7 +2193,7 @@ export default function PhonePage() {
         }
     }, [loginUsername]);
 
-    const [meSubPage, setMeSubPage] = useState<"main" | "settings" | "identity" | "unlock" | "about" | "invite" | "account" | "wallpaper" | "theme" | "change-password" | "knob-style">("main");
+    const [meSubPage, setMeSubPage] = useState<"main" | "settings" | "identity" | "unlock" | "about" | "invite" | "account" | "wallpaper" | "theme" | "change-password" | "knob-style" | "bio">("main");
     const [identityStep, setIdentityStep] = useState(0);
     const [debugMode, setDebugMode] = useState(false);
     const [debugLevel, setDebugLevel] = useState<number | "all" | null>(null);
@@ -2956,6 +2966,9 @@ export default function PhonePage() {
             setIsAdmin(isAdminUser);
             setIsLoggedIn(true);
             setLoginUsername(username);
+            setUserBio(result.data?.userBio || "");
+            setBioDraft(result.data?.userBio || "");
+            localStorage.setItem("mimi_user_bio", result.data?.userBio || "");
             setAdminViewMode(isAdminUser ? "admin" : "user");
 
             // 保存登录 token（单设备登录）
@@ -8963,6 +8976,86 @@ export default function PhonePage() {
             );
         }
 
+        if (meSubPage === "bio") {
+            const handleSaveBio = async () => {
+                const trimmed = bioDraft.trim();
+                if (trimmed.length > 500) {
+                    setBioMessage("自传最多500字");
+                    return;
+                }
+                setBioLoading(true);
+                setBioMessage("");
+                const token = localStorage.getItem("auth_token");
+                try {
+                    const res = await fetch("/api/auth", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "update_bio", authToken: token, bio: trimmed })
+                    });
+                    const json = await res.json();
+                    if (json.success) {
+                        setUserBio(trimmed);
+                        localStorage.setItem("mimi_user_bio", trimmed);
+                        setBioMessage("保存成功");
+                    } else {
+                        setBioMessage(json.error || "保存失败");
+                    }
+                } catch (e) {
+                    setBioMessage("网络错误");
+                } finally {
+                    setBioLoading(false);
+                }
+            };
+
+            return (
+                <div style={{ padding: 16, display: "flex", flexDirection: "column", height: "100%" }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#3d5c45", marginBottom: 16, textAlign: "center" }}>📖 编辑自传</div>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+                        <textarea
+                            value={bioDraft}
+                            onChange={(e) => setBioDraft(e.target.value)}
+                            placeholder="写下你的个人简介，最多500字..."
+                            maxLength={500}
+                            style={{
+                                width: "100%",
+                                flex: 1,
+                                padding: 12,
+                                borderRadius: 12,
+                                border: "1px solid #b8dcc4",
+                                background: "rgba(255,255,255,0.8)",
+                                fontSize: 14,
+                                color: "#2e5c33",
+                                resize: "none",
+                                lineHeight: 1.6
+                            }}
+                        />
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: bioDraft.length > 500 ? "#ef4444" : "#4a7c50" }}>
+                            <span>{bioDraft.length}/500 字</span>
+                            {bioDraft.length > 500 && <span>已超出字数限制</span>}
+                        </div>
+                        {bioMessage && (
+                            <div style={{ fontSize: 13, color: bioMessage.includes("成功") ? "#2e7d32" : "#ef4444", textAlign: "center", padding: 8, background: bioMessage.includes("成功") ? "rgba(46,125,50,0.1)" : "rgba(239,68,68,0.1)", borderRadius: 8 }}>
+                                {bioMessage}
+                            </div>
+                        )}
+                        <button
+                            onClick={handleSaveBio}
+                            disabled={bioLoading || bioDraft.trim().length > 500}
+                            className="identity-btn"
+                            style={{ width: "100%", background: bioLoading || bioDraft.trim().length > 500 ? "#b8dcc4" : "#2e7d32", color: "#fff" }}
+                        >
+                            {bioLoading ? "保存中..." : "保存自传"}
+                        </button>
+                        <button
+                            className="identity-btn"
+                            onClick={() => setMeSubPage("main")}
+                            style={{ width: "100%", background: "#e5e7eb", color: "#3d5c45" }}>← 返回
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
         if (meSubPage === "wallpaper") {
             const WALLPAPER_OPTIONS: { key: string; label: string; emoji: string }[] = [
                 { key: "default", label: "默认浅绿", emoji: "🌿" },
@@ -9112,6 +9205,13 @@ export default function PhonePage() {
                         <span className="me-menu-label">我的主页</span>
                         <span className="me-menu-arrow">›</span>
                     </div>
+                    {isAdmin && (
+                        <div className="me-menu-item" onClick={() => { setBioDraft(userBio); setBioMessage(""); setMeSubPage("bio"); }}>
+                            <span className="me-menu-icon">📖</span>
+                            <span className="me-menu-label">编辑自传</span>
+                            <span className="me-menu-arrow">›</span>
+                        </div>
+                    )}
                     <div className="me-menu-item" onClick={() => setMeSubPage("settings")}>
                         <span className="me-menu-icon">⚙️</span>
                         <span className="me-menu-label">设置</span>
@@ -10520,6 +10620,7 @@ export default function PhonePage() {
             <UserProfileApp
                 username={viewingUserProfile || loginUsername}
                 isSelf={viewingUserProfile === loginUsername || !viewingUserProfile}
+                bio={userBio}
                 onClose={() => {
                     setViewingUserProfile(null);
                     setCurrentApp("forum");

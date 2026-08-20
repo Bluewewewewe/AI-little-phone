@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
       currentPassword,
       newPassword,
       newDisplayName,
+      bio,
       count,
       roleType,
       code,
@@ -286,6 +287,7 @@ export async function POST(request: NextRequest) {
           weiboVerified: user.weibo_verified,
           weiboUid: user.weibo_uid,
           weiboName: user.weibo_name,
+          userBio: user.user_bio || "",
           isAdmin: isAdminUser,
           isDefaultPassword,
           token: newToken,
@@ -325,6 +327,7 @@ export async function POST(request: NextRequest) {
           weiboVerified: u.weibo_verified,
           weiboUid: u.weibo_uid,
           weiboName: u.weibo_name,
+          userBio: u.user_bio || "",
           isAdmin: isAdminUser,
           isDefaultPassword,
         },
@@ -582,6 +585,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: "修改成功，请使用新密码重新登录",
+      });
+    }
+
+    // ========== 更新个人自传 ==========
+    if (action === "update_bio") {
+      if (!authToken || bio === undefined) {
+        return NextResponse.json(
+          { error: "缺少必要参数" },
+          { status: 400 }
+        );
+      }
+
+      const bioText = String(bio).trim();
+      if (bioText.length > 500) {
+        return NextResponse.json(
+          { error: "自传最多500字" },
+          { status: 400 }
+        );
+      }
+
+      const found = await getUserByToken(supabase, authToken as string);
+      if (!found) {
+        return NextResponse.json(
+          { error: "登录已过期" },
+          { status: 401 }
+        );
+      }
+
+      if (!isAdmin(found.user) && !isSuperAdmin(found.user)) {
+        return NextResponse.json(
+          { error: "无权操作：需要管理员身份" },
+          { status: 403 }
+        );
+      }
+
+      const { error } = await supabase
+        .from("users")
+        .update({ user_bio: bioText })
+        .eq("id", found.user.id);
+
+      if (error) {
+        console.error("更新自传失败:", error);
+        return NextResponse.json(
+          { error: "更新失败: " + error.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "自传更新成功",
+        data: { user_bio: bioText },
       });
     }
 
