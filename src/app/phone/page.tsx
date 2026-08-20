@@ -1793,6 +1793,20 @@ export default function PhonePage() {
     const [isDockReplacing, setIsDockReplacing] = useState(false);
     const [viewingUserProfile, setViewingUserProfile] = useState<string | null>(null);
     const [wallpaper, setWallpaper] = useState<string>("default");
+    const [knobStyle, setKnobStyle] = useState<string>("circle");
+    const [changePasswordCurrent, setChangePasswordCurrent] = useState("");
+    const [changePasswordNew, setChangePasswordNew] = useState("");
+    const [changePasswordConfirm, setChangePasswordConfirm] = useState("");
+    const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+    const [changePasswordMessage, setChangePasswordMessage] = useState("");
+
+    const KNOB_STYLES: Array<{ id: string; label: string; icon: string }> = [
+        { id: "circle", label: "圆形", icon: "●" },
+        { id: "star", label: "星星", icon: "★" },
+        { id: "heart", label: "爱心", icon: "♥" },
+        { id: "bolt", label: "闪电", icon: "⚡" },
+        { id: "flower", label: "花朵", icon: "✿" }
+    ];
 
     const WALLPAPER_PRESETS: Record<string, string> = {
         default: "linear-gradient(175deg, #f0f7f2 0%, #e8f3eb 30%, #dceee2 60%, #d4e8da 100%)",
@@ -2127,6 +2141,16 @@ export default function PhonePage() {
         } catch {}
     }, []);
 
+    // 加载悬浮旋钮样式
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem("mimi_knob_style_v1");
+            if (saved && KNOB_STYLES.find((s) => s.id === saved)) {
+                setKnobStyle(saved);
+            }
+        } catch {}
+    }, []);
+
     // 监听 iframe 消息（关闭 APP）
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -2159,7 +2183,7 @@ export default function PhonePage() {
         }
     }, [loginUsername]);
 
-    const [meSubPage, setMeSubPage] = useState<"main" | "settings" | "identity" | "unlock" | "about" | "invite" | "account" | "wallpaper" | "theme">("main");
+    const [meSubPage, setMeSubPage] = useState<"main" | "settings" | "identity" | "unlock" | "about" | "invite" | "account" | "wallpaper" | "theme" | "change-password" | "knob-style">("main");
     const [identityStep, setIdentityStep] = useState(0);
     const [debugMode, setDebugMode] = useState(false);
     const [debugLevel, setDebugLevel] = useState<number | "all" | null>(null);
@@ -8572,8 +8596,18 @@ export default function PhonePage() {
                             marginBottom: 16
                         }}>⚙️ 设置</div>
                     <div className="me-menu-item" onClick={() => setMeSubPage("account")}>
-                        <span className="me-menu-icon">🔑</span>
+                        <span className="me-menu-icon">👤</span>
                         <span className="me-menu-label">账户设置</span>
+                        <span className="me-menu-arrow">›</span>
+                    </div>
+                    <div className="me-menu-item" onClick={() => setMeSubPage("change-password")}>
+                        <span className="me-menu-icon">🔑</span>
+                        <span className="me-menu-label">修改密码</span>
+                        <span className="me-menu-arrow">›</span>
+                    </div>
+                    <div className="me-menu-item" onClick={() => setMeSubPage("knob-style")}>
+                        <span className="me-menu-icon">🎛️</span>
+                        <span className="me-menu-label">悬浮按钮样式</span>
                         <span className="me-menu-arrow">›</span>
                     </div>
                     {isAdmin && (
@@ -8756,6 +8790,165 @@ export default function PhonePage() {
                             style={{ width: "100%", background: "#e5e7eb", color: "#3d5c45" }}>← 返回
                         </button>
                     </div>
+                </div>
+            );
+        }
+
+        if (meSubPage === "change-password") {
+            const hasLetter = /[a-zA-Z]/.test(changePasswordNew);
+            const hasNumber = /\d/.test(changePasswordNew);
+            const isStrong = changePasswordNew.length >= 6 && hasLetter && hasNumber;
+            const isMatch = changePasswordNew && changePasswordNew === changePasswordConfirm;
+
+            const handleChangePassword = async () => {
+                if (!isStrong) {
+                    setChangePasswordMessage("密码至少6位且包含字母和数字");
+                    return;
+                }
+                if (!isMatch) {
+                    setChangePasswordMessage("两次输入的新密码不一致");
+                    return;
+                }
+                setChangePasswordLoading(true);
+                setChangePasswordMessage("");
+                const token = localStorage.getItem("auth_token");
+                try {
+                    const res = await fetch("/api/auth", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            action: "change_password",
+                            token,
+                            currentPassword: changePasswordCurrent,
+                            newPassword: changePasswordNew
+                        })
+                    });
+                    const json = await res.json();
+                    if (json.success) {
+                        setChangePasswordMessage("修改成功，请重新登录");
+                        setTimeout(() => {
+                            localStorage.removeItem("auth_token");
+                            setIsLoggedIn(false);
+                            setIsAdmin(false);
+                            setCurrentApp(null);
+                            setMeSubPage("main");
+                            setLoginUsername("");
+                            setLoginPassword("");
+                            setChangePasswordCurrent("");
+                            setChangePasswordNew("");
+                            setChangePasswordConfirm("");
+                        }, 1500);
+                    } else {
+                        setChangePasswordMessage(json.error || "修改失败");
+                    }
+                } catch (e) {
+                    setChangePasswordMessage("网络错误");
+                } finally {
+                    setChangePasswordLoading(false);
+                }
+            };
+
+            return (
+                <div style={{ padding: 16, display: "flex", flexDirection: "column", height: "100%" }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#3d5c45", marginBottom: 16, textAlign: "center" }}>🔐 修改密码</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+                        <div>
+                            <div style={{ fontSize: 12, color: "#4a7c50", marginBottom: 4 }}>当前密码</div>
+                            <input
+                                type="password"
+                                value={changePasswordCurrent}
+                                onChange={(e) => setChangePasswordCurrent(e.target.value)}
+                                placeholder="请输入当前密码"
+                                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #b8dcc4", background: "rgba(255,255,255,0.8)", fontSize: 14, color: "#2e5c33" }}
+                            />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: 12, color: "#4a7c50", marginBottom: 4 }}>新密码</div>
+                            <input
+                                type="password"
+                                value={changePasswordNew}
+                                onChange={(e) => setChangePasswordNew(e.target.value)}
+                                placeholder="至少6位，包含字母和数字"
+                                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #b8dcc4", background: "rgba(255,255,255,0.8)", fontSize: 14, color: "#2e5c33" }}
+                            />
+                            <div style={{ fontSize: 11, color: isStrong ? "#2e7d32" : "#ef4444", marginTop: 4 }}>
+                                {changePasswordNew ? (isStrong ? "✅ 密码强度符合要求" : "⚠️ 至少6位且同时包含字母和数字") : "密码至少6位且包含字母和数字"}
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{ fontSize: 12, color: "#4a7c50", marginBottom: 4 }}>确认新密码</div>
+                            <input
+                                type="password"
+                                value={changePasswordConfirm}
+                                onChange={(e) => setChangePasswordConfirm(e.target.value)}
+                                placeholder="请再次输入新密码"
+                                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #b8dcc4", background: "rgba(255,255,255,0.8)", fontSize: 14, color: "#2e5c33" }}
+                            />
+                            {changePasswordConfirm && (
+                                <div style={{ fontSize: 11, color: isMatch ? "#2e7d32" : "#ef4444", marginTop: 4 }}>
+                                    {isMatch ? "✅ 两次输入一致" : "⚠️ 两次输入不一致"}
+                                </div>
+                            )}
+                        </div>
+                        {changePasswordMessage && (
+                            <div style={{ fontSize: 13, color: changePasswordMessage.includes("成功") ? "#2e7d32" : "#ef4444", textAlign: "center", padding: 8, background: changePasswordMessage.includes("成功") ? "rgba(46,125,50,0.1)" : "rgba(239,68,68,0.1)", borderRadius: 8 }}>
+                                {changePasswordMessage}
+                            </div>
+                        )}
+                        <button
+                            onClick={handleChangePassword}
+                            disabled={changePasswordLoading || !changePasswordCurrent || !isStrong || !isMatch}
+                            className="identity-btn"
+                            style={{ width: "100%", background: changePasswordLoading || !changePasswordCurrent || !isStrong || !isMatch ? "#b8dcc4" : "#2e7d32", color: "#fff", marginTop: "auto" }}
+                        >
+                            {changePasswordLoading ? "保存中..." : "确认修改"}
+                        </button>
+                        <button
+                            className="identity-btn"
+                            onClick={() => setMeSubPage("main")}
+                            style={{ width: "100%", background: "#e5e7eb", color: "#3d5c45" }}>← 返回
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        if (meSubPage === "knob-style") {
+            return (
+                <div style={{ padding: 16, display: "flex", flexDirection: "column", height: "100%" }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#3d5c45", marginBottom: 16, textAlign: "center" }}>🎨 悬浮按钮样式</div>
+                    <div style={{ flex: 1, overflowY: "auto" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                            {KNOB_STYLES.map((style) => (
+                                <button
+                                    key={style.id}
+                                    onClick={() => {
+                                        setKnobStyle(style.id);
+                                        localStorage.setItem("mimi_knob_style", style.id);
+                                    }}
+                                    style={{
+                                        padding: 16,
+                                        borderRadius: 16,
+                                        border: "2px solid",
+                                        borderColor: knobStyle === style.id ? "#2e7d32" : "rgba(255,255,255,0.5)",
+                                        background: knobStyle === style.id ? "rgba(46,125,50,0.15)" : "rgba(255,255,255,0.5)",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        gap: 8
+                                    }}
+                                >
+                                    <span style={{ fontSize: 32 }}>{style.icon}</span>
+                                    <span style={{ fontSize: 13, color: "#2e5c33", fontWeight: 600 }}>{style.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <button
+                        className="identity-btn"
+                        onClick={() => setMeSubPage("main")}
+                        style={{ width: "100%", background: "#e5e7eb", color: "#3d5c45", marginTop: 12 }}>← 返回
+                    </button>
                 </div>
             );
         }
@@ -12859,7 +13052,7 @@ export default function PhonePage() {
                             fontSize: 22,
                         }}
                     >
-                        🏠
+                        {KNOB_STYLES.find((s) => s.id === knobStyle)?.icon || "🏠"}
                     </div>
                     {showKnobMenu && (
                         <div
