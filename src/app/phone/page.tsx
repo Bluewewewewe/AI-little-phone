@@ -8924,7 +8924,7 @@ export default function PhonePage() {
                                     key={style.id}
                                     onClick={() => {
                                         setKnobStyle(style.id);
-                                        localStorage.setItem("mimi_knob_style", style.id);
+                                        localStorage.setItem("mimi_knob_style_v1", style.id);
                                     }}
                                     style={{
                                         padding: 16,
