@@ -1739,6 +1739,14 @@ function WeiboVerifyAdmin() {
     );
 }
 
+const KNOB_STYLES: Array<{ id: string; label: string; icon: string }> = [
+    { id: "circle", label: "圆形", icon: "●" },
+    { id: "star", label: "星星", icon: "★" },
+    { id: "heart", label: "爱心", icon: "♥" },
+    { id: "bolt", label: "闪电", icon: "⚡" },
+    { id: "flower", label: "花朵", icon: "✿" }
+];
+
 export default function PhonePage() {
     const [time, setTime] = useState("--:--");
     const [dateStr, setDateStr] = useState("");
@@ -1799,14 +1807,6 @@ export default function PhonePage() {
     const [changePasswordConfirm, setChangePasswordConfirm] = useState("");
     const [changePasswordLoading, setChangePasswordLoading] = useState(false);
     const [changePasswordMessage, setChangePasswordMessage] = useState("");
-
-    const KNOB_STYLES: Array<{ id: string; label: string; icon: string }> = [
-        { id: "circle", label: "圆形", icon: "●" },
-        { id: "star", label: "星星", icon: "★" },
-        { id: "heart", label: "爱心", icon: "♥" },
-        { id: "bolt", label: "闪电", icon: "⚡" },
-        { id: "flower", label: "花朵", icon: "✿" }
-    ];
 
     const WALLPAPER_PRESETS: Record<string, string> = {
         default: "linear-gradient(175deg, #f0f7f2 0%, #e8f3eb 30%, #dceee2 60%, #d4e8da 100%)",
@@ -2305,6 +2305,62 @@ export default function PhonePage() {
             setAppClosing(false);
         }, 220);
     }, []);
+
+    const handleChangePassword = useCallback(async () => {
+        const hasUpper = /[A-Z]/.test(changePasswordNew);
+        const hasLower = /[a-z]/.test(changePasswordNew);
+        const hasNumber = /\d/.test(changePasswordNew);
+        const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(changePasswordNew);
+        const isStrong = changePasswordNew.length >= 8 && hasUpper && hasLower && hasNumber && hasSpecial;
+        const isMatch = changePasswordNew && changePasswordNew === changePasswordConfirm;
+
+        if (!isStrong) {
+            setChangePasswordMessage("密码至少8位且包含大写、小写、数字和特殊字符");
+            return;
+        }
+        if (!isMatch) {
+            setChangePasswordMessage("两次输入的新密码不一致");
+            return;
+        }
+        setChangePasswordLoading(true);
+        setChangePasswordMessage("");
+        const token = localStorage.getItem("auth_token");
+        try {
+            const res = await fetch("/api/auth", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "change_password",
+                    token,
+                    currentPassword: changePasswordCurrent.trim(),
+                    newPassword: changePasswordNew
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                setChangePasswordMessage("修改成功，请重新登录");
+                localStorage.removeItem("auth_token");
+                setIsLoggedIn(false);
+                setIsAdmin(false);
+                setCurrentApp(null);
+                setMeSubPage("main");
+                setLoginUsername("");
+                setLoginPassword("");
+                setChangePasswordCurrent("");
+                setChangePasswordNew("");
+                setChangePasswordConfirm("");
+                setTimeout(() => {
+                    setChangePasswordMessage("");
+                }, 1500);
+            } else {
+                setChangePasswordMessage(json.error || "修改失败");
+            }
+        } catch (e) {
+            setChangePasswordMessage("网络错误");
+        } finally {
+            setChangePasswordLoading(false);
+        }
+    }, [changePasswordCurrent, changePasswordNew, changePasswordConfirm]);
 
     const handleDebugTitleClick = useCallback(() => {
         if (!DEBUG_ENABLED || debugMode)
@@ -8795,58 +8851,12 @@ export default function PhonePage() {
         }
 
         if (meSubPage === "change-password") {
-            const hasLetter = /[a-zA-Z]/.test(changePasswordNew);
+            const hasUpper = /[A-Z]/.test(changePasswordNew);
+            const hasLower = /[a-z]/.test(changePasswordNew);
             const hasNumber = /\d/.test(changePasswordNew);
-            const isStrong = changePasswordNew.length >= 6 && hasLetter && hasNumber;
+            const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(changePasswordNew);
+            const isStrong = changePasswordNew.length >= 8 && hasUpper && hasLower && hasNumber && hasSpecial;
             const isMatch = changePasswordNew && changePasswordNew === changePasswordConfirm;
-
-            const handleChangePassword = async () => {
-                if (!isStrong) {
-                    setChangePasswordMessage("密码至少6位且包含字母和数字");
-                    return;
-                }
-                if (!isMatch) {
-                    setChangePasswordMessage("两次输入的新密码不一致");
-                    return;
-                }
-                setChangePasswordLoading(true);
-                setChangePasswordMessage("");
-                const token = localStorage.getItem("auth_token");
-                try {
-                    const res = await fetch("/api/auth", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            action: "change_password",
-                            token,
-                            currentPassword: changePasswordCurrent,
-                            newPassword: changePasswordNew
-                        })
-                    });
-                    const json = await res.json();
-                    if (json.success) {
-                        setChangePasswordMessage("修改成功，请重新登录");
-                        setTimeout(() => {
-                            localStorage.removeItem("auth_token");
-                            setIsLoggedIn(false);
-                            setIsAdmin(false);
-                            setCurrentApp(null);
-                            setMeSubPage("main");
-                            setLoginUsername("");
-                            setLoginPassword("");
-                            setChangePasswordCurrent("");
-                            setChangePasswordNew("");
-                            setChangePasswordConfirm("");
-                        }, 1500);
-                    } else {
-                        setChangePasswordMessage(json.error || "修改失败");
-                    }
-                } catch (e) {
-                    setChangePasswordMessage("网络错误");
-                } finally {
-                    setChangePasswordLoading(false);
-                }
-            };
 
             return (
                 <div style={{ padding: 16, display: "flex", flexDirection: "column", height: "100%" }}>
@@ -8868,11 +8878,11 @@ export default function PhonePage() {
                                 type="password"
                                 value={changePasswordNew}
                                 onChange={(e) => setChangePasswordNew(e.target.value)}
-                                placeholder="至少6位，包含字母和数字"
+                                placeholder="至少8位，包含大小写字母、数字和特殊字符"
                                 style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #b8dcc4", background: "rgba(255,255,255,0.8)", fontSize: 14, color: "#2e5c33" }}
                             />
                             <div style={{ fontSize: 11, color: isStrong ? "#2e7d32" : "#ef4444", marginTop: 4 }}>
-                                {changePasswordNew ? (isStrong ? "✅ 密码强度符合要求" : "⚠️ 至少6位且同时包含字母和数字") : "密码至少6位且包含字母和数字"}
+                                {changePasswordNew ? (isStrong ? "✅ 密码强度符合要求" : "⚠️ 至少8位且同时包含大写、小写、数字和特殊字符") : "密码至少8位且包含大写、小写、数字和特殊字符"}
                             </div>
                         </div>
                         <div>
@@ -8897,9 +8907,9 @@ export default function PhonePage() {
                         )}
                         <button
                             onClick={handleChangePassword}
-                            disabled={changePasswordLoading || !changePasswordCurrent || !isStrong || !isMatch}
+                            disabled={changePasswordLoading || !changePasswordCurrent.trim() || !isStrong || !isMatch}
                             className="identity-btn"
-                            style={{ width: "100%", background: changePasswordLoading || !changePasswordCurrent || !isStrong || !isMatch ? "#b8dcc4" : "#2e7d32", color: "#fff", marginTop: "auto" }}
+                            style={{ width: "100%", background: changePasswordLoading || !changePasswordCurrent.trim() || !isStrong || !isMatch ? "#b8dcc4" : "#2e7d32", color: "#fff", marginTop: "auto" }}
                         >
                             {changePasswordLoading ? "保存中..." : "确认修改"}
                         </button>
@@ -13052,7 +13062,7 @@ export default function PhonePage() {
                             fontSize: 22,
                         }}
                     >
-                        {KNOB_STYLES.find((s) => s.id === knobStyle)?.icon || "🏠"}
+                        {KNOB_STYLES.find((s) => s.id === knobStyle)?.icon}
                     </div>
                     {showKnobMenu && (
                         <div
