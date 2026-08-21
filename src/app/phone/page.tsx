@@ -46,6 +46,9 @@ import { AdminApp } from "@/components/admin-app";
 import { InviteApp } from "@/components/invite-app";
 import UserProfileApp from "@/components/user-profile-app";
 import { AdminReviewApp } from "@/components/admin-review-app";
+import AppStoreApp from "@/components/app-store-app";
+import AppAdminApp from "@/components/admin/app-admin-app";
+import type { StoreAppItem } from "@/lib/apps";
 
 
 interface Message {
@@ -518,6 +521,11 @@ interface AppItem {
 }
 
 const FIRST_PAGE_APPS: AppItem[] = [{
+    id: "app-store",
+    emoji: "🛒",
+    label: "应用商店",
+    color: "#2e7d32"
+}, {
     id: "forum",
     emoji: "🏘️",
     label: "社区论坛",
@@ -1811,6 +1819,15 @@ export default function PhonePage() {
     const [bioDraft, setBioDraft] = useState("");
     const [bioLoading, setBioLoading] = useState(false);
     const [bioMessage, setBioMessage] = useState("");
+    const [installedStoreApps, setInstalledStoreApps] = useState<Array<{ id: string; name: string; icon: string }>>(() => {
+        try {
+            const raw = localStorage.getItem("mimi_installed_apps_v1");
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    });
 
     const WALLPAPER_PRESETS: Record<string, string> = {
         default: "linear-gradient(175deg, #f0f7f2 0%, #e8f3eb 30%, #dceee2 60%, #d4e8da 100%)",
@@ -2157,6 +2174,19 @@ export default function PhonePage() {
             const saved = localStorage.getItem("mimi_knob_style_v1");
             if (saved && KNOB_STYLES.find((s) => s.id === saved)) {
                 setKnobStyle(saved);
+            }
+        } catch {}
+    }, []);
+
+    // 加载已安装的应用商店应用
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem("mimi_installed_apps_v1");
+            if (saved) {
+                const parsed = JSON.parse(saved) as Array<{ id: string; name: string; icon: string; route: string }>;
+                if (Array.isArray(parsed)) {
+                    setInstalledStoreApps(parsed);
+                }
             }
         } catch {}
     }, []);
@@ -3505,8 +3535,9 @@ export default function PhonePage() {
 
     function openApp(appId: string) {
         const isSecondPage = SECOND_PAGE_APPS.some(a => a.id === appId);
+        const isInstalledFromStore = installedStoreApps.some(a => a.id === appId);
 
-        if (isSecondPage && !isAdmin) {
+        if (isSecondPage && !isAdmin && !isInstalledFromStore) {
             showToast("装修中，敬请期待");
             return;
         }
@@ -10596,9 +10627,50 @@ export default function PhonePage() {
             return <AdminApp adminRole={adminRole} onClose={() => setCurrentApp(null)} />;
         case "admin-review":
             return <AdminReviewApp loginUsername={loginUsername} onClose={() => setCurrentApp(null)} />;
+        case "app-store":
+            return renderAppStore();
         default:
+            if (currentApp && installedStoreApps.some(a => a.id === currentApp)) {
+                return renderStoreApp(currentApp);
+            }
             return <div className="empty-state"><div className="empty-emoji">📱</div>APP开发中</div>;
         }
+    }
+
+    function renderAppStore() {
+        return (
+            <AppStoreApp
+                isAdmin={isAdmin}
+                loginUsername={loginUsername}
+                installedAppIds={installedStoreApps.map(a => a.id)}
+                onInstall={(app) => {
+                    const next = Array.from(new Set([...installedStoreApps, { id: app.app_id, name: app.name, icon: app.icon }]));
+                    setInstalledStoreApps(next);
+                    try {
+                        localStorage.setItem("mimi_installed_apps_v1", JSON.stringify(next));
+                    } catch {}
+                }}
+                onOpenApp={(appId) => {
+                    setCurrentApp(appId);
+                }}
+                onClose={() => setCurrentApp(null)}
+            />
+        );
+    }
+
+    function renderStoreApp(appId: string) {
+        const app = installedStoreApps.find(a => a.id === appId);
+        return (
+            <div className="app-layer" style={{ background: "rgba(255,255,255,0.85)", display: "flex", flexDirection: "column", height: "100%" }}>
+                <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid rgba(184,220,196,0.5)" }}>
+                    <button onClick={() => setCurrentApp(null)} style={{ background: "none", border: "none", fontSize: 18, color: "#2e5c33" }}>←</button>
+                    <span style={{ fontWeight: 700, color: "#2e5c33" }}>{app?.icon ? `${app.icon} ` : ""}{app?.name || "应用"}</span>
+                </div>
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#4a7c50" }}>
+                    外部应用加载中...
+                </div>
+            </div>
+        );
     }
 
     function renderForum() {
