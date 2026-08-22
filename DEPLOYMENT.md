@@ -1,121 +1,113 @@
-# Zeabur 部署指南
+# 米米宇宙部署指南
 
-## 前置条件
-1. 拥有 GitHub 账户
-2. 拥有 Zeabur 账户（https://zeabur.com）
-3. 已安装 Git
+## 一、Zeabur 部署步骤
 
-## 步骤 1：推送代码到 GitHub
+1. 在 [Zeabur](https://zeabur.com) 登录并创建新项目。
+2. 进入项目 → **Deploy New Service** → **Deploy your source code** → 选择 GitHub 仓库 `Bluewewewewe/AI-little-phone`。
+3. Zeabur 会自动识别为 Node.js 项目。本仓库已提供 `zeabur.json`，构建与启动命令如下：
+   - Build: `bash ./scripts/build.sh`
+   - Start: `bash ./scripts/start.sh`
+4. 在 Zeabur 服务 **Variables** 中配置下方环境变量。
+5. 部署完成后，访问 `/api/health` 确认后端状态。
 
-### 方式 A：使用现有仓库
-项目已经配置了远程仓库：`https://github.com/Bluewewewewe/AI-little-phone.git`
+> 提示：香港节点访问大陆 Supabase 通常比美西节点更稳定。
 
-在本地执行：
-```bash
-# 克隆现有仓库（如果是新设备）
-git clone https://github.com/Bluewewewewe/AI-little-phone.git
-cd AI-little-phone
+---
 
-# 或者如果已有本地代码，添加远程仓库
-git remote add origin https://github.com/Bluewewewewe/AI-little-phone.git
-git push -u origin main
-```
+## 二、环境变量清单
 
-### 方式 B：创建新仓库
-1. 在 GitHub 创建新仓库（如 `ai-little-phone`）
-2. 在本地执行：
-```bash
-git remote set-url origin https://github.com/YOUR_USERNAME/ai-little-phone.git
-git push -u origin main
-```
+| 变量名 | 必填 | 说明 | 示例值 |
+|---|---|---|---|
+| `SUPABASE_URL` | 是 | Supabase 项目 URL | `https://xxxx.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | 是 | Supabase service_role key（拥有最高权限） | `eyJhbG...` |
+| `SUPABASE_SECRET_KEY` | 否 | 兼容旧名，当 `SUPABASE_SERVICE_ROLE_KEY` 不存在时作为 fallback | `eyJhbG...` |
+| `NODE_ENV` | 是 | 生产环境必须设置为 `production` | `production` |
+| `BOOTSTRAP_ADMIN_USERNAME` | 是 | 首次启动时自动创建的管理员用户名 | `admin` |
+| `BOOTSTRAP_ADMIN_PASSWORD` | 是 | 首次启动时自动创建的管理员密码（bcrypt 哈希存储） | `YourStrongP@ssw0rd` |
+| `PORT` | 否 | Zeabur 自动注入，一般无需手动配置 | `8080` |
+| `COZE_PROJECT_ENV` | 否 | 部署平台环境标识 | `PROD` |
 
-## 步骤 2：在 Zeabur 部署
+### 密码强度要求
+`BOOTSTRAP_ADMIN_PASSWORD` 建议至少 12 位，包含大小写字母、数字和特殊字符。
 
-### 2.1 登录 Zeabur
-访问 https://zeabur.com 并登录
+---
 
-### 2.2 创建新项目
-1. 点击 "New Project"
-2. 选择 "Deploy from Git"
-3. 选择你的 GitHub 仓库 `AI-little-phone`
+## 三、Supabase 数据库初始化
 
-### 2.3 配置部署参数
-Zeabur 会自动检测到 Dockerfile，使用以下配置：
+1. 打开 Supabase Dashboard → SQL Editor。
+2. 新建 Query，粘贴并执行 `supabase-schema-v2.sql` 全部内容。
+3. 再新建 Query，粘贴并执行 `seed-data.sql` 插入初始公告和示例帖。
+4. 确认表已创建：
+   - `public.users`
+   - `public.user_sessions`
+   - `public.invite_codes`
+   - `public.apps`
+   - `public.app_beta_codes`
+   - `public.forum_posts`
+   - `public.forum_replies`
+   - `public.forum_likes`
+   - `public.forum_favorites`
+   - `public.bug_reports`
+   - `public.weibo_verification`
 
-**构建配置**：
-- Build Command: `pnpm build`
-- Start Command: `node dist/server.js`
-- Port: `5000`
+---
 
-**区域选择**：
-- 选择 **Hong Kong**（香港节点）
+## 四、RLS 策略说明
 
-### 2.4 环境变量（可选）
-如果需要，可以添加以下环境变量：
-- `NODE_ENV`: `production`
-- `COZE_PROJECT_ENV`: `PROD`
+本项目通过 **Service Role Key** 在后端 API 中访问 Supabase，不依赖客户端直连数据库，因此表中未启用 RLS。所有权限控制均在 `/api/*` 路由层完成（token 校验、admin 角色校验等）。
 
-### 2.5 部署
-点击 "Deploy" 开始部署，等待构建完成（通常需要 3-5 分钟）
+如果未来需要让前端直接访问 Supabase，请为每张表补充 RLS 策略，并改用 Anon Key + Row Level Security。
 
-## 步骤 3：访问应用
+---
 
-部署完成后，Zeabur 会提供一个域名，格式如：
-`https://ai-little-phone-xxxx.zeabur.app`
+## 五、部署后验证清单
 
-## 故障排查
+| 检查项 | 操作 | 期望结果 |
+|---|---|---|
+| 后端健康 | `GET /api/health` | `{ "status": "ok", "env": "production", "supabase": "connected" }` |
+| 注册流程 | 使用有效邀请码注册新账号 | 返回 pending 状态，等待管理员审核 |
+| 管理员登录 | 用 `BOOTSTRAP_ADMIN_USERNAME` 登录 | 进入新版管理后台 |
+| 用户审核 | 在管理后台通过新注册账号 | 用户状态变为 approved |
+| 论坛发帖 | 登录后发帖/回复/点赞 | 数据写入 Supabase 并持久化 |
+| 官方公告 | 访问论坛首页 | 顶部置顶显示「欢迎来到米米小作坊」 |
 
-### 构建失败
-1. 检查 Zeabur 构建日志
-2. 确保 `pnpm-lock.yaml` 已提交到仓库
-3. 检查 Node.js 版本是否兼容（推荐 Node 20）
+---
 
-### 启动失败
-1. 检查端口配置是否为 5000
-2. 检查 `dist/server.js` 是否正确生成
-3. 查看 Zeabur 运行时日志
+## 六、常见问题排查
 
-### 访问异常
-1. 检查 Zeabur 域名是否正确解析
-2. 尝试清除浏览器缓存
-3. 检查 Zeabur 服务状态
+### 1. 环境变量不匹配
+- 确保 `SUPABASE_SERVICE_ROLE_KEY` 不是 Anon Key。
+- 如果只有 `SUPABASE_SECRET_KEY`，系统会自动 fallback，但建议统一使用 `SUPABASE_SERVICE_ROLE_KEY`。
 
-## 自定义域名（可选）
+### 2. 数据库连接失败
+- 检查 `/api/health` 返回的 `supabase` 字段是否为 `connected`。
+- 确认 `SUPABASE_URL` 没有拼写错误，且 Service Role Key 有效。
+- 检查 Supabase 项目是否启用了 IP 白名单，需要将 Zeabur 出口 IP 加入白名单。
 
-Zeabur 支持绑定自定义域名：
-1. 在 Zeabur 项目设置中找到 "Domains"
-2. 点击 "Add Custom Domain"
-3. 按提示配置 DNS 记录
+### 3. 构建失败
+- 查看 Zeabur build logs，确认 `pnpm install` 和 `pnpm next build` 是否成功。
+- 本地可运行 `pnpm run build` 复现。
+- 确保没有新增非 pnpm 的 lock 文件（`package-lock.json`、`yarn.lock` 会被 `preinstall` 脚本拒绝）。
 
-## 项目结构说明
+### 4. 启动失败 / 端口未监听
+- 检查 start logs 中 `Port` 是否与 Zeabur 注入的 `PORT` 一致。
+- `scripts/start.sh` 已优先使用 `PORT` 环境变量，无需手动修改。
 
-```
-/workspace/projects/
-├── Dockerfile              # Docker 构建文件
-├── .dockerignore          # Docker 忽略文件
-├── zeabur.json            # Zeabur 配置文件
-├── package.json           # 项目依赖
-├── pnpm-lock.yaml         # 依赖锁定文件
-├── src/                   # 源代码
-│   ├── app/              # Next.js 页面
-│   ├── components/       # React 组件
-│   └── server.ts         # 自定义服务器
-└── scripts/              # 构建脚本
-    ├── build.sh          # 构建脚本
-    └── start.sh          # 启动脚本
-```
+### 5. 注册提示邀请码无效
+- 确认已执行 `seed-data.sql` 后，管理员已在后台生成邀请码。
+- 邀请码不区分大小写，但需去除前后空格。
 
-## 技术栈
+### 6. 首次登录没有管理员权限
+- 确认环境变量中 `BOOTSTRAP_ADMIN_USERNAME` 和 `BOOTSTRAP_ADMIN_PASSWORD` 已设置。
+- 只有当 `users` 表中不存在任何 `admin`/`super_admin` 角色用户时，系统才会自动创建 bootstrap admin。
 
-- **Framework**: Next.js 16 (App Router)
-- **Core**: React 19
-- **Language**: TypeScript 5
-- **UI**: shadcn/ui + Tailwind CSS 4
-- **Package Manager**: pnpm
-- **Node.js**: 20+
+---
 
-## 支持
+## 七、目录约定
 
-如有问题，请参考：
-- Zeabur 文档：https://docs.zeabur.com
-- Next.js 文档：https://nextjs.org/docs
+- `scripts/build.sh`：安装依赖 + Next.js 构建 + tsup 打包 server.ts
+- `scripts/start.sh`：启动生产服务
+- `src/server.ts`：自定义 Next.js HTTP 服务端入口
+- `supabase-schema-v2.sql`：数据库建表语句
+- `seed-data.sql`：示例初始数据
+- `zeabur.json`：Zeabur 构建/启动命令声明

@@ -19,7 +19,8 @@ console.log(`COZE_PROJECT_ENV: ${process.env.COZE_PROJECT_ENV || 'not set'}`);
 console.log(`Hostname: ${hostname}`);
 console.log(`Port: ${port} (type: ${typeof port}, raw: ${process.env.PORT || 'not set'})`);
 console.log(`SUPABASE_URL: ${process.env.SUPABASE_URL ? 'configured' : 'not set'}`);
-console.log(`SUPABASE_SECRET_KEY: ${process.env.SUPABASE_SECRET_KEY ? 'configured' : 'not set'}`);
+console.log(`SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? 'configured' : 'not set'}`);
+console.log(`SUPABASE_SECRET_KEY (fallback): ${process.env.SUPABASE_SECRET_KEY ? 'configured' : 'not set'}`);
 console.log(`Current directory: ${process.cwd()}`);
 console.log('===========================');
 

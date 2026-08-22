@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import getSupabaseClient from "@/storage/database/supabase-client";
 import { requireAuthRequest, requireAdminRequest } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 
 const supabase = getSupabaseClient();
 
@@ -8,6 +9,17 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { action } = body;
+
+    // 写操作限流：发帖/回复/点赞/收藏/管理操作每分钟10次
+    if (action && !["list", "detail"].includes(action as string)) {
+      const limit = rateLimit(request, `forum:${action as string}`, 10, 60);
+      if (!limit.allowed) {
+        return NextResponse.json(
+          { success: false, error: "请求过于频繁，请稍后再试" },
+          { status: 429, headers: { "X-RateLimit-Reset": String(limit.resetAt) } }
+        );
+      }
+    }
 
     if (action === "list") {
       const { section, search } = body;

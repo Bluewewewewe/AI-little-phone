@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     weibo_link TEXT,
     role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'manager', 'admin', 'super_admin')),
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-    bio TEXT DEFAULT '',
+    user_bio TEXT DEFAULT '',
     invite_code_used TEXT,
     reviewed_by TEXT,
     review_reason TEXT,

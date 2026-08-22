@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
 import { requireAdmin } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 
 const supabase = getSupabaseClient();
 
@@ -108,6 +109,17 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const { action, username, weiboUid, weiboName, code, adminNote, authToken } = body;
+
+        // 写操作限流：每分钟10次
+        if (action) {
+            const limit = rateLimit(request, `weibo:${action as string}`, 10, 60);
+            if (!limit.allowed) {
+                return NextResponse.json(
+                    { error: "请求过于频繁，请稍后再试" },
+                    { status: 429, headers: { "X-RateLimit-Reset": String(limit.resetAt) } }
+                );
+            }
+        }
 
         if (!username) {
             return NextResponse.json({ error: "Missing username" }, { status: 400 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
+import { rateLimit } from "@/lib/rate-limit";
 
 function generateInviteCode(prefix: string): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -128,6 +129,31 @@ export async function POST(request: NextRequest) {
     } = body;
 
     const supabase = await getSupabaseClient();
+
+    // 速率限制：注册/登录更严格（同一IP每分钟5次）
+    if (action === "register" || action === "login") {
+      const limit = rateLimit(request, `auth:${action}`, 5, 60);
+      if (!limit.allowed) {
+        return NextResponse.json(
+          { error: "请求过于频繁，请稍后再试" },
+          { status: 429, headers: { "X-RateLimit-Reset": String(limit.resetAt) } }
+        );
+      }
+    }
+
+    // 写操作/admin操作通用限流（每分钟30次）
+    if (
+      action &&
+      !["register", "login", "get_session", "list_pending_users", "list_users", "get_invite_settings"].includes(action as string)
+    ) {
+      const limit = rateLimit(request, `auth:${action as string}`, 30, 60);
+      if (!limit.allowed) {
+        return NextResponse.json(
+          { error: "请求过于频繁，请稍后再试" },
+          { status: 429, headers: { "X-RateLimit-Reset": String(limit.resetAt) } }
+        );
+      }
+    }
 
     // ========== 注册 ==========
     if (action === "register") {
@@ -725,6 +751,13 @@ export async function POST(request: NextRequest) {
 
     // ========== 生成邀请码 ==========
     if (action === "generate_invite_codes") {
+      const inviteLimit = rateLimit(request, "auth:generate_invite_codes", 5, 60);
+      if (!inviteLimit.allowed) {
+        return NextResponse.json(
+          { error: "生成邀请码过于频繁，请稍后再试" },
+          { status: 429, headers: { "X-RateLimit-Reset": String(inviteLimit.resetAt) } }
+        );
+      }
       if (!authToken || !count || count < 1) {
         return NextResponse.json(
           { error: "缺少必要参数" },
