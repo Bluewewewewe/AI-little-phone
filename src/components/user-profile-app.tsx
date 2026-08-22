@@ -38,6 +38,53 @@ function loadForumPosts(): ForumPost[] {
   }
 }
 
+interface ApiForumPost {
+  id: string;
+  title: string;
+  content: string;
+  section: string;
+  author_name: string;
+  created_at: string;
+  is_pinned: boolean;
+  is_essence: boolean;
+  replyCount?: number;
+  likes?: number;
+  favorites?: number;
+  forum_replies?: { count: number }[];
+  forum_likes?: { count: number }[];
+}
+
+async function fetchAllForumPosts(): Promise<ForumPost[]> {
+  try {
+    const res = await fetch("/api/forum", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "list", section: "all" })
+    });
+    const json = await res.json() as { success: boolean; data?: ApiForumPost[]; error?: string };
+    if (!json.success || !Array.isArray(json.data)) return loadForumPosts();
+    return json.data.map((p) => ({
+      id: p.id,
+      title: p.title,
+      content: p.content,
+      author: p.author_name,
+      authorAvatar: p.section === "announce" ? "📢" : "🌽",
+      section: p.section,
+      sectionName: p.section,
+      replyCount: p.replyCount ?? p.forum_replies?.[0]?.count ?? 0,
+      viewCount: 0,
+      likes: p.likes ?? p.forum_likes?.[0]?.count ?? 0,
+      favorites: p.favorites ?? 0,
+      createdAt: new Date(p.created_at).toLocaleString("zh-CN"),
+      lastReplyAt: new Date(p.created_at).toLocaleString("zh-CN"),
+      isEssence: p.is_essence,
+      isPinned: p.is_pinned
+    }));
+  } catch {
+    return loadForumPosts();
+  }
+}
+
 function loadUserSet(keyBase: string, username: string): Set<string> {
   if (typeof window === "undefined") return new Set();
   try {
@@ -72,10 +119,18 @@ export default function UserProfileApp({ username, isSelf = false, bio = "", onC
   const [coins, setCoins] = useState<number>(1000);
 
   useEffect(() => {
-    setPosts(loadForumPosts());
-    setLikedIds(loadUserSet("forum_likes", username));
-    setFavoritedIds(loadUserSet("forum_favorites", username));
-    setCoins(loadCoins(username));
+    let cancelled = false;
+    async function load() {
+      const data = await fetchAllForumPosts();
+      if (!cancelled) {
+        setPosts(data);
+        setLikedIds(loadUserSet("forum_likes", username));
+        setFavoritedIds(loadUserSet("forum_favorites", username));
+        setCoins(loadCoins(username));
+      }
+    }
+    load();
+    return () => { cancelled = true; };
   }, [username]);
 
   const userPosts = useMemo(

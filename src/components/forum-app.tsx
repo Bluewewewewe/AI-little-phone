@@ -108,6 +108,139 @@ function transferCoins(from: string, to: string, amount: number): boolean {
     return true;
 }
 
+// ============ API 数据层 ============
+interface ApiPost {
+    id: string;
+    title: string;
+    content: string;
+    section: string;
+    author_id: string;
+    author_name: string;
+    category?: string;
+    tags?: string[];
+    is_pinned: boolean;
+    is_essence: boolean;
+    bug_status?: "pending" | "fixed" | "wontfix";
+    deleted_at?: string;
+    created_at: string;
+    updated_at: string;
+    last_reply_at?: string;
+    replyCount?: number;
+    likes?: number;
+    favorites?: number;
+    forum_replies?: { count: number }[];
+    forum_likes?: { count: number }[];
+    forum_replies_detail?: ApiReply[];
+}
+
+interface ApiReply {
+    id: string;
+    post_id: string;
+    author_id: string;
+    author_name: string;
+    content: string;
+    is_admin: boolean;
+    parent_reply_id?: string;
+    created_at: string;
+}
+
+function getAuthToken(): string | null {
+    if (typeof window === "undefined") return null;
+    try {
+        return localStorage.getItem("auth_token");
+    } catch {
+        return null;
+    }
+}
+
+function formatTime(iso: string): string {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return iso;
+    return date.toLocaleString("zh-CN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
+function mapApiReplyToReply(r: ApiReply): ForumReply {
+    return {
+        id: r.id,
+        postId: r.post_id,
+        content: r.content,
+        author: r.author_name,
+        authorAvatar: r.is_admin ? "👑" : "🌽",
+        createdAt: formatTime(r.created_at),
+        isPinned: false,
+        isDeleted: false,
+        subReplies: [],
+    };
+}
+
+function mapApiPostToPost(p: ApiPost): ForumPost {
+    const topReplies = p.forum_replies_detail || [];
+    const parentReplies = topReplies.filter((r) => !r.parent_reply_id).map(mapApiReplyToReply);
+    const subReplies = topReplies.filter((r) => r.parent_reply_id);
+    parentReplies.forEach((r) => {
+        r.subReplies = subReplies
+            .filter((sr) => sr.parent_reply_id === r.id)
+            .map((sr) => ({
+                id: sr.id,
+                replyId: r.id,
+                content: sr.content,
+                author: sr.author_name,
+                authorAvatar: sr.is_admin ? "👑" : "",
+                createdAt: formatTime(sr.created_at),
+                replyTo: r.author,
+            }));
+    });
+    return {
+        id: p.id,
+        title: p.title,
+        content: p.content,
+        author: p.author_name,
+        authorAvatar: p.author_name === "官方通知" || p.section === "announce" ? "📢" : "🌽",
+        section: p.section,
+        replyCount: p.replyCount ?? p.forum_replies?.[0]?.count ?? parentReplies.length,
+        viewCount: 0,
+        createdAt: formatTime(p.created_at),
+        lastReplyAt: formatTime(p.last_reply_at || p.updated_at),
+        status: p.deleted_at ? "deleted" : "normal",
+        isEssence: p.is_essence,
+        isPinned: p.is_pinned,
+        isLocked: false,
+        replies: parentReplies,
+        likes: p.likes ?? p.forum_likes?.[0]?.count ?? 0,
+        favorites: p.favorites ?? 0,
+        bugStatus: p.bug_status,
+    };
+}
+
+async function forumApi(action: string, payload: Record<string, unknown> = {}) {
+    const token = getAuthToken();
+    const res = await fetch("/api/forum", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, authToken: token, ...payload }),
+    });
+    return res.json() as Promise<{ success: boolean; data?: unknown; error?: string }>;
+}
+
+async function fetchForumPosts(section?: string, search?: string): Promise<ForumPost[]> {
+    const res = await forumApi("list", { section: section || "all", search });
+    if (!res.success || !Array.isArray(res.data)) return [];
+    return (res.data as ApiPost[]).map(mapApiPostToPost);
+}
+
+async function fetchForumPostDetail(postId: string): Promise<ForumPost | null> {
+    const res = await forumApi("detail", { postId });
+    if (!res.success || !res.data) return null;
+    return mapApiPostToPost(res.data as ApiPost);
+}
+
 // ============ Mock 数据 ============
 const MOCK_SECTIONS: ForumSection[] = [
     { id: "creative", icon: "🎨", name: "同人创作", desc: "文字描述、创作讨论", postCount: 128 },
@@ -334,6 +467,9 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
         return MOCK_POSTS;
     });
     const [sortBy, setSortBy] = useState<"latest" | "hot" | "essence">("latest");
+    const [isLoading, setIsLoading] = useState(false);
+    const [apiError, setApiError] = useState<string | null>(null);
+    const [isOffline, setIsOffline] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchType, setSearchType] = useState<"post" | "user">("post");
     const [searchFilter, setSearchFilter] = useState<{ section: string; time: string; essenceOnly: boolean }>({
@@ -396,34 +532,39 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
     const [rewardAdminMode, setRewardAdminMode] = useState(false);
 
     // 发布官方通知（仅admin）
-    const handlePublishNotice = () => {
+    const handlePublishNotice = async () => {
         const title = newNoticeTitle.trim();
         const content = newNoticeContent.trim();
         if (!title || !content) return;
-        const now = new Date().toLocaleString("zh-CN");
-        const notice: ForumPost = {
-            id: `notice_${crypto.randomUUID()}`,
-            title: `【官方公告】${title}`,
-            content,
-            author: loginUsername || "官方通知",
-            authorAvatar: "📢",
-            section: "announce",
-            replyCount: 0,
-            viewCount: 0,
-            createdAt: now,
-            lastReplyAt: now,
-            status: "normal",
-            isEssence: true,
-            isPinned: true,
-            isLocked: false,
-            replies: [],
-            likes: 0,
-            favorites: 0
-        };
-        setPosts(prev => [notice, ...prev]);
-        setNewNoticeTitle("");
-        setNewNoticeContent("");
-        setShowNoticeForm(false);
+        const token = getAuthToken();
+        if (!token) {
+            alert("请先登录");
+            return;
+        }
+        setIsLoading(true);
+        try {
+            const res = await forumApi("create", {
+                title: `【官方公告】${title}`,
+                content,
+                section: "announce"
+            });
+            if (!res.success) {
+                setApiError(res.error || "发布公告失败");
+                return;
+            }
+            const fresh = await fetchForumPostDetail((res.data as { id: string }).id);
+            if (fresh) {
+                setPosts(prev => [fresh, ...prev.filter(p => p.id !== fresh.id)]);
+            }
+            setNewNoticeTitle("");
+            setNewNoticeContent("");
+            setShowNoticeForm(false);
+            setApiError(null);
+        } catch (err) {
+            setApiError(err instanceof Error ? err.message : "发布公告失败");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // 通知相关状态
@@ -452,9 +593,25 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
     };
 
     // 管理员加精/取消加精
-    const toggleEssence = (postId: string) => {
-        setPosts(prev => prev.map(p => p.id === postId ? { ...p, isEssence: !p.isEssence } : p));
-        setCurrentPost(prev => prev && prev.id === postId ? { ...prev, isEssence: !prev.isEssence } : prev);
+    const toggleEssence = async (postId: string) => {
+        if (!isAdmin) return;
+        const post = posts.find(p => p.id === postId);
+        if (!post) return;
+        try {
+            const res = await forumApi("feature", { postId, featured: !post.isEssence });
+            if (!res.success) {
+                setApiError(res.error || "加精失败");
+                return;
+            }
+            const fresh = await fetchForumPostDetail(postId);
+            if (fresh) {
+                setPosts(prev => prev.map(p => p.id === fresh.id ? fresh : p));
+                if (currentPost?.id === fresh.id) setCurrentPost(fresh);
+            }
+            setApiError(null);
+        } catch (err) {
+            setApiError(err instanceof Error ? err.message : "加精失败");
+        }
     };
 
     // 打赏/奖励作者米米币
@@ -556,6 +713,39 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
         } catch {}
     }, [posts]);
 
+    // 从云端加载帖子（缓存优先）
+    useEffect(() => {
+        let cancelled = false;
+        async function loadFromCloud() {
+            setIsLoading(true);
+            setApiError(null);
+            try {
+                const data = await fetchForumPosts();
+                if (!cancelled) {
+                    if (data.length > 0) {
+                        setPosts(prev => {
+                            const map = new Map(data.map((p) => [p.id, p]));
+                            prev.forEach((p) => {
+                                if (!map.has(p.id)) map.set(p.id, p);
+                            });
+                            return Array.from(map.values()).sort((a, b) => Number(b.isPinned) - Number(a.isPinned) || new Date(b.lastReplyAt).getTime() - new Date(a.lastReplyAt).getTime());
+                        });
+                    }
+                    setIsOffline(false);
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    setApiError(err instanceof Error ? err.message : "加载失败，显示本地缓存");
+                    setIsOffline(true);
+                }
+            } finally {
+                if (!cancelled) setIsLoading(false);
+            }
+        }
+        loadFromCloud();
+        return () => { cancelled = true; };
+    }, []);
+
     // 进入 Bug 帖子详情时同步状态选择器
     useEffect(() => {
         if (currentPost?.section === "bug-report") {
@@ -579,97 +769,140 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
         return updated;
     }, []);
 
-    const toggleLike = useCallback((postId: string) => {
+    const toggleLike = useCallback(async (postId: string) => {
+        const token = getAuthToken();
+        if (!token) {
+            alert("请先登录");
+            return;
+        }
         const liked = likedPostIds.includes(postId);
         setLikedPostIds(prev => liked ? prev.filter(id => id !== postId) : [...prev, postId]);
         setPosts(prev => prev.map(p => {
             if (p.id !== postId) return p;
             return { ...p, likes: Math.max(0, p.likes + (liked ? -1 : 1)) };
         }));
-    }, [likedPostIds]);
+        try {
+            const res = await forumApi("like", { postId });
+            if (!res.success) {
+                setApiError(res.error || "点赞失败");
+                return;
+            }
+            const fresh = await fetchForumPostDetail(postId);
+            if (fresh) {
+                setPosts(prev => prev.map(p => p.id === fresh.id ? fresh : p));
+                if (currentPost?.id === fresh.id) setCurrentPost(fresh);
+            }
+            setApiError(null);
+        } catch (err) {
+            setApiError(err instanceof Error ? err.message : "点赞失败");
+        }
+    }, [likedPostIds, currentPost]);
 
-    const toggleFavorite = useCallback((postId: string) => {
+    const toggleFavorite = useCallback(async (postId: string) => {
+        const token = getAuthToken();
+        if (!token) {
+            alert("请先登录");
+            return;
+        }
         const favorited = favoritedPostIds.includes(postId);
         setFavoritedPostIds(prev => favorited ? prev.filter(id => id !== postId) : [...prev, postId]);
         setPosts(prev => prev.map(p => {
             if (p.id !== postId) return p;
             return { ...p, favorites: Math.max(0, p.favorites + (favorited ? -1 : 1)) };
         }));
-    }, [favoritedPostIds]);
+        try {
+            const res = await forumApi("favorite", { postId });
+            if (!res.success) {
+                setApiError(res.error || "收藏失败");
+                return;
+            }
+            const fresh = await fetchForumPostDetail(postId);
+            if (fresh) {
+                setPosts(prev => prev.map(p => p.id === fresh.id ? fresh : p));
+                if (currentPost?.id === fresh.id) setCurrentPost(fresh);
+            }
+            setApiError(null);
+        } catch (err) {
+            setApiError(err instanceof Error ? err.message : "收藏失败");
+        }
+    }, [favoritedPostIds, currentPost]);
 
     // 发帖
-    const handleCreatePost = useCallback(() => {
+    const handleCreatePost = useCallback(async () => {
         if (!newPostTitle.trim() || !newPostContent.trim() || !newPostSection) return;
         if (newPostSection === "announce" && !isAdmin) return;
+        const token = getAuthToken();
+        if (!token) {
+            alert("请先登录");
+            return;
+        }
 
-        const now = new Date().toLocaleString("zh-CN");
-        const newPost: ForumPost = {
-            id: `p${crypto.randomUUID()}`,
-            title: newPostTitle,
-            content: newPostContent,
-            author: "我",
-            authorAvatar: "🌽",
-            section: newPostSection,
-            replyCount: 0,
-            viewCount: 0,
-            likes: 0,
-            favorites: 0,
-            createdAt: now,
-            lastReplyAt: now,
-            status: "normal",
-            isEssence: newPostSection === "announce",
-            isPinned: newPostSection === "announce",
-            isLocked: false,
-            replies: [],
-            bugStatus: newPostSection === "bug-report" ? "pending" : undefined
-        };
-
-        setPosts(prev => [newPost, ...prev]);
-        setNewPostTitle("");
-        setNewPostContent("");
-        setNewPostSection("");
-        setView("posts");
-        setCurrentSection(newPostSection);
+        setIsLoading(true);
+        try {
+            const res = await forumApi("create", {
+                title: newPostTitle.trim(),
+                content: newPostContent.trim(),
+                section: newPostSection
+            });
+            if (!res.success) {
+                setApiError(res.error || "发帖失败");
+                return;
+            }
+            const fresh = await fetchForumPostDetail((res.data as { id: string }).id);
+            if (fresh) {
+                setPosts(prev => [fresh, ...prev.filter(p => p.id !== fresh.id)]);
+            }
+            setNewPostTitle("");
+            setNewPostContent("");
+            setNewPostSection("");
+            setView("posts");
+            setCurrentSection(newPostSection);
+            setApiError(null);
+        } catch (err) {
+            setApiError(err instanceof Error ? err.message : "发帖失败");
+        } finally {
+            setIsLoading(false);
+        }
     }, [newPostTitle, newPostContent, newPostSection, isAdmin]);
 
     // 回复
-    const handleReply = useCallback(() => {
+    const handleReply = useCallback(async () => {
         if (!replyContent.trim() || !currentPost) return;
+        const token = getAuthToken();
+        if (!token) {
+            alert("请先登录");
+            return;
+        }
 
-        const now = new Date().toLocaleString("zh-CN");
-        const newReply: ForumReply = {
-            id: `r${crypto.randomUUID()}`,
-            postId: currentPost.id,
-            content: replyContent,
-            author: "我",
-            authorAvatar: "🌽",
-            createdAt: now,
-            isPinned: false,
-            isDeleted: false,
-            subReplies: []
-        };
-
-        const shouldUpdateBugStatus = isAdmin && currentPost.section === "bug-report" && newBugStatus !== currentPost.bugStatus;
-
-        const updatedPosts = posts.map(p => {
-            if (p.id === currentPost.id) {
-                return {
-                    ...p,
-                    replies: [...p.replies, newReply],
-                    replyCount: p.replyCount + 1,
-                    lastReplyAt: now,
-                    bugStatus: shouldUpdateBugStatus ? newBugStatus : p.bugStatus
-                };
+        setIsLoading(true);
+        try {
+            const shouldUpdateBugStatus = isAdmin && currentPost.section === "bug-report" && newBugStatus !== currentPost.bugStatus;
+            const res = await forumApi("reply", {
+                postId: currentPost.id,
+                content: replyContent.trim()
+            });
+            if (!res.success) {
+                setApiError(res.error || "回复失败");
+                return;
             }
-            return p;
-        });
-
-        setPosts(updatedPosts);
-        setCurrentPost(updatedPosts.find(p => p.id === currentPost.id) || null);
-        setReplyContent("");
-        setReplyToReplyId(null);
-        setReplyToAuthor("");
-    }, [replyContent, currentPost, posts, isAdmin, newBugStatus]);
+            if (shouldUpdateBugStatus) {
+                await forumApi("set_bug_status", { postId: currentPost.id, bugStatus: newBugStatus });
+            }
+            const fresh = await fetchForumPostDetail(currentPost.id);
+            if (fresh) {
+                setPosts(prev => prev.map(p => p.id === fresh.id ? fresh : p));
+                setCurrentPost(fresh);
+            }
+            setReplyContent("");
+            setReplyToReplyId(null);
+            setReplyToAuthor("");
+            setApiError(null);
+        } catch (err) {
+            setApiError(err instanceof Error ? err.message : "回复失败");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [replyContent, currentPost, isAdmin, newBugStatus]);
 
     // 楼中楼回复
     const handleSubReply = (replyId: string, replyToAuthor: string) => {
@@ -839,9 +1072,10 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                 return (
                     <div style={{ padding: "0 16px 12px", background: "#fff" }}>
                         <div
-                            onClick={() => {
-                                setCurrentPost(pinnedAnnounce);
+                            onClick={async () => {
                                 setView("postDetail");
+                                const fresh = await fetchForumPostDetail(pinnedAnnounce.id);
+                                setCurrentPost(fresh || pinnedAnnounce);
                             }}
                             style={{
                                 padding: "12px 14px",
@@ -1183,10 +1417,11 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                         filteredPosts.map(post => (
                             <div
                                 key={post.id}
-                                onClick={() => {
-                                    const updated = incrementViewCount(post.id) || post;
-                                    setCurrentPost(updated);
+                                onClick={async () => {
+                                    incrementViewCount(post.id);
                                     setView("postDetail");
+                                    const fresh = await fetchForumPostDetail(post.id);
+                                    setCurrentPost(fresh || post);
                                 }}
                                 style={{
                                     background: "#fff",
@@ -1326,6 +1561,47 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                             fontSize: 12,
                             cursor: "pointer"
                         }}> 举报</button>
+                    {isAdmin && (
+                        <>
+                            <button
+                                onClick={async () => {
+                                    if (!confirm("确定删除该帖子？")) return;
+                                    try {
+                                        const res = await forumApi("delete", { postId: currentPost.id });
+                                        if (!res.success) {
+                                            setApiError(res.error || "删除失败");
+                                            return;
+                                        }
+                                        setPosts(prev => prev.filter(p => p.id !== currentPost.id));
+                                        setView("posts");
+                                        setCurrentPost(null);
+                                        setApiError(null);
+                                    } catch (err) {
+                                        setApiError(err instanceof Error ? err.message : "删除失败");
+                                    }
+                                }}
+                                style={{
+                                    background: "rgba(239,68,68,0.85)",
+                                    border: "none",
+                                    color: "#fff",
+                                    padding: "6px 12px",
+                                    borderRadius: 8,
+                                    fontSize: 12,
+                                    cursor: "pointer"
+                                }}>删除</button>
+                            <button
+                                onClick={() => toggleEssence(currentPost.id)}
+                                style={{
+                                    background: "rgba(245,158,11,0.85)",
+                                    border: "none",
+                                    color: "#fff",
+                                    padding: "6px 12px",
+                                    borderRadius: 8,
+                                    fontSize: 12,
+                                    cursor: "pointer"
+                                }}>{currentPost.isEssence ? "取消精华" : "加精"}</button>
+                        </>
+                    )}
                 </div>
 
                 {/* 帖子内容 */}
@@ -2207,10 +2483,11 @@ export function ForumApp({ onClose, isAdmin = false, loginUsername = "", onViewU
                         results.map(post => (
                             <div
                                 key={post.id}
-                                onClick={() => {
-                                    const updated = incrementViewCount(post.id) || post;
-                                    setCurrentPost(updated);
+                                onClick={async () => {
+                                    incrementViewCount(post.id);
                                     setView("postDetail");
+                                    const fresh = await fetchForumPostDetail(post.id);
+                                    setCurrentPost(fresh || post);
                                 }}
                                 style={{
                                     background: "#fff",

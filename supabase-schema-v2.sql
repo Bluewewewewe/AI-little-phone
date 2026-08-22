@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS public.forum_replies (
     author_name TEXT NOT NULL,
     content TEXT NOT NULL,
     is_admin BOOLEAN NOT NULL DEFAULT false,
+    parent_reply_id UUID REFERENCES public.forum_replies(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
