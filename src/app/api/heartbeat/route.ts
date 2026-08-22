@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 import { buildHeartbeatPrompt, getParentStatus, getMomStatus, type ParentStatusInfo, DAD_PROFILE, MOM_PROFILE } from '@/lib/world-book';
 import { getModelForScene } from '@/lib/config';
+import { requireAuthRequest } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -17,6 +18,8 @@ export const maxDuration = 30;
  */
 export async function POST(request: NextRequest) {
   try {
+    await requireAuthRequest(request);
+
     const { 
       recentMessages = [],    // 最近聊天记录
       currentApp = 'home',   // 当前在哪个APP

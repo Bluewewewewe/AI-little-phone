@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
 import { randomUUID } from "crypto";
+import bcrypt from "bcryptjs";
 
 function generateInviteCode(prefix: string): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -12,11 +13,14 @@ function generateInviteCode(prefix: string): string {
 }
 
 function isSuperAdmin(user: Record<string, unknown>): boolean {
-  return user.username === "admin" || (user.level as number) >= 99;
+  return user.role === "super_admin" && user.status === "approved";
 }
 
 function isAdmin(user: Record<string, unknown>): boolean {
-  return user.role === "admin" && user.status === "approved";
+  return (
+    (user.role === "admin" || user.role === "super_admin") &&
+    user.status === "approved"
+  );
 }
 
 async function getUserByToken(
@@ -40,6 +44,27 @@ async function getUserByToken(
 
   if (!user) return null;
   return { user, session };
+}
+
+async function requireAdminAuth(
+  supabase: Awaited<ReturnType<typeof getSupabaseClient>>,
+  authToken: string | undefined
+): Promise<{ user: Record<string, unknown> | null; error: NextResponse | null }> {
+  if (!authToken) {
+    return { user: null, error: NextResponse.json({ error: "缺少token" }, { status: 401 }) };
+  }
+  const userData = await getUserByToken(supabase, authToken);
+  if (!userData) {
+    return { user: null, error: NextResponse.json({ error: "未登录或token已过期" }, { status: 401 }) };
+  }
+  const { user } = userData;
+  if (user.role !== "admin" && user.role !== "super_admin") {
+    return { user: null, error: NextResponse.json({ error: "权限不足" }, { status: 403 }) };
+  }
+  if (user.status !== "approved") {
+    return { user: null, error: NextResponse.json({ error: "账号未审核通过" }, { status: 403 }) };
+  }
+  return { user, error: null };
 }
 
 async function createDefaultInviteCodes(
@@ -67,6 +92,8 @@ async function createDefaultInviteCodes(
     code,
     owner_id: userId,
     role_type: "user",
+    status: "active",
+    created_at: new Date().toISOString(),
   }));
 
   const { error } = await supabase.from("invite_codes").insert(insertData);
@@ -173,12 +200,13 @@ export async function POST(request: NextRequest) {
       }
 
       const role = invite.role_type === "admin" ? "admin" : "user";
+      const passwordHash = await bcrypt.hash(password, 10);
 
       const { data, error } = await supabase
         .from("users")
         .insert({
           username,
-          password,
+          password: passwordHash,
           display_name: displayName || username,
           weibo_name: weiboName,
           role,
@@ -200,11 +228,16 @@ export async function POST(request: NextRequest) {
       // 标记邀请码已使用
       await supabase
         .from("invite_codes")
-        .update({ used_by: data.id })
+        .update({
+          used_by: data.id,
+          status: "used",
+          used_at: new Date().toISOString(),
+        })
         .eq("code", normalizedCode);
 
       return NextResponse.json({
         success: true,
+        pending: true,
         message: "注册成功，请等待管理员审核",
         data: {
           id: data.id,
@@ -224,6 +257,27 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // 首次启动：如果数据库中没有 admin 且配置了 bootstrap 账号，自动创建
+      const bootstrapUsername = process.env.BOOTSTRAP_ADMIN_USERNAME;
+      const bootstrapPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+      if (bootstrapUsername && bootstrapPassword) {
+        const { count: adminCount, error: adminCountError } = await supabase
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .in("role", ["admin", "super_admin"]);
+        if (!adminCountError && (adminCount === 0 || adminCount === null)) {
+          const bootstrapHash = await bcrypt.hash(bootstrapPassword, 10);
+          await supabase.from("users").insert({
+            username: bootstrapUsername,
+            password: bootstrapHash,
+            display_name: bootstrapUsername,
+            role: "super_admin",
+            status: "approved",
+            weibo_name: "",
+          });
+        }
+      }
+
       const { data: user, error } = await supabase
         .from("users")
         .select("*")
@@ -237,11 +291,26 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (user.password !== password) {
+      let passwordValid = false;
+      let needsHashUpgrade = false;
+      if (user.password.startsWith("$2")) {
+        passwordValid = await bcrypt.compare(password, user.password);
+      } else {
+        passwordValid = user.password === password;
+        needsHashUpgrade = passwordValid;
+      }
+
+      if (!passwordValid) {
         return NextResponse.json(
           { error: "密码错误" },
           { status: 401 }
         );
+      }
+
+      if (needsHashUpgrade) {
+        const newHash = await bcrypt.hash(password, 10);
+        await supabase.from("users").update({ password: newHash }).eq("id", user.id);
+        user.password = newHash;
       }
 
       if (user.status === "pending") {
@@ -274,7 +343,7 @@ export async function POST(request: NextRequest) {
 
       const isAdminUser = isAdmin(user) || isSuperAdmin(user);
       const isDefaultPassword =
-        user.password === "admin123" || user.password === user.username;
+        password === "admin123" || password === user.username;
 
       return NextResponse.json({
         success: true,
@@ -473,10 +542,13 @@ export async function POST(request: NextRequest) {
 
     // ========== 获取所有用户列表 ==========
     if (action === "list_users") {
+      const { user: adminUser, error: authError } = await requireAdminAuth(supabase, authToken);
+      if (authError || !adminUser) return authError!;
+
       const { data, error } = await supabase
         .from("users")
         .select(
-          "id, username, display_name, level, role, status, weibo_verified, weibo_uid, weibo_name, created_at"
+          "id, username, display_name, level, role, status, weibo_verified, weibo_uid, weibo_name, created_at, reviewed_at, reviewed_by"
         )
         .order("created_at", { ascending: false });
 
@@ -489,6 +561,9 @@ export async function POST(request: NextRequest) {
 
     // ========== 角色管理 ==========
     if (action === "set_role") {
+      const { user: adminUser, error: authError } = await requireAdminAuth(supabase, authToken);
+      if (authError || !adminUser) return authError!;
+
       const { targetUserId: roleTargetId, role } = body;
 
       if (!roleTargetId || !role) {
@@ -498,7 +573,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const validRoles = ["user", "teacher", "leader", "admin"];
+      const validRoles = ["user", "teacher", "leader", "admin", "super_admin"];
       if (!validRoles.includes(role)) {
         return NextResponse.json({ error: "无效的角色" }, { status: 400 });
       }
@@ -518,6 +593,9 @@ export async function POST(request: NextRequest) {
 
     // ========== 获取邀请码设置 ==========
     if (action === "get_invite_settings") {
+      const { user: adminUser, error: authError } = await requireAdminAuth(supabase, authToken);
+      if (authError || !adminUser) return authError!;
+
       const { data } = await supabase.from("system_settings").select("*");
 
       const settings: Record<string, string> = {};
@@ -555,14 +633,19 @@ export async function POST(request: NextRequest) {
       }
 
       const user = found.user;
-      if ((user.password as string) !== currentPassword) {
+      const validCurrent = await bcrypt.compare(
+        currentPassword as string,
+        user.password as string
+      );
+      if (!validCurrent) {
         return NextResponse.json(
           { error: "当前密码错误" },
           { status: 403 }
         );
       }
 
-      const updateData: Record<string, unknown> = { password: newPassword };
+      const hashedNew = await bcrypt.hash(newPassword as string, 10);
+      const updateData: Record<string, unknown> = { password: hashedNew };
       if (newDisplayName && newDisplayName.trim()) {
         updateData.display_name = newDisplayName.trim();
       }
@@ -714,6 +797,8 @@ export async function POST(request: NextRequest) {
         code,
         owner_id: user.id,
         role_type: targetRole,
+        status: "active",
+        created_at: new Date().toISOString(),
       }));
 
       const { error } = await supabase.from("invite_codes").insert(insertData);
@@ -752,7 +837,7 @@ export async function POST(request: NextRequest) {
 
       const { data, error } = await supabase
         .from("invite_codes")
-        .select("code, owner_id, role_type, used_by, created_at, revoked_at")
+        .select("code, owner_id, role_type, status, used_by, created_at, used_at, revoked_at")
         .eq("owner_id", found.user.id)
         .order("created_at", { ascending: false });
 
@@ -832,7 +917,10 @@ export async function POST(request: NextRequest) {
 
       const { error } = await supabase
         .from("invite_codes")
-        .update({ revoked_at: new Date().toISOString() })
+        .update({
+          status: "revoked",
+          revoked_at: new Date().toISOString(),
+        })
         .eq("code", (code as string).toUpperCase().trim());
 
       if (error) {

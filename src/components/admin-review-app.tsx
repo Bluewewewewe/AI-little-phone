@@ -32,7 +32,7 @@ export function AdminReviewApp({ loginUsername, onClose }: { loginUsername: stri
             const res = await fetch("/api/auth", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "list_pending_users", token })
+                body: JSON.stringify({ action: "list_pending_users", authToken: token })
             });
             const result = await res.json();
             if (result.success && Array.isArray(result.data)) {
@@ -61,7 +61,7 @@ export function AdminReviewApp({ loginUsername, onClose }: { loginUsername: stri
             const res = await fetch("/api/auth", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "batch_approve_users", userIds: ids, reviewedBy: loginUsername, token })
+                body: JSON.stringify({ action: "batch_approve_users", targetUserIds: ids, reviewedBy: loginUsername, authToken: token })
             });
             const result = await res.json();
             if (result.success) {
@@ -90,10 +90,10 @@ export function AdminReviewApp({ loginUsername, onClose }: { loginUsername: stri
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     action: "reject_user",
-                    userId: user.id,
+                    targetUserId: user.id,
                     reason: rejectReason.trim(),
                     reviewedBy: loginUsername,
-                    token
+                    authToken: token
                 })
             });
             const result = await res.json();

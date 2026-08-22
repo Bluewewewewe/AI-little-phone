@@ -48,6 +48,7 @@ import UserProfileApp from "@/components/user-profile-app";
 import { AdminReviewApp } from "@/components/admin-review-app";
 import AppStoreApp from "@/components/app-store-app";
 import AppAdminApp from "@/components/admin/app-admin-app";
+import AdminDashboard from "@/components/admin-dashboard";
 import type { StoreAppItem } from "@/lib/apps";
 
 
@@ -1561,7 +1562,10 @@ function WeiboVerifyAdmin() {
 
     const fetchVerifications = async () => {
         try {
-            const res = await fetch("/api/weibo-verify?list=true&status=" + filter);
+            const authToken = localStorage.getItem("auth_token");
+            const res = await fetch("/api/weibo-verify?list=true&status=" + filter, {
+                headers: authToken ? { "Authorization": `Bearer ${authToken}` } : {}
+            });
             const result = await res.json();
             if (result.data) {
                 setVerifications(result.data);
@@ -1575,13 +1579,15 @@ function WeiboVerifyAdmin() {
 
     const handleAction = async (username: string, action: string, note?: string) => {
         try {
+            const authToken = localStorage.getItem("auth_token");
             await fetch("/api/weibo-verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     action,
                     username,
-                    adminNote: note || `Admin ${action}`
+                    adminNote: note || `Admin ${action}`,
+                    authToken
                 })
             });
             fetchVerifications();
@@ -1788,7 +1794,6 @@ export default function PhonePage() {
     const [currentPage, setCurrentPage] = useState(0);
     const [currentApp, setCurrentApp] = useState<string | null>(null);
     const [appClosing, setAppClosing] = useState(false);
-    const ADMIN_ACCOUNTS = ["admin", "manager_lin", "cp_official"];
     const [loginUsername, setLoginUsername] = useState("");
     const [loginPassword, setLoginPassword] = useState("");
     const [loginMode, setLoginMode] = useState<"login" | "register">("login");
@@ -1877,6 +1882,7 @@ export default function PhonePage() {
 
     // 新注册系统状态
     const [showAdminApp, setShowAdminApp] = useState(false);
+    const [showNewAdmin, setShowNewAdmin] = useState(false);
     const [adminRole, setAdminRole] = useState<'super_admin' | 'review_admin' | 'ops_admin'>('super_admin');
 
     // Weibo verification state
@@ -2056,8 +2062,8 @@ export default function PhonePage() {
         // 自动登录：检查是否有有效的 token
         const savedToken = localStorage.getItem("auth_token");
         if (savedToken) {
-            // 本地 mock 管理员 token 直接恢复，无需请求服务端
-            if (savedToken.startsWith("mock_admin_")) {
+            // 本地 mock 管理员 token 直接恢复，仅开发环境
+            if (process.env.NODE_ENV !== "production" && savedToken.startsWith("mock_admin_")) {
                 const mockUser = localStorage.getItem("mock_admin_user") || "admin";
                 setIsAdmin(true);
                 setIsLoggedIn(true);
@@ -2085,7 +2091,7 @@ export default function PhonePage() {
             .then(result => {
                 if (result.valid) {
                     const userData = result.data;
-                    const isAdminUser = ADMIN_ACCOUNTS.includes(userData.username?.toLowerCase());
+                    const isAdminUser = userData.isAdmin === true;
                     setIsAdmin(isAdminUser);
                     setIsLoggedIn(true);
                     setAuthToken(savedToken);
@@ -2940,24 +2946,26 @@ export default function PhonePage() {
         }
 
         setLoginError("");
-        // Mock 管理员账号验证（开发环境）
-        const MOCK_ADMINS: Record<string, string> = {
-            "admin": "admin123",
-            "manager_lin": "admin123",
-            "cp_official": "admin123"
-        };
-        if (MOCK_ADMINS[username.toLowerCase()] === password) {
-            setIsAdmin(true);
-            setIsLoggedIn(true);
-            setAdminViewMode("admin");
-            setAdminRole("super_admin");
-            setLoginLoading(false);
-            const mockToken = `mock_admin_${username}_${Date.now()}`;
-            setAuthToken(mockToken);
-            localStorage.setItem("auth_token", mockToken);
-            localStorage.setItem("mock_admin_user", username);
-            setDefaultPasswordTip(true);
-            return;
+        // Mock 管理员账号验证（仅开发环境）
+        if (process.env.NODE_ENV !== "production") {
+            const MOCK_ADMINS: Record<string, string> = {
+                "admin": "admin123",
+                "manager_lin": "admin123",
+                "cp_official": "admin123"
+            };
+            if (MOCK_ADMINS[username.toLowerCase()] === password) {
+                setIsAdmin(true);
+                setIsLoggedIn(true);
+                setAdminViewMode("admin");
+                setAdminRole("super_admin");
+                setLoginLoading(false);
+                const mockToken = `mock_admin_${username}_${Date.now()}`;
+                setAuthToken(mockToken);
+                localStorage.setItem("auth_token", mockToken);
+                localStorage.setItem("mock_admin_user", username);
+                setDefaultPasswordTip(true);
+                return;
+            }
         }
         setLoginLoading(true);
 
@@ -2992,7 +3000,7 @@ export default function PhonePage() {
             }
 
             // Login/Register successful
-            const isAdminUser = result.data?.isAdmin || ADMIN_ACCOUNTS.includes(username.toLowerCase());
+            const isAdminUser = result.data?.isAdmin === true;
             setIsAdmin(isAdminUser);
             setIsLoggedIn(true);
             setLoginUsername(username);
@@ -8711,11 +8719,18 @@ export default function PhonePage() {
                         <span className="me-menu-arrow">›</span>
                     </div>
                     {isAdmin && (
-                        <div className="me-menu-item" onClick={() => setCurrentApp("admin-review")}>
-                            <span className="me-menu-icon">✅</span>
-                            <span className="me-menu-label">用户审核</span>
-                            <span className="me-menu-arrow">›</span>
-                        </div>
+                        <>
+                            <div className="me-menu-item" onClick={() => setCurrentApp("admin-review")}>
+                                <span className="me-menu-icon">✅</span>
+                                <span className="me-menu-label">用户审核</span>
+                                <span className="me-menu-arrow">›</span>
+                            </div>
+                            <div className="me-menu-item" onClick={() => setShowNewAdmin(true)}>
+                                <span className="me-menu-icon">🛠️</span>
+                                <span className="me-menu-label">新版管理后台</span>
+                                <span className="me-menu-arrow">›</span>
+                            </div>
+                        </>
                     )}
                     <div className="me-menu-item" onClick={() => setMeSubPage("wallpaper")}>
                         <span className="me-menu-icon">🖼️</span>
@@ -13293,6 +13308,13 @@ export default function PhonePage() {
                         </div>
                     )}
                 </>
+            )}
+            {showNewAdmin && authToken && (
+                <AdminDashboard
+                    token={authToken}
+                    username={loginUsername}
+                    onClose={() => setShowNewAdmin(false)}
+                />
             )}
         </div>
     );

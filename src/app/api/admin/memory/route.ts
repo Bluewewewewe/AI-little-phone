@@ -13,11 +13,13 @@ import {
   getDuplicateGroups,
   getDuplicateSummary,
 } from '@/lib/public-memory';
+import { requireAdminRequest } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
+    const authUser = await requireAdminRequest(request);
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as 'pending' | 'approved' | 'rejected' | null;
     const includeDuplicates = searchParams.get('duplicates') !== 'false';
@@ -55,7 +57,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { action, candidateId, approvedBy, category, editedContent } = await request.json();
+    const authUser = await requireAdminRequest(request);
+    const { action, candidateId, category, editedContent } = await request.json();
 
     if (!candidateId || !action) {
       return new Response(JSON.stringify({ error: '缺少参数' }), {
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (action === 'approve') {
       success = await approvePromotionCandidate(
         candidateId,
-        approvedBy || 'admin',
+        authUser.username || 'admin',
         category || 'general',
         editedContent
       );

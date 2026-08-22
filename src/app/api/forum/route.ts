@@ -1,0 +1,222 @@
+import { NextRequest, NextResponse } from "next/server";
+import getSupabaseClient from "@/storage/database/supabase-client";
+import { requireAuthRequest, requireAdminRequest } from "@/lib/auth";
+
+const supabase = getSupabaseClient();
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { action } = body;
+
+    if (action === "list") {
+      const { section, search } = body;
+      let query = supabase
+        .from("forum_posts")
+        .select("*, forum_replies(count), forum_likes(count)")
+        .order("is_pinned", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (section && section !== "all") {
+        query = query.eq("section", section);
+      }
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      const posts = (data || []).map((p) => ({
+        ...p,
+        replyCount: p.forum_replies?.[0]?.count ?? 0,
+        likes: p.forum_likes?.[0]?.count ?? 0,
+      }));
+      return NextResponse.json({ success: true, data: posts });
+    }
+
+    if (action === "detail") {
+      const { postId } = body;
+      const { data: post, error } = await supabase
+        .from("forum_posts")
+        .select("*, forum_replies(*), forum_likes(user_id)")
+        .eq("id", postId)
+        .single();
+      if (error || !post) {
+        return NextResponse.json(
+          { success: false, error: "帖子不存在" },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({ success: true, data: post });
+    }
+
+    if (action === "create") {
+      const user = await requireAuthRequest(request);
+      const {
+        title,
+        content,
+        section = "general",
+        category,
+        tags,
+        bugStatus,
+      } = body;
+      if (!title || !content) {
+        return NextResponse.json(
+          { success: false, error: "标题和内容不能为空" },
+          { status: 400 }
+        );
+      }
+      const insert: Record<string, unknown> = {
+        title,
+        content,
+        section,
+        author_id: user.userId,
+        author_name: user.username,
+        category: category || null,
+        tags: tags || [],
+        bug_status: bugStatus || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const { data, error } = await supabase
+        .from("forum_posts")
+        .insert(insert)
+        .select()
+        .single();
+      if (error) throw error;
+      return NextResponse.json({ success: true, data });
+    }
+
+    if (action === "reply") {
+      const user = await requireAuthRequest(request);
+      const { postId, content, parentReplyId } = body;
+      if (!postId || !content) {
+        return NextResponse.json(
+          { success: false, error: "参数错误" },
+          { status: 400 }
+        );
+      }
+      const { data, error } = await supabase
+        .from("forum_replies")
+        .insert({
+          post_id: postId,
+          author_id: user.userId,
+          author_name: user.username,
+          content,
+          parent_reply_id: parentReplyId || null,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (error) throw error;
+
+      await supabase
+        .from("forum_posts")
+        .update({ last_reply_at: new Date().toISOString() })
+        .eq("id", postId);
+
+      return NextResponse.json({ success: true, data });
+    }
+
+    if (action === "like") {
+      const user = await requireAuthRequest(request);
+      const { postId } = body;
+      const { data: existing } = await supabase
+        .from("forum_likes")
+        .select("id")
+        .eq("post_id", postId)
+        .eq("user_id", user.userId)
+        .maybeSingle();
+      if (existing) {
+        await supabase.from("forum_likes").delete().eq("id", existing.id);
+        return NextResponse.json({ success: true, data: { liked: false } });
+      }
+      await supabase.from("forum_likes").insert({
+        post_id: postId,
+        user_id: user.userId,
+        created_at: new Date().toISOString(),
+      });
+      return NextResponse.json({ success: true, data: { liked: true } });
+    }
+
+    if (action === "favorite") {
+      const user = await requireAuthRequest(request);
+      const { postId } = body;
+      const { data: existing } = await supabase
+        .from("forum_favorites")
+        .select("id")
+        .eq("post_id", postId)
+        .eq("user_id", user.userId)
+        .maybeSingle();
+      if (existing) {
+        await supabase.from("forum_favorites").delete().eq("id", existing.id);
+        return NextResponse.json({ success: true, data: { favorited: false } });
+      }
+      await supabase.from("forum_favorites").insert({
+        post_id: postId,
+        user_id: user.userId,
+        created_at: new Date().toISOString(),
+      });
+      return NextResponse.json({ success: true, data: { favorited: true } });
+    }
+
+    if (action === "my_favorites") {
+      const user = await requireAuthRequest(request);
+      const { data, error } = await supabase
+        .from("forum_favorites")
+        .select("post_id, forum_posts(*)")
+        .eq("user_id", user.userId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const posts = (data || []).map((f) => f.forum_posts);
+      return NextResponse.json({ success: true, data: posts });
+    }
+
+    if (action === "admin_pin" || action === "admin_essence") {
+      await requireAdminRequest(request);
+      const { postId, value } = body;
+      const field = action === "admin_pin" ? "is_pinned" : "is_essence";
+      const { data, error } = await supabase
+        .from("forum_posts")
+        .update({ [field]: value })
+        .eq("id", postId)
+        .select()
+        .single();
+      if (error) throw error;
+      return NextResponse.json({ success: true, data });
+    }
+
+    if (action === "admin_delete") {
+      await requireAdminRequest(request);
+      const { postId } = body;
+      await supabase.from("forum_replies").delete().eq("post_id", postId);
+      await supabase.from("forum_likes").delete().eq("post_id", postId);
+      await supabase.from("forum_favorites").delete().eq("post_id", postId);
+      await supabase.from("forum_posts").delete().eq("id", postId);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "admin_update_bug_status") {
+      await requireAdminRequest(request);
+      const { postId, bugStatus } = body;
+      const { data, error } = await supabase
+        .from("forum_posts")
+        .update({ bug_status: bugStatus })
+        .eq("id", postId)
+        .select()
+        .single();
+      if (error) throw error;
+      return NextResponse.json({ success: true, data });
+    }
+
+    return NextResponse.json(
+      { success: false, error: "未知 action" },
+      { status: 400 }
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "服务器内部错误";
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    );
+  }
+}

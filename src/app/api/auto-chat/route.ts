@@ -2,12 +2,15 @@ import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 import { buildAutoChatPrompt } from '@/lib/world-book';
 import { getModelForScene } from '@/lib/config';
+import { requireAuthRequest } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAuthRequest(request);
+
     const { speaker, recentMessages } = await request.json();
 
     if (!speaker || (speaker !== 'dad' && speaker !== 'mom')) {

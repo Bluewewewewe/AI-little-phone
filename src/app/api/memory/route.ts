@@ -8,15 +8,19 @@ import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 import { getModelForScene } from '@/lib/config';
 import { detectCrossUserDuplicates, computeContentFingerprint } from '@/lib/duplicate-detector';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { requireAuthRequest } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const maxDuration = 15;
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, reply, userId } = await request.json();
+    const authUser = await requireAuthRequest(request);
+    const userId = authUser.userId;
 
-    if (!message || !reply || !userId) {
+    const { message, reply } = await request.json();
+
+    if (!message || !reply) {
       return new Response(JSON.stringify({ error: '缺少参数' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },

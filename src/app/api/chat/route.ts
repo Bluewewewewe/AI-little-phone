@@ -2,12 +2,15 @@ import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 import { buildSystemPrompt } from '@/lib/world-book';
 import { getModelForScene } from '@/lib/config';
+import { requireAuthRequest } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAuthRequest(request);
+
     const { message, character, speaker, history, identityContext, scene, memoryContext } = await request.json();
 
     if (!message || !character) {
