@@ -157,6 +157,116 @@ async function createDefaultInviteCodes(
   }
 }
 
+async function cascadingBan(
+  supabase: Awaited<ReturnType<typeof getSupabaseClient>>,
+  userId: string,
+  reason: string,
+  adminUser: { id: string; username: string | null },
+  visited = new Set<string>()
+): Promise<number> {
+  if (visited.has(userId)) return 0;
+  visited.add(userId);
+
+  const { data: invites } = await supabase
+    .from("invite_codes")
+    .select("used_by")
+    .eq("owner_id", userId)
+    .eq("status", "used")
+    .not("used_by", "is", null);
+
+  let bannedCount = 0;
+  if (!invites || invites.length === 0) return 0;
+
+  for (const invite of invites) {
+    const downstreamId = invite.used_by as string;
+    if (!downstreamId || visited.has(downstreamId)) continue;
+
+    const { data: target } = await supabase
+      .from("users")
+      .select("ban_status")
+      .eq("id", downstreamId)
+      .single();
+    if (!target) continue;
+    if (target.ban_status === "perma_banned" || target.ban_status === "temp_banned") continue;
+
+    const banUntil = new Date();
+    banUntil.setDate(banUntil.getDate() + 30);
+
+    await supabase
+      .from("users")
+      .update({
+        ban_status: "temp_banned",
+        ban_reason: `连坐封禁：上游用户被封禁/拒绝。${reason}`,
+        ban_until: banUntil.toISOString(),
+        banned_by: adminUser.id,
+        banned_at: new Date().toISOString(),
+        violation_count: 1,
+      })
+      .eq("id", downstreamId);
+
+    await logAudit(supabase, adminUser.id, "cascading_ban", "user", downstreamId, {
+      upstream_id: userId,
+      reason,
+      banned_by: adminUser.username,
+    });
+
+    bannedCount += 1;
+    bannedCount += await cascadingBan(supabase, downstreamId, reason, adminUser, visited);
+  }
+
+  return bannedCount;
+}
+
+async function applyInviterViolation(
+  supabase: Awaited<ReturnType<typeof getSupabaseClient>>,
+  userId: string,
+  adminUser: { id: string; username: string | null }
+): Promise<{ inviterId: string | null; penalty: string }> {
+  const { data: invite } = await supabase
+    .from("invite_codes")
+    .select("owner_id")
+    .eq("used_by", userId)
+    .eq("status", "used")
+    .single();
+
+  const inviterId = invite?.owner_id as string | null;
+  if (!inviterId) return { inviterId: null, penalty: "none" };
+
+  const { data: inviter } = await supabase
+    .from("users")
+    .select("violation_count, invite_quota, vote_weight, username")
+    .eq("id", inviterId)
+    .single();
+  if (!inviter) return { inviterId, penalty: "none" };
+
+  const nextCount = (inviter.violation_count || 0) + 1;
+  let penalty = "warning";
+  const updates: Record<string, unknown> = { violation_count: nextCount };
+
+  if (nextCount === 2) {
+    penalty = "quota_minus_5";
+    updates.invite_quota = Math.max(0, (inviter.invite_quota || 0) - 5);
+  } else if (nextCount === 3) {
+    penalty = "quota_zero";
+    updates.invite_quota = 0;
+  } else if (nextCount >= 4) {
+    penalty = "vote_weight_half";
+    updates.vote_weight = 0.5;
+  }
+
+  await supabase.from("users").update(updates).eq("id", inviterId);
+
+  await logAudit(supabase, adminUser.id, "inviter_violation", "user", inviterId, {
+    downstream_id: userId,
+    previous_count: inviter.violation_count,
+    new_count: nextCount,
+    penalty,
+    inviter_username: inviter.username,
+  });
+
+  return { inviterId, penalty };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -698,16 +808,28 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "未选择用户" }, { status: 400 });
       }
 
-      for (const uid of ids) {
-        await finalizeReview(uid, "approved", found.user);
-        await createDefaultInviteCodes(supabase, uid);
-        await logAudit(supabase, found.user.id as string, "approve_user", "user", uid, {
-          reviewed_by: found.user.username,
-          batch: true,
-        });
-      }
+      const results = await Promise.allSettled(
+        ids.map(async (uid) => {
+          await finalizeReview(uid, "approved", found.user);
+          await createDefaultInviteCodes(supabase, uid);
+          await logAudit(supabase, found.user.id as string, "approve_user", "user", uid, {
+            reviewed_by: found.user.username,
+            batch: true,
+          });
+          return uid;
+        })
+      );
 
-      return NextResponse.json({ success: true, message: `已通过 ${ids.length} 人` });
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results
+        .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+        .map((r) => (r.reason instanceof Error ? r.reason.message : String(r.reason)));
+
+      return NextResponse.json({
+        success: true,
+        data: { succeeded, failed, total: ids.length },
+        message: `已通过 ${succeeded}/${ids.length} 人${failed.length > 0 ? `，${failed.length} 人失败` : ""}`,
+      });
     }
 
     // ========== 拒绝用户 ==========
@@ -724,12 +846,26 @@ export async function POST(request: NextRequest) {
       const notes = (body.reason as string) || "";
       await finalizeReview(targetUserId as string, "rejected", found.user, notes);
 
+      const bannedCount = await cascadingBan(
+        supabase,
+        targetUserId as string,
+        notes || "用户被拒绝",
+        { id: found.user.id as string, username: found.user.username as string | null }
+      );
+      const { penalty } = await applyInviterViolation(
+        supabase,
+        targetUserId as string,
+        { id: found.user.id as string, username: found.user.username as string | null }
+      );
+
       await logAudit(supabase, found.user.id as string, "reject_user", "user", targetUserId as string, {
         reviewed_by: found.user.username,
         reason: notes,
+        cascading_banned_count: bannedCount,
+        inviter_penalty: penalty,
       });
 
-      return NextResponse.json({ success: true, message: "已拒绝" });
+      return NextResponse.json({ success: true, message: `已拒绝${bannedCount > 0 ? `，连坐封禁 ${bannedCount} 人` : ""}` });
     }
 
     // ========== 宽限期用户 ==========
@@ -983,37 +1119,24 @@ export async function POST(request: NextRequest) {
         ban_until: banUntil,
       });
 
-      // 连坐惩罚：临时/永久封禁时扣减邀请人配额并累计邀请人违规
-      if (
-        (banStatus === "temp_banned" || banStatus === "perma_banned") &&
-        targetUser?.referrer_id
-      ) {
-        const { data: referrer } = await supabase
-          .from("users")
-          .select("id, invite_quota, violation_count, ban_status")
-          .eq("id", targetUser.referrer_id)
-          .single();
-        if (referrer && referrer.ban_status !== "perma_banned") {
-          const newQuota = Math.max(0, (referrer.invite_quota || 0) - 1);
-          const newViolation = (referrer.violation_count || 0) + 1;
-          const referrerUpdate: Record<string, unknown> = {
-            invite_quota: newQuota,
-            violation_count: newViolation,
-          };
-          if (newViolation >= 3 && referrer.ban_status === "none") {
-            referrerUpdate.ban_status = "restricted";
-            referrerUpdate.ban_reason = "多名被邀请人违规，系统自动限制";
-            referrerUpdate.banned_at = now;
-            referrerUpdate.banned_by = "system";
-          }
-          await supabase.from("users").update(referrerUpdate).eq("id", referrer.id);
-          await logAudit(supabase, adminUser.id as string, "collective_punishment", "user", referrer.id, {
-            target_user_id: banTargetId,
-            invite_quota_delta: -1,
-            violation_count_delta: 1,
-            auto_restricted: newViolation >= 3 && referrer.ban_status === "none",
-          });
-        }
+      // 连坐惩罚：临时/永久封禁时递归封禁下游邀请链路并阶梯惩罚邀请人
+      if (banStatus === "temp_banned" || banStatus === "perma_banned") {
+        const bannedCount = await cascadingBan(
+          supabase,
+          banTargetId,
+          banReason || "上游用户被封禁",
+          { id: adminUser.id as string, username: adminUser.username as string | null }
+        );
+        const { penalty } = await applyInviterViolation(
+          supabase,
+          banTargetId,
+          { id: adminUser.id as string, username: adminUser.username as string | null }
+        );
+        await logAudit(supabase, adminUser.id as string, "collective_punishment", "user", banTargetId, {
+          ban_status: banStatus,
+          cascading_banned_count: bannedCount,
+          inviter_penalty: penalty,
+        });
       }
 
       return NextResponse.json({

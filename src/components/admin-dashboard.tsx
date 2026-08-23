@@ -63,6 +63,8 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
   const [inviteOwnerFilter, setInviteOwnerFilter] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState<string>("admin");
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -70,6 +72,23 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch("/api/admin/permissions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_my_permissions", authToken: token }),
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success && res.data) {
+          setUserPermissions(res.data.permissions || []);
+          setCurrentUserRole(res.data.role || "admin");
+        }
+      })
+      .catch(() => {});
+  }, [token]);
 
   const api = useCallback(async (action: string, payload?: Record<string, unknown>) => {
     const res = await fetch("/api/auth", {
@@ -135,24 +154,29 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
     if (res.success) loadForum();
   };
 
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: "overview", label: "总览", icon: "📊" },
-    { id: "users", label: "用户管理", icon: "👤" },
-    { id: "tree", label: "邀请树", icon: "🌳" },
-    { id: "review", label: "用户审核", icon: "👥" },
-    { id: "invites", label: "邀请码", icon: "🎟️" },
-    { id: "forum", label: "论坛管理", icon: "📋" },
-    { id: "announce", label: "官方公告", icon: "📢" },
-    { id: "bugs", label: "Bug反馈", icon: "🐛" },
-    { id: "permissions", label: "权限管理", icon: "🔐" },
-    { id: "audit_log", label: "操作日志", icon: "📜" },
-    { id: "settings", label: "系统设置", icon: "⚙️" },
+  const tabs: { id: Tab; label: string; icon: string; permission: string }[] = [
+    { id: "overview", label: "总览", icon: "📊", permission: "stats" },
+    { id: "users", label: "用户管理", icon: "👤", permission: "user_manage" },
+    { id: "tree", label: "邀请树", icon: "🌳", permission: "tree_view" },
+    { id: "review", label: "用户审核", icon: "👥", permission: "review" },
+    { id: "invites", label: "邀请码", icon: "🎟️", permission: "invite_manage" },
+    { id: "forum", label: "论坛管理", icon: "📋", permission: "forum_manage" },
+    { id: "announce", label: "官方公告", icon: "📢", permission: "forum_manage" },
+    { id: "bugs", label: "Bug反馈", icon: "🐛", permission: "forum_manage" },
+    { id: "permissions", label: "权限管理", icon: "🔐", permission: "permissions" },
+    { id: "audit_log", label: "操作日志", icon: "📜", permission: "audit_log" },
+    { id: "settings", label: "系统设置", icon: "⚙️", permission: "system_setting" },
   ];
+
+  const visibleTabs = useMemo(() => {
+    if (currentUserRole === "super_admin") return tabs;
+    return tabs.filter((t) => userPermissions.includes(t.permission));
+  }, [currentUserRole, userPermissions]);
 
   const renderSidebar = () => (
     <nav className="admin-sidebar">
       <div className="admin-brand">米米宇宙管理后台</div>
-      {tabs.map((t) => (
+      {visibleTabs.map((t) => (
         <button
           key={t.id}
           className={`admin-nav-item ${activeTab === t.id ? "active" : ""}`}
@@ -172,11 +196,6 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
   const currentAdminId = useMemo(() => {
     if (typeof window === "undefined") return undefined;
     return localStorage.getItem("userId") || undefined;
-  }, []);
-
-  const currentUserRole = useMemo(() => {
-    if (typeof window === "undefined") return "";
-    return localStorage.getItem("role") || "";
   }, []);
 
   const renderReview = () => (

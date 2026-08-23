@@ -35,10 +35,27 @@ function buildTree(users: TreeUser[]): TreeNode[] {
     map.set(u.id, { user: { ...u, invite_count: 0 }, children: [] });
   });
   const roots: TreeNode[] = [];
+  const cycleIds = new Set<string>();
   users.forEach((u) => {
     const node = map.get(u.id)!;
     if (u.referrer_id && map.has(u.referrer_id)) {
-      map.get(u.referrer_id)!.children.push(node);
+      // simple cycle detection: walk referrer chain
+      let current: string | null = u.referrer_id;
+      const chain = new Set<string>([u.id]);
+      while (current) {
+        if (chain.has(current)) {
+          cycleIds.add(u.id);
+          break;
+        }
+        chain.add(current);
+        const parent = users.find((x) => x.id === current);
+        current = parent?.referrer_id || null;
+      }
+      if (!cycleIds.has(u.id)) {
+        map.get(u.referrer_id)!.children.push(node);
+      } else {
+        roots.push(node);
+      }
     } else {
       roots.push(node);
     }
