@@ -68,12 +68,35 @@ async function requireAdminAuth(
   return { user, error: null };
 }
 
+async function logAudit(
+  supabase: Awaited<ReturnType<typeof getSupabaseClient>>,
+  adminId: string,
+  action: string,
+  targetType: string,
+  targetId: string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  try {
+    await supabase.from("audit_log").insert({
+      admin_id: adminId,
+      action,
+      target_type: targetType,
+      target_id: targetId,
+      details: details || {},
+      created_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error("审计日志写入失败:", err);
+  }
+}
+
 async function createDefaultInviteCodes(
   supabase: Awaited<ReturnType<typeof getSupabaseClient>>,
   userId: string
 ): Promise<void> {
+  const quota = parseInt(process.env.INVITE_QUOTA_DEFAULT || "10", 10);
   const codes: string[] = [];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < quota; i++) {
     let code = generateInviteCode("MIMI-");
     let attempts = 0;
     while (attempts < 5) {
@@ -93,13 +116,18 @@ async function createDefaultInviteCodes(
     code,
     owner_id: userId,
     role_type: "user",
-    status: "active",
+    status: "available",
     created_at: new Date().toISOString(),
   }));
 
   const { error } = await supabase.from("invite_codes").insert(insertData);
   if (error) {
     console.error("自动生成邀请码失败:", error);
+  } else {
+    await supabase
+      .from("users")
+      .update({ invite_quota: quota })
+      .eq("id", userId);
   }
 }
 
@@ -126,6 +154,7 @@ export async function POST(request: NextRequest) {
       count,
       roleType,
       code,
+      owner_id,
     } = body;
 
     const supabase = await getSupabaseClient();
@@ -353,6 +382,35 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // 封禁状态检查
+      const banStatus = user.ban_status as string;
+      if (banStatus === "perma_banned") {
+        return NextResponse.json(
+          {
+            error: "账号已被永久封禁",
+            banStatus,
+            banReason: user.ban_reason || "",
+          },
+          { status: 403 }
+        );
+      }
+      if (banStatus === "temp_banned" && user.ban_until) {
+        const banUntil = new Date(user.ban_until as string).getTime();
+        if (banUntil > Date.now()) {
+          return NextResponse.json(
+            {
+              error: `账号被临时封禁，解封时间：${new Date(
+                banUntil
+              ).toLocaleString()}`,
+              banStatus,
+              banReason: user.ban_reason || "",
+              banUntil: user.ban_until,
+            },
+            { status: 403 }
+          );
+        }
+      }
+
       await supabase.from("user_sessions").delete().eq("user_id", user.id);
 
       const newToken = randomUUID();
@@ -461,7 +519,51 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ success: true, data: data || [] });
+      const users = data || [];
+      const inviteCodes = users
+        .map((u) => u.invite_code_used)
+        .filter(Boolean) as string[];
+      let codeOwnerMap: Record<string, { id: string; username: string; verify_status: string; ban_status: string }> = {};
+      if (inviteCodes.length > 0) {
+        const { data: codes } = await supabase
+          .from("invite_codes")
+          .select("code, owner_id")
+          .in("code", inviteCodes);
+        const ownerIds = Array.from(
+          new Set((codes || []).map((c) => c.owner_id).filter(Boolean))
+        ) as string[];
+        if (ownerIds.length > 0) {
+          const { data: owners } = await supabase
+            .from("users")
+            .select("id, username, status, ban_status")
+            .in("id", ownerIds);
+          (owners || []).forEach((o) => {
+            codeOwnerMap[o.id] = {
+              id: o.id,
+              username: o.username,
+              verify_status: o.status,
+              ban_status: o.ban_status || "none",
+            };
+          });
+        }
+        const codeMap: Record<string, string> = {};
+        (codes || []).forEach((c) => {
+          if (c.owner_id) codeMap[c.code] = c.owner_id;
+        });
+        users.forEach((u) => {
+          const ownerId = u.referrer_id || codeMap[u.invite_code_used];
+          if (ownerId && codeOwnerMap[ownerId]) {
+            const owner = codeOwnerMap[ownerId];
+            (u as Record<string, unknown>).referrer_name = owner.username;
+            (u as Record<string, unknown>).referrer_verify_status =
+              owner.verify_status;
+            (u as Record<string, unknown>).referrer_ban_status =
+              owner.ban_status;
+          }
+        });
+      }
+
+      return NextResponse.json({ success: true, data: users });
     }
 
     // ========== 通过用户 ==========
@@ -491,8 +593,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // 普通用户注册成功后自动生成 10 个普通用户邀请码
+      // 普通用户注册成功后自动生成默认数量普通用户邀请码
       await createDefaultInviteCodes(supabase, targetUserId as string);
+
+      await logAudit(supabase, found.user.id as string, "approve_user", "user", targetUserId as string, {
+        reviewed_by: found.user.username,
+      });
 
       return NextResponse.json({ success: true, message: "已通过" });
     }
@@ -531,6 +637,10 @@ export async function POST(request: NextRequest) {
 
       for (const uid of ids) {
         await createDefaultInviteCodes(supabase, uid);
+        await logAudit(supabase, found.user.id as string, "approve_user", "user", uid, {
+          reviewed_by: found.user.username,
+          batch: true,
+        });
       }
 
       return NextResponse.json({ success: true, message: `已通过 ${ids.length} 人` });
@@ -563,26 +673,221 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      await logAudit(supabase, found.user.id as string, "reject_user", "user", targetUserId as string, {
+        reviewed_by: found.user.username,
+      });
+
       return NextResponse.json({ success: true, message: "已拒绝" });
     }
 
-    // ========== 获取所有用户列表 ==========
+    // ========== 获取所有用户列表（支持搜索/筛选/分页） ==========
     if (action === "list_users") {
       const { user: adminUser, error: authError } = await requireAdminAuth(supabase, authToken);
       if (authError || !adminUser) return authError!;
 
-      const { data, error } = await supabase
-        .from("users")
-        .select(
-          "id, username, display_name, level, role, status, weibo_verified, weibo_uid, weibo_name, created_at, reviewed_at, reviewed_by"
-        )
-        .order("created_at", { ascending: false });
+      const search = (body.search as string)?.trim() || "";
+      const status = body.status as string;
+      const violation = body.violation as string;
+      const page = Math.max(1, parseInt(String(body.page || "1"), 10));
+      const pageSize = Math.min(
+        100,
+        Math.max(1, parseInt(String(body.pageSize || "20"), 10))
+      );
+
+      let query = supabase.from("users").select(
+        "id, username, display_name, level, role, status, verify_status, weibo_verified, weibo_uid, weibo_name, weibo_level, created_at, reviewed_at, reviewed_by, referrer_id, ban_status, ban_until, violation_count, invite_quota",
+        { count: "exact" }
+      );
+
+      if (search) {
+        query = query.or(`username.ilike.%${search}%,weibo_name.ilike.%${search}%,id.ilike.%${search}%`);
+      }
+      if (status && status !== "all") {
+        if (status === "pending" || status === "approved" || status === "rejected") {
+          query = query.eq("status", status);
+        } else if (status === "banned") {
+          query = query.in("ban_status", ["temp_banned", "perma_banned"]);
+        }
+      }
+      if (violation && violation !== "all") {
+        if (violation === ">0") {
+          query = query.gt("violation_count", 0);
+        } else if (violation === ">=3") {
+          query = query.gte("violation_count", 3);
+        }
+      }
+
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      const { data, error, count } = await query
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ success: true, data: data || [] });
+      const users = (data || []) as Record<string, unknown>[];
+      const referrerIds = Array.from(
+        new Set(users.map((u) => u.referrer_id).filter(Boolean))
+      ) as string[];
+      const userIds = users.map((u) => u.id as string);
+
+      let referrerMap: Record<string, string> = {};
+      if (referrerIds.length > 0) {
+        const { data: refs } = await supabase
+          .from("users")
+          .select("id, username")
+          .in("id", referrerIds);
+        referrerMap = (refs || []).reduce(
+          (acc, r) => {
+            acc[r.id] = r.username;
+            return acc;
+          },
+          {} as Record<string, string>
+        );
+      }
+
+      let inviteCountMap: Record<string, number> = {};
+      if (userIds.length > 0) {
+        const { data: usedCodes } = await supabase
+          .from("invite_codes")
+          .select("owner_id, used_by")
+          .in("owner_id", userIds)
+          .not("used_by", "is", null);
+        usedCodes?.forEach((c) => {
+          inviteCountMap[c.owner_id] = (inviteCountMap[c.owner_id] || 0) + 1;
+        });
+      }
+
+      const list = users.map((u) => ({
+        ...u,
+        referrer_name: referrerMap[u.referrer_id as string] || null,
+        invite_count: inviteCountMap[u.id as string] || 0,
+      }));
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          list,
+          total: count || 0,
+          page,
+          pageSize,
+        },
+      });
+    }
+
+    // ========== 封禁/处罚用户 ==========
+    if (action === "ban_user") {
+      const { user: adminUser, error: authError } = await requireAdminAuth(supabase, authToken);
+      if (authError || !adminUser) return authError!;
+
+      const banTargetId = body.targetUserId as string;
+      const banStatus = body.banStatus as string;
+      const banReason = (body.reason as string) || "";
+      const duration = body.duration ? parseInt(String(body.duration), 10) : 0;
+
+      if (!banTargetId || !banStatus) {
+        return NextResponse.json(
+          { error: "缺少必要参数" },
+          { status: 400 }
+        );
+      }
+
+      const validStatuses = [
+        "none",
+        "warning",
+        "muted",
+        "restricted",
+        "temp_banned",
+        "perma_banned",
+      ];
+      if (!validStatuses.includes(banStatus)) {
+        return NextResponse.json(
+          { error: "无效的封禁状态" },
+          { status: 400 }
+        );
+      }
+
+      const { data: targetUser } = await supabase
+        .from("users")
+        .select("id, role, status, violation_count")
+        .eq("id", banTargetId)
+        .single();
+
+      if (!targetUser) {
+        return NextResponse.json({ error: "用户不存在" }, { status: 404 });
+      }
+
+      if (targetUser.role === "super_admin") {
+        return NextResponse.json(
+          { error: "不能处罚超级管理员" },
+          { status: 403 }
+        );
+      }
+
+      const now = new Date().toISOString();
+      const banUntil =
+        banStatus === "temp_banned" && duration > 0
+          ? new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString()
+          : null;
+
+      let updateData: Record<string, unknown> = {};
+      if (banStatus === "none") {
+        updateData = {
+          ban_status: "none",
+          ban_reason: null,
+          ban_until: null,
+          banned_by: null,
+          banned_at: null,
+        };
+      } else {
+        updateData = {
+          ban_status: banStatus,
+          ban_reason: banReason,
+          ban_until: banUntil,
+          banned_by: adminUser.id,
+          banned_at: now,
+        };
+      }
+
+      // 对于非解除、非警告操作，增加违规次数
+      if (banStatus !== "none" && banStatus !== "warning") {
+        updateData.violation_count = ((targetUser.violation_count || 0) as number) + 1;
+      }
+
+      const { error: updateError } = await supabase
+        .from("users")
+        .update(updateData)
+        .eq("id", banTargetId);
+
+      if (updateError) {
+        return NextResponse.json(
+          { error: "操作失败: " + updateError.message },
+          { status: 500 }
+        );
+      }
+
+      // 临时/永久封禁时撤销其所有可用邀请码
+      if (banStatus === "temp_banned" || banStatus === "perma_banned") {
+        await supabase
+          .from("invite_codes")
+          .update({ status: "revoked", revoked_at: now })
+          .eq("owner_id", banTargetId)
+          .eq("status", "available");
+      }
+
+      await logAudit(supabase, adminUser.id as string, "ban_user", "user", banTargetId, {
+        ban_status: banStatus,
+        reason: banReason,
+        duration,
+        ban_until: banUntil,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: banStatus === "none" ? "已解除处罚" : "处罚已生效",
+      });
     }
 
     // ========== 角色管理 ==========
@@ -613,6 +918,10 @@ export async function POST(request: NextRequest) {
         console.error("更新角色失败:", error);
         return NextResponse.json({ error: "更新角色失败" }, { status: 500 });
       }
+
+      await logAudit(supabase, adminUser.id as string, "set_role", "user", roleTargetId as string, {
+        new_role: role,
+      });
 
       return NextResponse.json({ success: true, message: `角色已更新为 ${role}` });
     }
@@ -905,6 +1214,57 @@ export async function POST(request: NextRequest) {
         success: true,
         data: codes.map((c) => ({
           ...c,
+          used_by_username: c.used_by ? usersMap[c.used_by] || c.used_by : null,
+        })),
+      });
+    }
+
+    // ========== 管理员获取全部邀请码 ==========
+    if (action === "list_all_invite_codes") {
+      const { user: adminUser, error: adminError } = await requireAdminAuth(supabase, authToken);
+      if (adminError || !adminUser) {
+        return adminError || NextResponse.json({ error: "无权限" }, { status: 403 });
+      }
+
+      const ownerId = owner_id as string | undefined;
+      let query = supabase
+        .from("invite_codes")
+        .select("code, owner_id, role_type, status, used_by, created_at, used_at, revoked_at")
+        .order("created_at", { ascending: false });
+      if (ownerId) {
+        query = query.eq("owner_id", ownerId);
+      }
+      const { data, error } = await query;
+      if (error) {
+        return NextResponse.json({ error: "获取失败: " + error.message }, { status: 500 });
+      }
+      const codes = data || [];
+      const userIds = Array.from(
+        new Set([
+          ...codes.map((c) => c.owner_id),
+          ...codes.map((c) => c.used_by).filter(Boolean),
+        ])
+      );
+      let usersMap: Record<string, string> = {};
+      if (userIds.length > 0) {
+        const { data: usersData } = await supabase
+          .from("users")
+          .select("id, username")
+          .in("id", userIds);
+        usersMap = (usersData || []).reduce(
+          (acc, u) => {
+            acc[u.id] = u.username;
+            return acc;
+          },
+          {} as Record<string, string>
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: codes.map((c) => ({
+          ...c,
+          owner_username: usersMap[c.owner_id] || c.owner_id,
           used_by_username: c.used_by ? usersMap[c.used_by] || c.used_by : null,
         })),
       });

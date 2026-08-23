@@ -2,6 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+interface InviteCodeItem {
+  code: string;
+  status: string;
+  used_by?: string;
+  used_by_username?: string;
+  used_at?: string;
+  revoked_at?: string;
+}
+
 interface ForumPost {
   id: string;
   title: string;
@@ -112,21 +121,39 @@ function formatTime(iso: string): string {
 }
 
 export default function UserProfileApp({ username, isSelf = false, bio = "", onClose }: UserProfileAppProps) {
-  const [activeTab, setActiveTab] = useState<"posts" | "likes" | "favorites">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "likes" | "favorites" | "invites">("posts");
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
   const [coins, setCoins] = useState<number>(1000);
+  const [inviteCodes, setInviteCodes] = useState<InviteCodeItem[]>([]);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       const data = await fetchAllForumPosts();
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+      let codes: InviteCodeItem[] = [];
+      if (token) {
+        try {
+          const res = await fetch("/api/auth", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "list_my_invite_codes", authToken: token }),
+          });
+          const json = await res.json() as { success?: boolean; data?: InviteCodeItem[] };
+          if (json.success) codes = json.data || [];
+        } catch {
+          // ignore
+        }
+      }
       if (!cancelled) {
         setPosts(data);
         setLikedIds(loadUserSet("forum_likes", username));
         setFavoritedIds(loadUserSet("forum_favorites", username));
         setCoins(loadCoins(username));
+        setInviteCodes(codes);
       }
     }
     load();
@@ -215,10 +242,11 @@ export default function UserProfileApp({ username, isSelf = false, bio = "", onC
             { key: "posts", label: "我的帖子" },
             { key: "likes", label: "我的点赞" },
             { key: "favorites", label: "我的收藏" },
+            { key: "invites", label: "我的邀请码" },
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as "posts" | "likes" | "favorites")}
+              onClick={() => setActiveTab(tab.key as "posts" | "likes" | "favorites" | "invites")}
               className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
                 activeTab === tab.key
                   ? "bg-primary text-primary-foreground"
@@ -271,6 +299,75 @@ export default function UserProfileApp({ username, isSelf = false, bio = "", onC
             ) : (
               favoritePosts.map(renderPostItem)
             )}
+          </>
+        )}
+
+        {activeTab === "invites" && (
+          <>
+            {(() => {
+              const available = inviteCodes.filter((c) => c.status === "available");
+              const used = inviteCodes.filter((c) => c.status === "used");
+              const revoked = inviteCodes.filter((c) => c.status === "revoked");
+              const copy = (code: string) => {
+                void navigator.clipboard.writeText(code);
+                setCopiedCode(code);
+                setTimeout(() => setCopiedCode(null), 1500);
+              };
+              return (
+                <div className="space-y-4">
+                  <div className="rounded-xl bg-gradient-to-r from-primary/20 to-primary/5 p-4 text-center border border-primary/20">
+                    <div className="text-3xl font-bold text-foreground">{available.length}</div>
+                    <div className="text-xs text-muted-foreground">还能邀请 {available.length} 人</div>
+                  </div>
+
+                  {available.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground mb-2">可用邀请码</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {available.map((c) => (
+                          <button
+                            key={c.code}
+                            onClick={() => copy(c.code)}
+                            className="min-h-[44px] rounded-lg bg-primary/10 px-3 py-2 text-sm font-mono text-primary border border-primary/20 active:scale-95 transition-transform"
+                          >
+                            {c.code} {copiedCode === c.code ? "✅已复制" : "📋"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {used.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground mb-2">已使用</h3>
+                      <div className="space-y-2">
+                        {used.map((c) => (
+                          <div key={c.code} className="rounded-lg bg-white/40 p-2 text-xs text-muted-foreground">
+                            <span className="font-mono text-foreground">{c.code}</span>
+                            <span className="mx-2">→</span>
+                            <span>{c.used_by_username || c.used_by || "未知用户"}</span>
+                            <span className="ml-2">{c.used_at ? formatTime(c.used_at) : ""}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {revoked.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground mb-2">已作废</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {revoked.map((c) => (
+                          <span key={c.code} className="text-xs font-mono text-muted-foreground line-through">
+                            {c.code}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </>
         )}
       </div>

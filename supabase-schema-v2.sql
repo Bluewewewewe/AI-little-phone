@@ -204,3 +204,36 @@ CREATE POLICY service_bug_reports_all ON public.bug_reports FOR ALL TO service_r
 CREATE POLICY anon_read_published_apps ON public.apps FOR SELECT TO anon USING (status = 'published');
 CREATE POLICY anon_read_forum_posts ON public.forum_posts FOR SELECT TO anon USING (deleted_at IS NULL);
 CREATE POLICY anon_read_forum_replies ON public.forum_replies FOR SELECT TO anon USING (true);
+
+-- 管理后台增强：用户/邀请码字段 + 操作日志表
+ALTER TABLE users ADD COLUMN IF NOT EXISTS referrer_id VARCHAR;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_status VARCHAR DEFAULT 'none';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_until TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS banned_by VARCHAR;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS banned_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS violation_count INT DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS invite_quota INT DEFAULT 10;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS invite_code_used VARCHAR;
+
+ALTER TABLE invite_codes ADD COLUMN IF NOT EXISTS owner_id VARCHAR;
+ALTER TABLE invite_codes ADD COLUMN IF NOT EXISTS used_by VARCHAR;
+ALTER TABLE invite_codes ADD COLUMN IF NOT EXISTS status VARCHAR DEFAULT 'frozen';
+ALTER TABLE invite_codes ADD COLUMN IF NOT EXISTS role_type VARCHAR DEFAULT 'user';
+ALTER TABLE invite_codes ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+ALTER TABLE invite_codes ADD COLUMN IF NOT EXISTS used_at TIMESTAMP;
+ALTER TABLE invite_codes ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMP;
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id SERIAL PRIMARY KEY,
+  admin_id VARCHAR NOT NULL,
+  action VARCHAR NOT NULL,
+  target_type VARCHAR NOT NULL,
+  target_id VARCHAR NOT NULL,
+  details JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_log_admin ON audit_log(admin_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_target ON audit_log(target_type, target_id, created_at DESC);
+
+CREATE POLICY service_audit_log_all ON public.audit_log FOR ALL TO service_role USING (true) WITH CHECK (true);

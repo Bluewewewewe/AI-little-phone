@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import AdminStats from "./admin/admin-stats";
+import AdminUsers from "./admin/admin-users";
+import AdminTree from "./admin/admin-tree";
 
 interface AdminDashboardProps {
   token: string;
@@ -8,7 +11,7 @@ interface AdminDashboardProps {
   onClose: () => void;
 }
 
-type Tab = "review" | "invites" | "forum" | "announce" | "bugs" | "settings";
+type Tab = "overview" | "users" | "tree" | "review" | "invites" | "forum" | "announce" | "bugs" | "settings";
 
 interface User {
   id: string;
@@ -18,14 +21,19 @@ interface User {
   status: string;
   created_at: string;
   invite_code_used?: string;
+  referrer_name?: string | null;
+  referrer_verify_status?: string;
+  referrer_ban_status?: string;
 }
 
 interface InviteCode {
   code: string;
   owner_id: string;
+  owner_username?: string;
   role_type: string;
   status: string;
   used_by?: string;
+  used_by_username?: string;
   created_at: string;
   used_at?: string;
   revoked_at?: string;
@@ -42,7 +50,7 @@ interface ForumPost {
 }
 
 export default function AdminDashboard({ token, username, onClose }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("review");
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [users, setUsers] = useState<User[]>([]);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
@@ -53,6 +61,7 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
   const [rejectReason, setRejectReason] = useState("");
   const [inviteRole, setInviteRole] = useState<"user" | "admin">("user");
   const [inviteCount, setInviteCount] = useState(5);
+  const [inviteOwnerFilter, setInviteOwnerFilter] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -85,10 +94,12 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
 
   const loadInvites = useCallback(async () => {
     setLoading(true);
-    const res = await api("my_invite_codes");
+    const res = await api("list_all_invite_codes", {
+      owner_id: inviteOwnerFilter || undefined,
+    });
     setInviteCodes(res.success ? res.data || [] : []);
     setLoading(false);
-  }, [api]);
+  }, [api, inviteOwnerFilter]);
 
   const loadForum = useCallback(async () => {
     setLoading(true);
@@ -167,6 +178,9 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
   };
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
+    { id: "overview", label: "总览", icon: "📊" },
+    { id: "users", label: "用户管理", icon: "👤" },
+    { id: "tree", label: "邀请树", icon: "🌳" },
     { id: "review", label: "用户审核", icon: "👥" },
     { id: "invites", label: "邀请码", icon: "🎟️" },
     { id: "forum", label: "论坛管理", icon: "📋" },
@@ -223,26 +237,41 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
           </div>
           <div className="admin-list">
             {pendingUsers.map((u) => (
-              <div key={u.id} className="admin-card">
-                <input
-                  type="checkbox"
-                  checked={selected.has(u.id)}
-                  onChange={(e) => {
-                    const next = new Set(selected);
-                    if (e.target.checked) next.add(u.id);
-                    else next.delete(u.id);
-                    setSelected(next);
-                  }}
-                />
-                <div className="admin-card-body">
-                  <div className="admin-card-title">{u.username}</div>
-                  <div className="admin-card-meta">
-                    微博：{u.weibo_name || "-"} · 邀请码：{u.invite_code_used || "-"} · 注册：{new Date(u.created_at).toLocaleString()}
+              <div key={u.id} className="admin-card" style={{ borderColor: u.referrer_ban_status && u.referrer_ban_status !== "none" ? "#ef4444" : undefined }}>
+                {u.referrer_ban_status && u.referrer_ban_status !== "none" && (
+                  <div className="mb-2 rounded bg-red-500/20 px-2 py-1 text-xs text-red-300">
+                    ⚠️ 邀请人已封禁
                   </div>
-                </div>
-                <div className="admin-card-actions">
-                  <button className="admin-btn primary" onClick={() => handleApprove(u.id)}>通过</button>
-                  <button className="admin-btn danger" onClick={() => handleReject(u.id)}>拒绝</button>
+                )}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(u.id)}
+                    onChange={(e) => {
+                      const next = new Set(selected);
+                      if (e.target.checked) next.add(u.id);
+                      else next.delete(u.id);
+                      setSelected(next);
+                    }}
+                  />
+                  <div className="admin-card-body flex-1">
+                    <div className="admin-card-title">{u.username}</div>
+                    <div className="admin-card-meta">
+                      微博：{u.weibo_name || "-"} · 邀请码：{u.invite_code_used || "-"} · 注册：{new Date(u.created_at).toLocaleString()}
+                    </div>
+                    {u.referrer_name && (
+                      <div className="admin-card-meta">
+                        邀请人：{u.referrer_name}
+                        {u.referrer_verify_status === "verified" && " ✅"}
+                        {u.referrer_verify_status === "pending" && " ⏳"}
+                        {(u.referrer_ban_status === "temp_banned" || u.referrer_ban_status === "perma_banned") && " ❌"}
+                      </div>
+                    )}
+                  </div>
+                  <div className="admin-card-actions">
+                    <button className="admin-btn primary" onClick={() => handleApprove(u.id)}>通过</button>
+                    <button className="admin-btn danger" onClick={() => handleReject(u.id)}>拒绝</button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -255,7 +284,7 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
   const renderInvites = () => (
     <div className="admin-section">
       <h2>邀请码管理</h2>
-      <div className="admin-toolbar">
+      <div className="admin-toolbar flex-wrap">
         <select
           className="admin-input"
           value={inviteRole}
@@ -272,6 +301,12 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
           value={inviteCount}
           onChange={(e) => setInviteCount(parseInt(e.target.value, 10))}
         />
+        <input
+          className="admin-input"
+          placeholder="按 owner_id 筛选"
+          value={inviteOwnerFilter}
+          onChange={(e) => setInviteOwnerFilter(e.target.value)}
+        />
         <button className="admin-btn primary" onClick={handleGenerateInvites}>生成邀请码</button>
       </div>
       <div className="admin-list">
@@ -280,7 +315,10 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
             <div className="admin-card-body">
               <div className="admin-card-title">{c.code}</div>
               <div className="admin-card-meta">
-                类型：{c.role_type} · 状态：{c.status} · 使用者：{c.used_by || "-"}
+                类型：{c.role_type} · 状态：{c.status} · 所有者：{c.owner_username || c.owner_id}
+              </div>
+              <div className="admin-card-meta">
+                使用者：{c.used_by_username || c.used_by || "-"}
               </div>
             </div>
             <div className="admin-card-actions">
@@ -356,6 +394,9 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
 
   const renderContent = () => {
     switch (activeTab) {
+      case "overview": return <AdminStats token={token} onNavigate={(tab) => setActiveTab(tab as Tab)} />;
+      case "users": return <AdminUsers token={token} />;
+      case "tree": return <AdminTree token={token} />;
       case "review": return renderReview();
       case "invites": return renderInvites();
       case "forum": return renderForum();

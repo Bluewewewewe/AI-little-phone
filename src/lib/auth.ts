@@ -6,6 +6,9 @@ export interface VerifiedUser {
     username: string;
     role: string;
     isAdmin: boolean;
+    banStatus?: string;
+    banUntil?: string | null;
+    banReason?: string;
 }
 
 export async function verifyToken(token: string | undefined | null): Promise<VerifiedUser | null> {
@@ -22,7 +25,7 @@ export async function verifyToken(token: string | undefined | null): Promise<Ver
 
         const { data: user, error: userError } = await supabase
             .from("users")
-            .select("id, username, role, status")
+            .select("id, username, role, status, ban_status, ban_until, ban_reason")
             .eq("id", session.user_id)
             .single();
         if (userError || !user || user.status !== "approved") return null;
@@ -32,6 +35,9 @@ export async function verifyToken(token: string | undefined | null): Promise<Ver
             username: user.username,
             role: user.role,
             isAdmin: user.role === "admin" || user.role === "super_admin",
+            banStatus: user.ban_status,
+            banUntil: user.ban_until,
+            banReason: user.ban_reason,
         };
     } catch {
         return null;

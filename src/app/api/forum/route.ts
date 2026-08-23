@@ -5,6 +5,29 @@ import { rateLimit } from "@/lib/rate-limit";
 
 const supabase = getSupabaseClient();
 
+function checkBanForForum(user: Awaited<ReturnType<typeof requireAuthRequest>>): NextResponse | null {
+  const banStatus = user.banStatus;
+  if (banStatus === "perma_banned" || banStatus === "temp_banned") {
+    return NextResponse.json(
+      { success: false, error: "账号已被封禁，无法操作" },
+      { status: 403 }
+    );
+  }
+  if (banStatus === "muted") {
+    return NextResponse.json(
+      { success: false, error: "账号已被禁言" },
+      { status: 403 }
+    );
+  }
+  if (banStatus === "restricted") {
+    return NextResponse.json(
+      { success: false, error: "账号功能受限" },
+      { status: 403 }
+    );
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -62,6 +85,8 @@ export async function POST(request: NextRequest) {
 
     if (action === "create") {
       const user = await requireAuthRequest(request);
+      const banCheck = checkBanForForum(user);
+      if (banCheck) return banCheck;
       const {
         title,
         content,
@@ -99,6 +124,8 @@ export async function POST(request: NextRequest) {
 
     if (action === "reply") {
       const user = await requireAuthRequest(request);
+      const banCheck = checkBanForForum(user);
+      if (banCheck) return banCheck;
       const { postId, content, parentReplyId } = body;
       if (!postId || !content) {
         return NextResponse.json(
@@ -130,6 +157,8 @@ export async function POST(request: NextRequest) {
 
     if (action === "like") {
       const user = await requireAuthRequest(request);
+      const banCheck = checkBanForForum(user);
+      if (banCheck) return banCheck;
       const { postId } = body;
       const { data: existing } = await supabase
         .from("forum_likes")
@@ -151,6 +180,8 @@ export async function POST(request: NextRequest) {
 
     if (action === "favorite") {
       const user = await requireAuthRequest(request);
+      const banCheck = checkBanForForum(user);
+      if (banCheck) return banCheck;
       const { postId } = body;
       const { data: existing } = await supabase
         .from("forum_favorites")
