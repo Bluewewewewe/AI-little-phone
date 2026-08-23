@@ -1,61 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
-
-async function getUserByToken(
-  supabase: Awaited<ReturnType<typeof getSupabaseClient>>,
-  authToken: string
-): Promise<Record<string, unknown> | null> {
-  const { data: session } = await supabase
-    .from("user_sessions")
-    .select("user_id")
-    .eq("token", authToken)
-    .gte("expires_at", new Date().toISOString())
-    .single();
-  if (!session) return null;
-  const { data: user } = await supabase
-    .from("users")
-    .select("id, role, status")
-    .eq("id", session.user_id as string)
-    .single();
-  return user || null;
-}
-
-function requireAdminAuth(
-  request: NextRequest
-): { token: string | null; error: NextResponse | null } {
-  const authHeader = request.headers.get("authorization");
-  let token: string | null = null;
-  try {
-    const body = request.body ? JSON.parse(request.body as unknown as string) : {};
-    token = body.authToken || null;
-  } catch {
-    token = null;
-  }
-  if (!token && authHeader?.startsWith("Bearer ")) {
-    token = authHeader.slice(7);
-  }
-  if (!token) {
-    return {
-      token: null,
-      error: NextResponse.json({ error: "缺少 token" }, { status: 401 }),
-    };
-  }
-  return { token, error: null };
-}
+import { requirePermissionRequest, logAudit } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await getSupabaseClient();
-    const { token, error } = requireAdminAuth(request);
-    if (error || !token) return error!;
-
-    const adminUser = await getUserByToken(supabase, token);
-    if (!adminUser || (adminUser.role !== "admin" && adminUser.role !== "super_admin")) {
-      return NextResponse.json({ error: "无权访问" }, { status: 403 });
-    }
-    if (adminUser.status !== "approved") {
-      return NextResponse.json({ error: "账号未审核通过" }, { status: 403 });
-    }
+    const adminUser = await requirePermissionRequest(request, "stats_view");
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -71,7 +21,7 @@ export async function POST(request: NextRequest) {
         supabase
           .from("users")
           .select("*", { count: "exact", head: true })
-          .eq("status", "pending"),
+          .eq("verify_status", "pending"),
         supabase
           .from("users")
           .select("*", { count: "exact", head: true })
@@ -105,6 +55,8 @@ export async function POST(request: NextRequest) {
         count: count || 0,
       });
     }
+
+    await logAudit(adminUser.id, "stats_view", "system", "dashboard");
 
     return NextResponse.json({
       success: true,

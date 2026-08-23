@@ -305,7 +305,7 @@ export default function UserProfileApp({ username, isSelf = false, bio = "", onC
         {activeTab === "invites" && (
           <>
             {(() => {
-              const available = inviteCodes.filter((c) => c.status === "available");
+              const available = inviteCodes.filter((c) => c.status === "active");
               const used = inviteCodes.filter((c) => c.status === "used");
               const revoked = inviteCodes.filter((c) => c.status === "revoked");
               const copy = (code: string) => {

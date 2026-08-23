@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
-import { requireAdminRequest } from "@/lib/auth";
+import { requirePermissionRequest, logAudit, type AdminPermission } from "@/lib/auth";
 
 function jsonResponse(data: { success: boolean; data?: unknown; error?: string }, status = 200) {
   return NextResponse.json(data, { status });
@@ -44,16 +44,22 @@ function computePriority(assignment: Record<string, unknown> | null, createdAt: 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await getSupabaseClient();
+    const body = await request.json();
+    const { action } = body;
+    const permissionAction: Record<string, AdminPermission> = {
+      list_pending: "user_review",
+      assign: "user_review",
+      claim: "user_review",
+      auto_assign: "user_review",
+      review_history: "user_review",
+    };
     let adminUser;
     try {
-      adminUser = await requireAdminRequest(request);
+      adminUser = await requirePermissionRequest(request, permissionAction[action as string] || "user_review");
     } catch (err) {
       const message = err instanceof Error ? err.message : "鉴权失败";
       return jsonResponse({ success: false, error: message }, 401);
     }
-
-    const body = await request.json();
-    const { action } = body;
 
     if (action === "list_pending") {
       const { data: users, error: usersError } = await supabase
@@ -195,6 +201,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) return jsonResponse({ success: false, error: error.message }, 500);
+      await logAudit(adminUser.id, "review_assign", "user", user_id as string, { assigned_to });
       return jsonResponse({ success: true, data });
     }
 
@@ -233,6 +240,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) return jsonResponse({ success: false, error: error.message }, 500);
+      await logAudit(adminUser.id, "review_claim", "user", user_id as string, {});
       return jsonResponse({ success: true, data });
     }
 
@@ -321,6 +329,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      await logAudit(adminUser.id, "review_auto_assign", "system", "all", { assigned_count: assignedCount });
       return jsonResponse({ success: true, data: { assigned_count: assignedCount } });
     }
 

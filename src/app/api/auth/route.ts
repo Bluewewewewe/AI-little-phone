@@ -95,6 +95,12 @@ async function createDefaultInviteCodes(
   userId: string
 ): Promise<void> {
   const quota = parseInt(process.env.INVITE_QUOTA_DEFAULT || "10", 10);
+  const { count } = await supabase
+    .from("invite_codes")
+    .select("*", { count: "exact", head: true })
+    .eq("owner_id", userId);
+  if ((count ?? 0) > 0) return;
+
   const codes: string[] = [];
   for (let i = 0; i < quota; i++) {
     let code = generateInviteCode("MIMI-");
@@ -116,7 +122,7 @@ async function createDefaultInviteCodes(
     code,
     owner_id: userId,
     role_type: "user",
-    status: "available",
+    status: "active",
     created_at: new Date().toISOString(),
   }));
 
@@ -239,6 +245,13 @@ export async function POST(request: NextRequest) {
       if (invite.used_by) {
         return NextResponse.json(
           { error: "邀请码已被使用" },
+          { status: 400 }
+        );
+      }
+
+      if (invite.status !== "active") {
+        return NextResponse.json(
+          { error: "邀请码无效或已被使用" },
           { status: 400 }
         );
       }
@@ -572,11 +585,20 @@ export async function POST(request: NextRequest) {
       reviewer: Record<string, unknown>,
       notes?: string
     ) {
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("verify_status")
+        .eq("id", targetId)
+        .single();
+      if (result === "approved" && existingUser?.verify_status === "verified") {
+        return;
+      }
+
       const now = new Date().toISOString();
       const updateData: Record<string, unknown> = {
         status: result === "approved" ? "approved" : result === "rejected" ? "rejected" : "grace_period",
         verify_status: result === "approved" ? "verified" : result === "rejected" ? "rejected" : "grace_period",
-        reviewed_by: reviewer.username,
+        reviewed_by: reviewer.id,
         reviewed_at: now,
         review_result: result,
       };
@@ -863,7 +885,7 @@ export async function POST(request: NextRequest) {
 
       const { data: targetUser } = await supabase
         .from("users")
-        .select("id, role, status, violation_count")
+        .select("id, role, status, violation_count, referrer_id")
         .eq("id", banTargetId)
         .single();
 
@@ -874,6 +896,12 @@ export async function POST(request: NextRequest) {
       if (targetUser.role === "super_admin") {
         return NextResponse.json(
           { error: "不能处罚超级管理员" },
+          { status: 403 }
+        );
+      }
+      if (targetUser.role === "admin" && adminUser.role !== "super_admin") {
+        return NextResponse.json(
+          { error: "只有超级管理员可以处罚管理员" },
           { status: 403 }
         );
       }
@@ -926,7 +954,7 @@ export async function POST(request: NextRequest) {
           .from("invite_codes")
           .update({ status: "revoked", revoked_at: now })
           .eq("owner_id", banTargetId)
-          .eq("status", "available");
+          .in("status", ["active"]);
       }
 
       await logAudit(supabase, adminUser.id as string, "ban_user", "user", banTargetId, {
@@ -935,6 +963,39 @@ export async function POST(request: NextRequest) {
         duration,
         ban_until: banUntil,
       });
+
+      // 连坐惩罚：临时/永久封禁时扣减邀请人配额并累计邀请人违规
+      if (
+        (banStatus === "temp_banned" || banStatus === "perma_banned") &&
+        targetUser?.referrer_id
+      ) {
+        const { data: referrer } = await supabase
+          .from("users")
+          .select("id, invite_quota, violation_count, ban_status")
+          .eq("id", targetUser.referrer_id)
+          .single();
+        if (referrer && referrer.ban_status !== "perma_banned") {
+          const newQuota = Math.max(0, (referrer.invite_quota || 0) - 1);
+          const newViolation = (referrer.violation_count || 0) + 1;
+          const referrerUpdate: Record<string, unknown> = {
+            invite_quota: newQuota,
+            violation_count: newViolation,
+          };
+          if (newViolation >= 3 && referrer.ban_status === "none") {
+            referrerUpdate.ban_status = "restricted";
+            referrerUpdate.ban_reason = "多名被邀请人违规，系统自动限制";
+            referrerUpdate.banned_at = now;
+            referrerUpdate.banned_by = "system";
+          }
+          await supabase.from("users").update(referrerUpdate).eq("id", referrer.id);
+          await logAudit(supabase, adminUser.id as string, "collective_punishment", "user", referrer.id, {
+            target_user_id: banTargetId,
+            invite_quota_delta: -1,
+            violation_count_delta: 1,
+            auto_restricted: newViolation >= 3 && referrer.ban_status === "none",
+          });
+        }
+      }
 
       return NextResponse.json({
         success: true,
@@ -946,6 +1007,14 @@ export async function POST(request: NextRequest) {
     if (action === "set_role") {
       const { user: adminUser, error: authError } = await requireAdminAuth(supabase, authToken);
       if (authError || !adminUser) return authError!;
+
+      // 细粒度权限：角色设置仅限超级管理员
+      if (adminUser.role !== "super_admin") {
+        return NextResponse.json(
+          { error: "权限不足：只有超级管理员可以设置角色" },
+          { status: 403 }
+        );
+      }
 
       const { targetUserId: roleTargetId, role } = body;
 

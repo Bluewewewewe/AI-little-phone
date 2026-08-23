@@ -127,7 +127,7 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
     const res = await fetch("/api/forum", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, postId, value }),
+      body: JSON.stringify({ action, postId, value, authToken: token }),
     }).then((r) => r.json());
     showMessage(res.success ? "操作成功" : res.error || "失败");
     if (res.success) loadForum();

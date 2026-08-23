@@ -2,6 +2,7 @@ import { getSupabaseClient } from "@/storage/database/supabase-client";
 import type { NextRequest } from "next/server";
 
 export interface VerifiedUser {
+    id: string;
     userId: string;
     username: string;
     role: string;
@@ -9,6 +10,7 @@ export interface VerifiedUser {
     banStatus?: string;
     banUntil?: string | null;
     banReason?: string;
+    verifyStatus?: string;
 }
 
 export async function verifyToken(token: string | undefined | null): Promise<VerifiedUser | null> {
@@ -30,7 +32,24 @@ export async function verifyToken(token: string | undefined | null): Promise<Ver
             .single();
         if (userError || !user || user.status !== "approved") return null;
 
+        // 临时封禁到期自动解除
+        if (user.ban_status === "temp_banned" && user.ban_until && new Date(user.ban_until) <= new Date()) {
+            await supabase
+                .from("users")
+                .update({
+                    ban_status: null,
+                    ban_until: null,
+                    ban_reason: null,
+                    banned_by: null,
+                    banned_at: null,
+                })
+                .eq("id", user.id);
+            user.ban_status = null;
+            user.ban_until = null;
+        }
+
         return {
+            id: user.id,
             userId: user.id,
             username: user.username,
             role: user.role,
@@ -38,6 +57,7 @@ export async function verifyToken(token: string | undefined | null): Promise<Ver
             banStatus: user.ban_status,
             banUntil: user.ban_until,
             banReason: user.ban_reason,
+            verifyStatus: user.status,
         };
     } catch {
         return null;
@@ -82,4 +102,63 @@ export async function requireAuthRequest(request: NextRequest): Promise<Verified
 export async function requireAdminRequest(request: NextRequest): Promise<VerifiedUser> {
     const token = await extractTokenFromRequest(request);
     return requireAdmin(token);
+}
+
+export type AdminPermission =
+    | "user_review"
+    | "user_ban"
+    | "user_manage"
+    | "invite_manage"
+    | "forum_manage"
+    | "stats_view"
+    | "tree_view"
+    | "system_setting"
+    | "review_queue";
+
+const ROLE_PERMISSIONS: Record<string, AdminPermission[]> = {
+    super_admin: [
+        "user_review",
+        "user_ban",
+        "user_manage",
+        "invite_manage",
+        "forum_manage",
+        "stats_view",
+        "tree_view",
+        "system_setting",
+        "review_queue",
+    ],
+    admin: ["user_review", "user_ban", "user_manage", "invite_manage", "forum_manage", "stats_view", "tree_view", "review_queue"],
+};
+
+export function hasPermission(user: VerifiedUser, permission: AdminPermission): boolean {
+    return ROLE_PERMISSIONS[user.role]?.includes(permission) ?? false;
+}
+
+export async function requirePermissionRequest(request: NextRequest, permission: AdminPermission): Promise<VerifiedUser> {
+    const user = await requireAdminRequest(request);
+    if (!hasPermission(user, permission)) {
+        throw new Error(`缺少权限：${permission}`);
+    }
+    return user;
+}
+
+export async function logAudit(
+    adminId: string,
+    action: string,
+    targetType: string,
+    targetId: string,
+    details?: Record<string, unknown>
+): Promise<void> {
+    try {
+        const supabase = getSupabaseClient();
+        await supabase.from("audit_log").insert({
+            admin_id: adminId,
+            action,
+            target_type: targetType,
+            target_id: targetId,
+            details: details ?? {},
+        });
+    } catch {
+        // 日志失败不应阻塞主流程
+    }
 }

@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import getSupabaseClient from "@/storage/database/supabase-client";
-import { requireAuthRequest, requireAdminRequest } from "@/lib/auth";
+import {
+  requireAuthRequest,
+  requirePermissionRequest,
+  logAudit,
+} from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
-
-const supabase = getSupabaseClient();
 
 function checkBanForForum(user: Awaited<ReturnType<typeof requireAuthRequest>>): NextResponse | null {
   const banStatus = user.banStatus;
+  const banUntil = user.banUntil;
+  if (banStatus === "temp_banned" && banUntil) {
+    const until = new Date(banUntil);
+    if (new Date() >= until) {
+      return null;
+    }
+  }
   if (banStatus === "perma_banned" || banStatus === "temp_banned") {
     return NextResponse.json(
       { success: false, error: "账号已被封禁，无法操作" },
@@ -30,6 +39,7 @@ function checkBanForForum(user: Awaited<ReturnType<typeof requireAuthRequest>>):
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseClient();
     const body = await request.json();
     const { action } = body;
 
@@ -214,7 +224,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "admin_pin" || action === "admin_essence") {
-      await requireAdminRequest(request);
+      const adminUser = await requirePermissionRequest(request, "forum_manage");
       const { postId, value } = body;
       const field = action === "admin_pin" ? "is_pinned" : "is_essence";
       const { data, error } = await supabase
@@ -224,22 +234,25 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
       if (error) throw error;
+      await logAudit(adminUser.id, action, "forum_post", postId, { field, value });
       return NextResponse.json({ success: true, data });
     }
 
     if (action === "admin_delete") {
-      await requireAdminRequest(request);
+      const adminUser = await requirePermissionRequest(request, "forum_manage");
       const { postId } = body;
       await supabase.from("forum_replies").delete().eq("post_id", postId);
       await supabase.from("forum_likes").delete().eq("post_id", postId);
       await supabase.from("forum_favorites").delete().eq("post_id", postId);
       await supabase.from("forum_posts").delete().eq("id", postId);
+      await logAudit(adminUser.id, action, "forum_post", postId);
       return NextResponse.json({ success: true });
     }
 
     if (action === "admin_update_bug_status") {
-      await requireAdminRequest(request);
-      const { postId, bugStatus } = body;
+      const adminUser = await requirePermissionRequest(request, "forum_manage");
+      const { postId, value } = body;
+      const bugStatus = value;
       const { data, error } = await supabase
         .from("forum_posts")
         .update({ bug_status: bugStatus })
@@ -247,6 +260,7 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
       if (error) throw error;
+      await logAudit(adminUser.id, action, "forum_post", postId, { bug_status: bugStatus });
       return NextResponse.json({ success: true, data });
     }
 

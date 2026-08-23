@@ -239,7 +239,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_target ON audit_log(target_type, target
 CREATE POLICY service_audit_log_all ON public.audit_log FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- 审核队列：审核人记录与自动分配
-ALTER TABLE users ADD COLUMN IF NOT EXISTS reviewed_by VARCHAR;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES users(id);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS review_result VARCHAR;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS grace_period_end TIMESTAMP;
@@ -247,15 +247,15 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS grace_period_notes TEXT;
 
 CREATE TABLE IF NOT EXISTS review_assignments (
   id              SERIAL PRIMARY KEY,
-  user_id         VARCHAR REFERENCES users(id),
-  assigned_to     VARCHAR REFERENCES users(id),
+  user_id         UUID REFERENCES users(id),
+  assigned_to     UUID REFERENCES users(id),
   assigned_at     TIMESTAMP DEFAULT NOW(),
   deadline        TIMESTAMP,
   status          VARCHAR DEFAULT 'pending',
-  reviewed_by     VARCHAR REFERENCES users(id),
+  reviewed_by     UUID REFERENCES users(id),
   reviewed_at     TIMESTAMP,
   review_result   VARCHAR,
-  reassigned_from VARCHAR,
+  reassigned_from UUID REFERENCES users(id),
   reassigned_at   TIMESTAMP,
   notes           TEXT
 );
