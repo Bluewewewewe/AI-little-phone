@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import AdminStats from "./admin/admin-stats";
 import AdminUsers from "./admin/admin-users";
 import AdminTree from "./admin/admin-tree";
+import ReviewQueue from "./admin/review-queue";
 
 interface AdminDashboardProps {
   token: string;
@@ -51,14 +52,10 @@ interface ForumPost {
 
 export default function AdminDashboard({ token, username, onClose }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
-  const [users, setUsers] = useState<User[]>([]);
-  const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [rejectReason, setRejectReason] = useState("");
   const [inviteRole, setInviteRole] = useState<"user" | "admin">("user");
   const [inviteCount, setInviteCount] = useState(5);
   const [inviteOwnerFilter, setInviteOwnerFilter] = useState("");
@@ -81,17 +78,6 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
     return res.json();
   }, [token]);
 
-  const loadReview = useCallback(async () => {
-    setLoading(true);
-    const [pendingRes, allRes] = await Promise.all([
-      api("list_pending_users"),
-      api("list_users"),
-    ]);
-    setPendingUsers(pendingRes.success ? pendingRes.data || [] : []);
-    setUsers(allRes.success ? allRes.data || [] : []);
-    setLoading(false);
-  }, [api]);
-
   const loadInvites = useCallback(async () => {
     setLoading(true);
     const res = await api("list_all_invite_codes", {
@@ -113,43 +99,13 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
   }, []);
 
   useEffect(() => {
-    if (activeTab === "review") loadReview();
     if (activeTab === "invites") loadInvites();
     if (activeTab === "forum" || activeTab === "announce" || activeTab === "bugs") loadForum();
-  }, [activeTab, loadReview, loadInvites, loadForum]);
+  }, [activeTab, loadInvites, loadForum]);
 
   const showMessage = (msg: string) => {
     setMessage(msg);
     setTimeout(() => setMessage(""), 3000);
-  };
-
-  const handleApprove = async (targetUserId: string) => {
-    const res = await api("approve_user", { targetUserId, reviewedBy: username });
-    showMessage(res.success ? "已通过" : res.error || "失败");
-    if (res.success) loadReview();
-  };
-
-  const handleBatchApprove = async () => {
-    if (selected.size === 0) return;
-    const res = await api("batch_approve_users", {
-      targetUserIds: Array.from(selected),
-      reviewedBy: username,
-    });
-    showMessage(res.success ? "批量通过成功" : res.error || "失败");
-    if (res.success) {
-      setSelected(new Set());
-      loadReview();
-    }
-  };
-
-  const handleReject = async (targetUserId: string) => {
-    const res = await api("reject_user", {
-      targetUserId,
-      reason: rejectReason || "不符合要求",
-      reviewedBy: username,
-    });
-    showMessage(res.success ? "已拒绝" : res.error || "失败");
-    if (res.success) loadReview();
   };
 
   const handleGenerateInvites = async () => {
@@ -209,76 +165,19 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
     </nav>
   );
 
+  const currentAdminId = useMemo(() => {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+      if (!token) return undefined;
+      const payload = JSON.parse(atob(token.split(".")[1] || "{}"));
+      return payload.id as string | undefined;
+    } catch {
+      return undefined;
+    }
+  }, []);
+
   const renderReview = () => (
-    <div className="admin-section">
-      <h2>用户审核</h2>
-      <div className="admin-tabs-sub">
-        <button className="active">待审核 ({pendingUsers.length})</button>
-        <button>全部用户 ({users.length})</button>
-      </div>
-      {pendingUsers.length === 0 ? (
-        <div className="admin-empty">暂无待审核用户</div>
-      ) : (
-        <>
-          <div className="admin-toolbar">
-            <button
-              className="admin-btn primary"
-              onClick={handleBatchApprove}
-              disabled={selected.size === 0}
-            >
-              批量通过 ({selected.size})
-            </button>
-            <input
-              className="admin-input"
-              placeholder="拒绝理由"
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-            />
-          </div>
-          <div className="admin-list">
-            {pendingUsers.map((u) => (
-              <div key={u.id} className="admin-card" style={{ borderColor: u.referrer_ban_status && u.referrer_ban_status !== "none" ? "#ef4444" : undefined }}>
-                {u.referrer_ban_status && u.referrer_ban_status !== "none" && (
-                  <div className="mb-2 rounded bg-red-500/20 px-2 py-1 text-xs text-red-300">
-                    ⚠️ 邀请人已封禁
-                  </div>
-                )}
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(u.id)}
-                    onChange={(e) => {
-                      const next = new Set(selected);
-                      if (e.target.checked) next.add(u.id);
-                      else next.delete(u.id);
-                      setSelected(next);
-                    }}
-                  />
-                  <div className="admin-card-body flex-1">
-                    <div className="admin-card-title">{u.username}</div>
-                    <div className="admin-card-meta">
-                      微博：{u.weibo_name || "-"} · 邀请码：{u.invite_code_used || "-"} · 注册：{new Date(u.created_at).toLocaleString()}
-                    </div>
-                    {u.referrer_name && (
-                      <div className="admin-card-meta">
-                        邀请人：{u.referrer_name}
-                        {u.referrer_verify_status === "verified" && " ✅"}
-                        {u.referrer_verify_status === "pending" && " ⏳"}
-                        {(u.referrer_ban_status === "temp_banned" || u.referrer_ban_status === "perma_banned") && " ❌"}
-                      </div>
-                    )}
-                  </div>
-                  <div className="admin-card-actions">
-                    <button className="admin-btn primary" onClick={() => handleApprove(u.id)}>通过</button>
-                    <button className="admin-btn danger" onClick={() => handleReject(u.id)}>拒绝</button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+    <ReviewQueue currentAdminId={currentAdminId} />
   );
 
   const renderInvites = () => (

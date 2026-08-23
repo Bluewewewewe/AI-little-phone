@@ -566,6 +566,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data: users });
     }
 
+    async function finalizeReview(
+      targetId: string,
+      result: "approved" | "rejected" | "grace_period",
+      reviewer: Record<string, unknown>,
+      notes?: string
+    ) {
+      const now = new Date().toISOString();
+      const updateData: Record<string, unknown> = {
+        status: result === "approved" ? "approved" : result === "rejected" ? "rejected" : "grace_period",
+        verify_status: result === "approved" ? "verified" : result === "rejected" ? "rejected" : "grace_period",
+        reviewed_by: reviewer.username,
+        reviewed_at: now,
+        review_result: result,
+      };
+      if (result === "grace_period") {
+        updateData.grace_period_end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      }
+      await supabase.from("users").update(updateData).eq("id", targetId);
+
+      // 关闭待审分配记录
+      const { data: activeAssignment } = await supabase
+        .from("review_assignments")
+        .select("id")
+        .eq("user_id", targetId)
+        .eq("status", "pending")
+        .maybeSingle();
+      if (activeAssignment) {
+        await supabase
+          .from("review_assignments")
+          .update({
+            status: "reviewed",
+            reviewed_by: reviewer.id,
+            reviewed_at: now,
+            review_result: result,
+            notes: notes || null,
+          })
+          .eq("id", activeAssignment.id);
+      } else {
+        // 没有分配记录也写入一条审核记录
+        await supabase.from("review_assignments").insert({
+          user_id: targetId,
+          assigned_to: reviewer.id,
+          assigned_at: now,
+          status: "reviewed",
+          reviewed_by: reviewer.id,
+          reviewed_at: now,
+          review_result: result,
+          notes: notes || null,
+        });
+      }
+    }
+
     // ========== 通过用户 ==========
     if (action === "approve_user") {
       if (!authToken || !targetUserId) {
@@ -577,21 +629,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "无权操作" }, { status: 403 });
       }
 
-      const { error } = await supabase
-        .from("users")
-        .update({
-          status: "approved",
-          reviewed_by: found.user.username,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq("id", targetUserId);
-
-      if (error) {
-        return NextResponse.json(
-          { error: "审核失败: " + error.message },
-          { status: 500 }
-        );
-      }
+      await finalizeReview(targetUserId as string, "approved", found.user);
 
       // 普通用户注册成功后自动生成默认数量普通用户邀请码
       await createDefaultInviteCodes(supabase, targetUserId as string);
@@ -619,23 +657,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "未选择用户" }, { status: 400 });
       }
 
-      const { error } = await supabase
-        .from("users")
-        .update({
-          status: "approved",
-          reviewed_by: found.user.username,
-          reviewed_at: new Date().toISOString(),
-        })
-        .in("id", ids);
-
-      if (error) {
-        return NextResponse.json(
-          { error: "批量审核失败: " + error.message },
-          { status: 500 }
-        );
-      }
-
       for (const uid of ids) {
+        await finalizeReview(uid, "approved", found.user);
         await createDefaultInviteCodes(supabase, uid);
         await logAudit(supabase, found.user.id as string, "approve_user", "user", uid, {
           reviewed_by: found.user.username,
@@ -657,27 +680,37 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "无权操作" }, { status: 403 });
       }
 
-      const { error } = await supabase
-        .from("users")
-        .update({
-          status: "rejected",
-          reviewed_by: found.user.username,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq("id", targetUserId);
-
-      if (error) {
-        return NextResponse.json(
-          { error: "操作失败: " + error.message },
-          { status: 500 }
-        );
-      }
+      const notes = (body.reason as string) || "";
+      await finalizeReview(targetUserId as string, "rejected", found.user, notes);
 
       await logAudit(supabase, found.user.id as string, "reject_user", "user", targetUserId as string, {
         reviewed_by: found.user.username,
+        reason: notes,
       });
 
       return NextResponse.json({ success: true, message: "已拒绝" });
+    }
+
+    // ========== 宽限期用户 ==========
+    if (action === "grace_period_user") {
+      if (!authToken || !targetUserId) {
+        return NextResponse.json({ error: "缺少参数" }, { status: 400 });
+      }
+
+      const found = await getUserByToken(supabase, authToken as string);
+      if (!found || (!isSuperAdmin(found.user) && !isAdmin(found.user))) {
+        return NextResponse.json({ error: "无权操作" }, { status: 403 });
+      }
+
+      const notes = (body.reason as string) || "";
+      await finalizeReview(targetUserId as string, "grace_period", found.user, notes);
+
+      await logAudit(supabase, found.user.id as string, "grace_period_user", "user", targetUserId as string, {
+        reviewed_by: found.user.username,
+        reason: notes,
+      });
+
+      return NextResponse.json({ success: true, message: "已设置宽限期" });
     }
 
     // ========== 获取所有用户列表（支持搜索/筛选/分页） ==========
@@ -695,7 +728,7 @@ export async function POST(request: NextRequest) {
       );
 
       let query = supabase.from("users").select(
-        "id, username, display_name, level, role, status, verify_status, weibo_verified, weibo_uid, weibo_name, weibo_level, created_at, reviewed_at, reviewed_by, referrer_id, ban_status, ban_until, violation_count, invite_quota",
+        "id, username, display_name, level, role, status, verify_status, weibo_verified, weibo_uid, weibo_name, weibo_level, created_at, reviewed_at, reviewed_by, review_result, referrer_id, ban_status, ban_until, violation_count, invite_quota",
         { count: "exact" }
       );
 
@@ -731,6 +764,9 @@ export async function POST(request: NextRequest) {
       const referrerIds = Array.from(
         new Set(users.map((u) => u.referrer_id).filter(Boolean))
       ) as string[];
+      const reviewerIds = Array.from(
+        new Set(users.map((u) => u.reviewed_by).filter(Boolean))
+      ) as string[];
       const userIds = users.map((u) => u.id as string);
 
       let referrerMap: Record<string, string> = {};
@@ -740,6 +776,21 @@ export async function POST(request: NextRequest) {
           .select("id, username")
           .in("id", referrerIds);
         referrerMap = (refs || []).reduce(
+          (acc, r) => {
+            acc[r.id] = r.username;
+            return acc;
+          },
+          {} as Record<string, string>
+        );
+      }
+
+      let reviewerMap: Record<string, string> = {};
+      if (reviewerIds.length > 0) {
+        const { data: revs } = await supabase
+          .from("users")
+          .select("id, username")
+          .in("id", reviewerIds);
+        reviewerMap = (revs || []).reduce(
           (acc, r) => {
             acc[r.id] = r.username;
             return acc;
@@ -763,6 +814,7 @@ export async function POST(request: NextRequest) {
       const list = users.map((u) => ({
         ...u,
         referrer_name: referrerMap[u.referrer_id as string] || null,
+        reviewer_name: reviewerMap[u.reviewed_by as string] || null,
         invite_count: inviteCountMap[u.id as string] || 0,
       }));
 

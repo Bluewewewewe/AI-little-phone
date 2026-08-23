@@ -18,6 +18,10 @@ interface UserItem {
   ban_until?: string;
   referrer_id?: string;
   referrer_name?: string | null;
+  reviewed_by?: string | null;
+  reviewer_name?: string | null;
+  reviewed_at?: string | null;
+  review_result?: string | null;
   invite_count: number;
   violation_count: number;
   created_at: string;
@@ -222,6 +226,13 @@ export default function AdminUsers({ token }: AdminUsersProps) {
               <div><span className="text-cyan-200/70">解封时间：</span>{new Date(detailUser.ban_until).toLocaleString()}</div>
             )}
             <div><span className="text-cyan-200/70">邀请人：</span>{detailUser.referrer_name || "-"}</div>
+            {detailUser.reviewer_name && (
+              <>
+                <div><span className="text-cyan-200/70">审核人：</span>{detailUser.reviewer_name}</div>
+                <div><span className="text-cyan-200/70">审核时间：</span>{new Date(detailUser.reviewed_at || "").toLocaleString()}</div>
+                <div><span className="text-cyan-200/70">审核结果：</span>{detailUser.review_result || "-"}</div>
+              </>
+            )}
             <div><span className="text-cyan-200/70">邀请人数：</span>{detailUser.invite_count}</div>
             <div><span className="text-cyan-200/70">违规次数：</span>{detailUser.violation_count}</div>
             <div><span className="text-cyan-200/70">注册时间：</span>{new Date(detailUser.created_at).toLocaleString()}</div>
@@ -293,6 +304,7 @@ export default function AdminUsers({ token }: AdminUsersProps) {
             <th className="p-3">微博</th>
             <th className="p-3">状态</th>
             <th className="p-3">邀请人</th>
+            <th className="p-3">审核人</th>
             <th className="p-3">邀请数</th>
             <th className="p-3">违规</th>
             <th className="p-3">注册时间</th>
@@ -315,6 +327,7 @@ export default function AdminUsers({ token }: AdminUsersProps) {
                 )}
               </td>
               <td className="p-3 text-slate-300">{u.referrer_name || "-"}</td>
+              <td className="p-3 text-slate-300">{u.reviewer_name || "-"}</td>
               <td className="p-3 text-slate-300">{u.invite_count}</td>
               <td className="p-3">
                 {u.violation_count > 0 ? (
