@@ -90,6 +90,26 @@ async function logAudit(
   }
 }
 
+async function checkDefaultPassword(
+  plaintext: string,
+  passwordHash: string | null,
+  username: string | null
+): Promise<boolean> {
+  if (!plaintext || !passwordHash) return false;
+  const commonDefaults = ["admin123", username || ""].filter(Boolean);
+  for (const candidate of commonDefaults) {
+    if (plaintext === candidate) return true;
+    if (passwordHash.startsWith("$2")) {
+      try {
+        if (await bcrypt.compare(candidate, passwordHash)) return true;
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  return false;
+}
+
 async function createDefaultInviteCodes(
   supabase: Awaited<ReturnType<typeof getSupabaseClient>>,
   userId: string
@@ -439,8 +459,11 @@ export async function POST(request: NextRequest) {
       }
 
       const isAdminUser = isAdmin(user) || isSuperAdmin(user);
-      const isDefaultPassword =
-        password === "admin123" || password === user.username;
+      const isDefaultPassword = await checkDefaultPassword(
+        password,
+        user.password,
+        user.username
+      );
 
       return NextResponse.json({
         success: true,
@@ -478,9 +501,6 @@ export async function POST(request: NextRequest) {
       }
 
       const isAdminUser = isAdmin(u) || isSuperAdmin(u);
-      const isDefaultPassword =
-        (u.password as string) === "admin123" ||
-        (u.password as string) === (u.username as string);
 
       return NextResponse.json({
         valid: true,
@@ -495,7 +515,6 @@ export async function POST(request: NextRequest) {
           weiboName: u.weibo_name,
           userBio: u.user_bio || "",
           isAdmin: isAdminUser,
-          isDefaultPassword,
         },
       });
     }
@@ -1025,7 +1044,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const validRoles = ["user", "teacher", "leader", "admin", "super_admin"];
+      const validRoles = ["user", "admin", "super_admin"];
       if (!validRoles.includes(role)) {
         return NextResponse.json({ error: "无效的角色" }, { status: 400 });
       }

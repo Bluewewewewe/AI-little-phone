@@ -51,17 +51,17 @@ type HistoryItem = {
 const API_URL = "/api/admin/review-queue";
 const AUTH_URL = "/api/auth";
 
-const authFetch = async (url: string, body: Record<string, unknown>) => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : "";
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...body, authToken: token }),
-  });
-  return res.json() as Promise<{ success: boolean; data?: unknown; error?: string }>;
-};
+export default function ReviewQueue({ currentAdminId, token: tokenProp }: { currentAdminId?: string; token?: string }) {
+  const token = tokenProp || (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
 
-export default function ReviewQueue({ currentAdminId }: { currentAdminId?: string }) {
+  const authFetch = async (url: string, body: Record<string, unknown>) => {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, authToken: token }),
+    });
+    return res.json() as Promise<{ success: boolean; data?: unknown; error?: string }>;
+  };
   const [users, setUsers] = useState<QueueUser[]>([]);
   const [stats, setStats] = useState<QueueStats | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);

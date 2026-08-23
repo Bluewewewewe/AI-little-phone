@@ -5,6 +5,8 @@ import AdminStats from "./admin/admin-stats";
 import AdminUsers from "./admin/admin-users";
 import AdminTree from "./admin/admin-tree";
 import ReviewQueue from "./admin/review-queue";
+import { AdminPermissions } from "./admin/admin-permissions";
+import { AdminAuditLog } from "./admin/admin-audit-log";
 
 interface AdminDashboardProps {
   token: string;
@@ -12,7 +14,7 @@ interface AdminDashboardProps {
   onClose: () => void;
 }
 
-type Tab = "overview" | "users" | "tree" | "review" | "invites" | "forum" | "announce" | "bugs" | "settings";
+type Tab = "overview" | "users" | "tree" | "review" | "invites" | "forum" | "announce" | "bugs" | "permissions" | "audit_log" | "settings";
 
 interface User {
   id: string;
@@ -142,6 +144,8 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
     { id: "forum", label: "论坛管理", icon: "📋" },
     { id: "announce", label: "官方公告", icon: "📢" },
     { id: "bugs", label: "Bug反馈", icon: "🐛" },
+    { id: "permissions", label: "权限管理", icon: "🔐" },
+    { id: "audit_log", label: "操作日志", icon: "📜" },
     { id: "settings", label: "系统设置", icon: "⚙️" },
   ];
 
@@ -166,18 +170,17 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
   );
 
   const currentAdminId = useMemo(() => {
-    try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      if (!token) return undefined;
-      const payload = JSON.parse(atob(token.split(".")[1] || "{}"));
-      return payload.id as string | undefined;
-    } catch {
-      return undefined;
-    }
+    if (typeof window === "undefined") return undefined;
+    return localStorage.getItem("userId") || undefined;
+  }, []);
+
+  const currentUserRole = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("role") || "";
   }, []);
 
   const renderReview = () => (
-    <ReviewQueue currentAdminId={currentAdminId} />
+    <ReviewQueue currentAdminId={currentAdminId} token={token} />
   );
 
   const renderInvites = () => (
@@ -301,6 +304,10 @@ export default function AdminDashboard({ token, username, onClose }: AdminDashbo
       case "forum": return renderForum();
       case "announce": return renderAnnounce();
       case "bugs": return renderBugs();
+      case "permissions": return (
+        <AdminPermissions token={token} currentUserRole={currentUserRole} currentUserId={currentAdminId || ""} />
+      );
+      case "audit_log": return <AdminAuditLog token={token} />;
       case "settings": return renderSettings();
       default: return null;
     }

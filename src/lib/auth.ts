@@ -113,7 +113,10 @@ export type AdminPermission =
     | "stats_view"
     | "tree_view"
     | "system_setting"
-    | "review_queue";
+    | "review_queue"
+    | "permissions"
+    | "audit_log"
+    | "app_manage";
 
 const ROLE_PERMISSIONS: Record<string, AdminPermission[]> = {
     super_admin: [
@@ -126,8 +129,11 @@ const ROLE_PERMISSIONS: Record<string, AdminPermission[]> = {
         "tree_view",
         "system_setting",
         "review_queue",
+        "permissions",
+        "audit_log",
+        "app_manage",
     ],
-    admin: ["user_review", "user_ban", "user_manage", "invite_manage", "forum_manage", "stats_view", "tree_view", "review_queue"],
+    admin: ["user_review", "user_ban", "user_manage", "invite_manage", "forum_manage", "stats_view", "tree_view", "review_queue", "audit_log"],
 };
 
 export function hasPermission(user: VerifiedUser, permission: AdminPermission): boolean {

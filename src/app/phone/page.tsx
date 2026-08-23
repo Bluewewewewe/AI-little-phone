@@ -2100,6 +2100,12 @@ export default function PhonePage() {
                     setBioDraft(userData.userBio || "");
                     localStorage.setItem("mimi_user_bio", userData.userBio || "");
                     setAdminViewMode(isAdminUser ? "admin" : "user");
+                    if (userData.id) {
+                        localStorage.setItem("userId", userData.id);
+                    }
+                    if (userData.role) {
+                        localStorage.setItem("role", userData.role);
+                    }
                     // 获取用户的邀请码
                     fetch("/api/auth", {
                         method: "POST",
@@ -3014,6 +3020,12 @@ export default function PhonePage() {
                 setAuthToken(result.data.token);
                 localStorage.setItem("auth_token", result.data.token);
                 localStorage.removeItem("mock_admin_user");
+            }
+            if (result.data?.id) {
+                localStorage.setItem("userId", result.data.id);
+            }
+            if (result.data?.role) {
+                localStorage.setItem("role", result.data.role);
             }
 
             if (result.data?.isDefaultPassword) {
