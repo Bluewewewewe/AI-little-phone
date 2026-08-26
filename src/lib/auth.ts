@@ -150,6 +150,7 @@ export async function requirePermissionRequest(request: NextRequest, permission:
 
 export async function logAudit(
     adminId: string,
+    adminUsername: string,
     action: string,
     targetType: string,
     targetId: string,
@@ -158,8 +159,9 @@ export async function logAudit(
     try {
         const supabase = getSupabaseClient();
         await supabase.from("audit_log").insert({
-            admin_id: adminId,
-            action,
+            operator_id: adminId,
+            operator_username: adminUsername,
+            action_type: action,
             target_type: targetType,
             target_id: targetId,
             details: details ?? {},

@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    await logAudit(adminUser.id, "stats_view", "system", "dashboard");
+    await logAudit(adminUser.id, adminUser.username, "stats_view", "system", "dashboard");
 
     return NextResponse.json({
       success: true,

@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       statusEmoji: getStatusEmoji(u.ban_status || "none", u.verify_status || u.status || ""),
     }));
 
-    await logAudit(adminUser.id, "view", "review_tree", "all", {
+    await logAudit(adminUser.id, adminUser.username, "view", "review_tree", "all", {
       count: userList.length,
     });
 

@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
 
       await logAudit(
         adminUser.userId,
+        adminUser.username,
         "update_permissions",
         "user",
         adminUserId,

@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) return jsonResponse({ success: false, error: error.message }, 500);
-      await logAudit(adminUser.id, "review_assign", "user", user_id as string, { assigned_to });
+      await logAudit(adminUser.id, adminUser.username, "review_assign", "user", user_id as string, { assigned_to });
       return jsonResponse({ success: true, data });
     }
 
@@ -240,7 +240,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) return jsonResponse({ success: false, error: error.message }, 500);
-      await logAudit(adminUser.id, "review_claim", "user", user_id as string, {});
+      await logAudit(adminUser.id, adminUser.username, "review_claim", "user", user_id as string, {});
       return jsonResponse({ success: true, data });
     }
 
@@ -329,7 +329,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      await logAudit(adminUser.id, "review_auto_assign", "system", "all", { assigned_count: assignedCount });
+      await logAudit(adminUser.id, adminUser.username, "review_auto_assign", "system", "all", { assigned_count: assignedCount });
       return jsonResponse({ success: true, data: { assigned_count: assignedCount } });
     }
 

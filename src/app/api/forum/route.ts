@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
       if (error) throw error;
-      await logAudit(adminUser.id, action, "forum_post", postId, { field, value });
+      await logAudit(adminUser.id, adminUser.username, action, "forum_post", postId, { field, value });
       return NextResponse.json({ success: true, data });
     }
 
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
       await supabase.from("forum_likes").delete().eq("post_id", postId);
       await supabase.from("forum_favorites").delete().eq("post_id", postId);
       await supabase.from("forum_posts").delete().eq("id", postId);
-      await logAudit(adminUser.id, action, "forum_post", postId);
+      await logAudit(adminUser.id, adminUser.username, action, "forum_post", postId);
       return NextResponse.json({ success: true });
     }
 
@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
       if (error) throw error;
-      await logAudit(adminUser.id, action, "forum_post", postId, { bug_status: bugStatus });
+      await logAudit(adminUser.id, adminUser.username, action, "forum_post", postId, { bug_status: bugStatus });
       return NextResponse.json({ success: true, data });
     }
 

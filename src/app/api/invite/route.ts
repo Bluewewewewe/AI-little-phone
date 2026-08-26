@@ -12,11 +12,14 @@ function generateCode(prefix: string): string {
 }
 
 function isSuperAdmin(user: Record<string, unknown>): boolean {
-  return user.username === "admin" || (user.level as number) >= 99;
+  return user.role === "super_admin" && user.status === "approved";
 }
 
 function isAdmin(user: Record<string, unknown>): boolean {
-  return user.role === "admin" && user.status === "approved";
+  return (
+    (user.role === "admin" || user.role === "super_admin") &&
+    user.status === "approved"
+  );
 }
 
 function mapInviteCode(item: Record<string, unknown>) {

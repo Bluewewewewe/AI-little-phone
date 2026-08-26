@@ -71,6 +71,7 @@ async function requireAdminAuth(
 async function logAudit(
   supabase: Awaited<ReturnType<typeof getSupabaseClient>>,
   adminId: string,
+  adminUsername: string,
   action: string,
   targetType: string,
   targetId: string,
@@ -78,12 +79,12 @@ async function logAudit(
 ): Promise<void> {
   try {
     await supabase.from("audit_log").insert({
-      admin_id: adminId,
-      action,
+      operator_id: adminId,
+      operator_username: adminUsername,
+      action_type: action,
       target_type: targetType,
       target_id: targetId,
       details: details || {},
-      created_at: new Date().toISOString(),
     });
   } catch (err) {
     console.error("审计日志写入失败:", err);
@@ -204,7 +205,7 @@ async function cascadingBan(
       })
       .eq("id", downstreamId);
 
-    await logAudit(supabase, adminUser.id, "cascading_ban", "user", downstreamId, {
+    await logAudit(supabase, adminUser.id, String(adminUser.username ?? ""), "cascading_ban", "user", downstreamId, {
       upstream_id: userId,
       reason,
       banned_by: adminUser.username,
@@ -256,7 +257,7 @@ async function applyInviterViolation(
 
   await supabase.from("users").update(updates).eq("id", inviterId);
 
-  await logAudit(supabase, adminUser.id, "inviter_violation", "user", inviterId, {
+  await logAudit(supabase, adminUser.id, String(adminUser.username ?? ""), "inviter_violation", "user", inviterId, {
     downstream_id: userId,
     previous_count: inviter.violation_count,
     new_count: nextCount,
@@ -665,7 +666,7 @@ export async function POST(request: NextRequest) {
       const inviteCodes = users
         .map((u) => u.invite_code_used)
         .filter(Boolean) as string[];
-      let codeOwnerMap: Record<string, { id: string; username: string; verify_status: string; ban_status: string }> = {};
+      const codeOwnerMap: Record<string, { id: string; username: string; verify_status: string; ban_status: string }> = {};
       if (inviteCodes.length > 0) {
         const { data: codes } = await supabase
           .from("invite_codes")
@@ -785,7 +786,7 @@ export async function POST(request: NextRequest) {
       // 普通用户注册成功后自动生成默认数量普通用户邀请码
       await createDefaultInviteCodes(supabase, targetUserId as string);
 
-      await logAudit(supabase, found.user.id as string, "approve_user", "user", targetUserId as string, {
+      await logAudit(supabase, found.user.id as string, String(found.user.username ?? ""), "approve_user", "user", targetUserId as string, {
         reviewed_by: found.user.username,
       });
 
@@ -812,7 +813,7 @@ export async function POST(request: NextRequest) {
         ids.map(async (uid) => {
           await finalizeReview(uid, "approved", found.user);
           await createDefaultInviteCodes(supabase, uid);
-          await logAudit(supabase, found.user.id as string, "approve_user", "user", uid, {
+          await logAudit(supabase, found.user.id as string, String(found.user.username ?? ""), "approve_user", "user", uid, {
             reviewed_by: found.user.username,
             batch: true,
           });
@@ -858,7 +859,7 @@ export async function POST(request: NextRequest) {
         { id: found.user.id as string, username: found.user.username as string | null }
       );
 
-      await logAudit(supabase, found.user.id as string, "reject_user", "user", targetUserId as string, {
+      await logAudit(supabase, found.user.id as string, String(found.user.username ?? ""), "reject_user", "user", targetUserId as string, {
         reviewed_by: found.user.username,
         reason: notes,
         cascading_banned_count: bannedCount,
@@ -882,7 +883,7 @@ export async function POST(request: NextRequest) {
       const notes = (body.reason as string) || "";
       await finalizeReview(targetUserId as string, "grace_period", found.user, notes);
 
-      await logAudit(supabase, found.user.id as string, "grace_period_user", "user", targetUserId as string, {
+      await logAudit(supabase, found.user.id as string, String(found.user.username ?? ""), "grace_period_user", "user", targetUserId as string, {
         reviewed_by: found.user.username,
         reason: notes,
       });
@@ -976,7 +977,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      let inviteCountMap: Record<string, number> = {};
+      const inviteCountMap: Record<string, number> = {};
       if (userIds.length > 0) {
         const { data: usedCodes } = await supabase
           .from("invite_codes")
@@ -1112,7 +1113,7 @@ export async function POST(request: NextRequest) {
           .in("status", ["active"]);
       }
 
-      await logAudit(supabase, adminUser.id as string, "ban_user", "user", banTargetId, {
+      await logAudit(supabase, adminUser.id as string, String(adminUser.username ?? ""), "ban_user", "user", banTargetId, {
         ban_status: banStatus,
         reason: banReason,
         duration,
@@ -1132,7 +1133,7 @@ export async function POST(request: NextRequest) {
           banTargetId,
           { id: adminUser.id as string, username: adminUser.username as string | null }
         );
-        await logAudit(supabase, adminUser.id as string, "collective_punishment", "user", banTargetId, {
+        await logAudit(supabase, adminUser.id as string, String(adminUser.username ?? ""), "collective_punishment", "user", banTargetId, {
           ban_status: banStatus,
           cascading_banned_count: bannedCount,
           inviter_penalty: penalty,
@@ -1182,7 +1183,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "更新角色失败" }, { status: 500 });
       }
 
-      await logAudit(supabase, adminUser.id as string, "set_role", "user", roleTargetId as string, {
+      await logAudit(supabase, adminUser.id as string, String(adminUser.username ?? ""), "set_role", "user", roleTargetId as string, {
         new_role: role,
       });
 

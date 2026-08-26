@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
 
     await logAudit(
       adminUser.userId,
+      adminUser.username,
       "audit_log_query",
       "audit_log",
       "",
