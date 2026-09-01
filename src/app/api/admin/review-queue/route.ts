@@ -44,7 +44,7 @@ function computePriority(assignment: Record<string, unknown> | null, createdAt: 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await getSupabaseClient();
-    const body = await request.json();
+    const body = await request.clone().json();
     const { action } = body;
     const permissionAction: Record<string, AdminPermission> = {
       list_pending: "user_review",
