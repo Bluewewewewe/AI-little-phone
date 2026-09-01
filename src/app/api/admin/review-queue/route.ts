@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       const { data: users, error: usersError } = await supabase
         .from("users")
         .select(
-          "id, username, nickname, weibo_nickname, weibo_level, weibo_screenshot_url, referrer_id, verify_status, created_at, reviewed_by, reviewed_at, review_result"
+          "id, username, nickname, weibo_nickname, weibo_level, weibo_screenshot_url, weibo_link, referrer_id, verify_status, created_at, reviewed_by, reviewed_at, review_result"
         )
         .eq("verify_status", "pending")
         .order("created_at", { ascending: true });
@@ -358,7 +358,7 @@ export async function POST(request: NextRequest) {
       const reviewerIds = (rows || []).map((r) => r.reviewed_by as string).filter(Boolean);
 
       const [{ data: users }, { data: reviewers }] = await Promise.all([
-        supabase.from("users").select("id, username, nickname, weibo_nickname").in("id", userIds.length ? userIds : [""]),
+        supabase.from("users").select("id, username, nickname, weibo_nickname, weibo_link").in("id", userIds.length ? userIds : [""]),
         supabase.from("users").select("id, username, nickname").in("id", reviewerIds.length ? reviewerIds : [""]),
       ]);
 
@@ -373,6 +373,7 @@ export async function POST(request: NextRequest) {
           user_id: r.user_id,
           username: u?.username || r.user_id,
           weibo_nickname: u?.weibo_nickname || u?.nickname || null,
+          weibo_link: u?.weibo_link || null,
           review_result: r.review_result,
           reviewed_by: r.reviewed_by,
           reviewed_by_name: rv?.username || r.reviewed_by,
